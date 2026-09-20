@@ -7836,18 +7836,70 @@ html[data-theme="dark"] #root {
 .career-app .metric.entity-card {
   position: relative;
   overflow: hidden;
-  border-top-color: color-mix(in srgb, var(--brand-gold) 20%, var(--border-default));
+  isolation: isolate;
 }
 
 .career-app .metric.entity-card::before {
   position: absolute;
-  inset: 0 auto auto 16px;
-  width: 30px;
-  height: 1px;
-  background: var(--brand-gold);
+  z-index: 0;
+  right: 12px;
+  bottom: 6px;
+  width: 48px;
+  height: 68px;
+  background-color: #c8a85b;
+  -webkit-mask-image: url("./assets/brand/yami-hair-watermark.svg");
+  mask-image: url("./assets/brand/yami-hair-watermark.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
   content: "";
-  opacity: 0.48;
+  opacity: 0.045;
   pointer-events: none;
+}
+
+.career-app .overview-grid > .metric:nth-child(2)::before {
+  right: 24px;
+  bottom: 9px;
+  width: 41px;
+  height: 58px;
+  transform: scaleX(-1) rotate(-6deg);
+}
+
+.career-app .overview-grid > .metric:nth-child(3)::before {
+  right: 11px;
+  bottom: 4px;
+  width: 53px;
+  height: 74px;
+  transform: rotate(8deg);
+}
+
+.career-app .metric.entity-card::after {
+  position: absolute;
+  z-index: 2;
+  top: 13px;
+  right: 15px;
+  display: none;
+  width: 5px;
+  height: 5px;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  background: var(--brand-gold-highlight);
+  content: "";
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.career-app .overview-grid > .metric:nth-child(1)::after,
+.career-app .overview-grid > .metric:nth-child(3)::after {
+  display: block;
+}
+
+.career-app .overview-grid > .metric:nth-child(3)::after {
+  top: auto;
+  right: 19px;
+  bottom: 15px;
 }
 
 .career-app .dashboard-progress-module > .section-title {
@@ -7858,54 +7910,141 @@ html[data-theme="dark"] #root {
 .career-app .company-card.entity-card {
   position: relative;
   overflow: hidden;
-  border-top-color: color-mix(in srgb, var(--brand-gold) 20%, var(--border-default));
+  isolation: isolate;
 }
 
 .career-app .company-card.entity-card::before {
   position: absolute;
-  inset: 0 auto auto 35px;
-  width: 22px;
-  height: 1px;
-  background: var(--brand-gold);
+  z-index: 0;
+  right: 16px;
+  bottom: 10px;
+  width: 78px;
+  height: 106px;
+  background-color: #c8a85b;
+  -webkit-mask-image: url("./assets/brand/yami-hair-watermark.svg");
+  mask-image: url("./assets/brand/yami-hair-watermark.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
   content: "";
-  opacity: 0.42;
+  opacity: 0.04;
   pointer-events: none;
+}
+
+.career-app .company-grid > .company-card.entity-card:nth-child(even)::before {
+  transform: scaleX(-1) rotate(-8deg);
+}
+
+.career-app .company-grid > .company-card.entity-card:nth-child(3n)::before {
+  transform: rotate(8deg);
+}
+
+.career-app .company-card.entity-card::after {
+  position: absolute;
+  z-index: 2;
+  top: 31px;
+  right: 42px;
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand-gold-highlight) 38%, transparent), transparent);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(-42deg) translateX(-8px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.career-app .metric.entity-card > *,
+.career-app .company-card.entity-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .career-app .metric-link:hover {
-    border-color: color-mix(in srgb, var(--brand-gold) 44%, var(--border-default));
+    border-color: color-mix(in srgb, var(--border-default) 72%, var(--text-secondary));
+    background: var(--bg-surface);
+    background-image: linear-gradient(112deg, transparent 38%, color-mix(in srgb, var(--brand-gold-highlight) 22%, transparent) 50%, transparent 62%);
+    background-repeat: no-repeat;
+    background-position: right 18px top 15px;
+    background-size: 54px 1px;
+    box-shadow: none;
   }
 
-  .career-app .metric-link:hover::before {
-    opacity: 0.72;
-  }
+  .career-app .metric-link:hover::before { opacity: 0.09; }
+  .career-app .metric-link:hover::after { opacity: 0.62; }
 
   .career-app .company-card.entity-card:hover {
-    border-color: color-mix(in srgb, var(--brand-gold) 42%, var(--border-default));
-    box-shadow: 0 5px 14px rgba(200, 168, 91, 0.08);
+    border-color: color-mix(in srgb, var(--border-default) 68%, var(--text-secondary));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    transform: translateY(-1px);
   }
 
-  .career-app .company-card.entity-card:hover::before {
-    opacity: 0.68;
+  .career-app .company-card.entity-card:hover::before { opacity: 0.075; }
+  .career-app .company-card.entity-card:hover::after {
+    opacity: 0.34;
+    transform: rotate(-42deg) translateX(0);
   }
 }
 
 @media (max-width: 767px) {
   .career-app .metric.entity-card::before {
-    inset-inline-start: 10px;
-    width: 22px;
-    opacity: 0.38;
+    right: 8px;
+    bottom: 5px;
+    width: 38px;
+    height: 52px;
+    opacity: 0.035;
+  }
+
+  .career-app .overview-grid > .metric:nth-child(2)::before {
+    right: 16px;
+    bottom: 7px;
+    width: 33px;
+    height: 45px;
+  }
+
+  .career-app .metric.entity-card::after {
+    top: 10px;
+    right: 11px;
+    width: 4px;
+    height: 4px;
+  }
+
+  .career-app .overview-grid > .metric:nth-child(3)::after {
+    top: auto;
+    right: 14px;
+    bottom: 11px;
   }
 
   .career-app .company-card.entity-card::before {
-    inset-inline-start: 30px;
-    width: 16px;
-    opacity: 0.3;
+    right: 12px;
+    bottom: 9px;
+    width: 58px;
+    height: 78px;
+    opacity: 0.03;
   }
 
+  .career-app .company-card.entity-card::after { display: none; }
+
   .career-app .company-card.entity-card:active {
-    border-color: color-mix(in srgb, var(--brand-gold) 38%, var(--border-default));
-    background: color-mix(in srgb, var(--brand-gold) 3%, var(--bg-surface));
+    border-color: var(--border-default);
+    background: var(--bg-surface);
+    transform: none;
   }
+}
+
+[data-theme="dark"] .career-app .metric.entity-card::before,
+[data-theme="dark"] .career-app .company-card.entity-card::before {
+  background-color: #dfc77e;
+}
+
+[data-theme="dark"] .career-app .metric.entity-card::before { opacity: 0.04; }
+[data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.035; }
+
+@media (max-width: 767px) {
+  [data-theme="dark"] .career-app .metric.entity-card::before { opacity: 0.03; }
+  [data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.025; }
 }
