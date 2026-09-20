@@ -7818,3 +7818,94 @@ html[data-theme="dark"] #root {
   font-size: 13px;
 }
 .notification-page-connection-note svg { width: 14px; height: 14px; }
+
+/* Subtle Yami accents for the dashboard and company list. */
+@media (min-width: 981px) {
+  .career-app .sidebar {
+    gap: 14px;
+    padding-top: 18px;
+  }
+
+  .career-app .sidebar > .yami-logo--sidebar {
+    width: 140px;
+    height: 116px;
+    flex: 0 0 116px;
+  }
+}
+
+.career-app .metric.entity-card {
+  position: relative;
+  overflow: hidden;
+  border-top-color: color-mix(in srgb, var(--brand-gold) 20%, var(--border-default));
+}
+
+.career-app .metric.entity-card::before {
+  position: absolute;
+  inset: 0 auto auto 16px;
+  width: 30px;
+  height: 1px;
+  background: var(--brand-gold);
+  content: "";
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.career-app .dashboard-progress-module > .section-title {
+  padding-inline-start: 10px;
+  border-inline-start: 1px solid color-mix(in srgb, var(--brand-gold) 52%, var(--border-default));
+}
+
+.career-app .company-card.entity-card {
+  position: relative;
+  overflow: hidden;
+  border-top-color: color-mix(in srgb, var(--brand-gold) 20%, var(--border-default));
+}
+
+.career-app .company-card.entity-card::before {
+  position: absolute;
+  inset: 0 auto auto 35px;
+  width: 22px;
+  height: 1px;
+  background: var(--brand-gold);
+  content: "";
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .career-app .metric-link:hover {
+    border-color: color-mix(in srgb, var(--brand-gold) 44%, var(--border-default));
+  }
+
+  .career-app .metric-link:hover::before {
+    opacity: 0.72;
+  }
+
+  .career-app .company-card.entity-card:hover {
+    border-color: color-mix(in srgb, var(--brand-gold) 42%, var(--border-default));
+    box-shadow: 0 5px 14px rgba(200, 168, 91, 0.08);
+  }
+
+  .career-app .company-card.entity-card:hover::before {
+    opacity: 0.68;
+  }
+}
+
+@media (max-width: 767px) {
+  .career-app .metric.entity-card::before {
+    inset-inline-start: 10px;
+    width: 22px;
+    opacity: 0.38;
+  }
+
+  .career-app .company-card.entity-card::before {
+    inset-inline-start: 30px;
+    width: 16px;
+    opacity: 0.3;
+  }
+
+  .career-app .company-card.entity-card:active {
+    border-color: color-mix(in srgb, var(--brand-gold) 38%, var(--border-default));
+    background: color-mix(in srgb, var(--brand-gold) 3%, var(--bg-surface));
+  }
+}

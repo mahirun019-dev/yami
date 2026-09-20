@@ -43,6 +43,26 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
       '调整了移动端页眉和 PC 侧边栏显示',
     ],
   },
+}, {
+  id: '2026-09-20-yami-sidebar-home-company-refinement',
+  date: '2026-09-20T09:00:00+09:00',
+  title: { ja: 'Yami のアップデート', zh: 'Yami 更新' },
+  summary: {
+    ja: 'ブランド表示の細部と閲覧体験を見直しました。',
+    zh: '优化了品牌展示细节与浏览体验。',
+  },
+  changes: {
+    ja: [
+      'PCサイドバーのロゴサイズと配置を見直しました',
+      'ホーム画面と企業一覧に控えめなブランド要素を加えました',
+      '画面全体の統一感と閲覧体験を整えました',
+    ],
+    zh: [
+      '调整了 PC 侧边栏 Logo 的尺寸与位置',
+      '在首页和企业列表加入了轻量品牌元素',
+      '优化了整体视觉一致性与浏览体验',
+    ],
+  },
 }];
 
 export function loadReadProductUpdateIds() {
