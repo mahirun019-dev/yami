@@ -1,0 +1,18 @@
+{
+  "name": "Yami Icon Test",
+  "short_name": "Yami Test",
+  "id": "/yami/icon-test/e1/",
+  "lang": "zh-CN",
+  "description": "Yami home screen icon appearance test.",
+  "theme_color": "#f7f7f8",
+  "background_color": "#f7f7f8",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "/yami/icon-test/e1/",
+  "scope": "/yami/icon-test/e1/",
+  "icons": [
+    { "src": "/yami/icon-test/e1/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/yami/icon-test/e1/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/yami/icon-test/e1/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -11,7 +11,7 @@ export default defineConfig(({ command, mode }) => {
   const basePathPattern = basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const cacheId = base === "/todo-apple-mobile/"
     ? "yami-legacy-todo-apple-mobile-v1"
-    : "yami-yami-brand-avatar-v3";
+    : "yami-yami-brand-avatar-v4";
 
   return {
     base,
@@ -22,13 +22,9 @@ export default defineConfig(({ command, mode }) => {
         includeAssets: [
           "favicon.ico",
           "apple-touch-icon.png",
-          "apple-touch-icon-dark.png",
           "icon-192.png",
           "icon-512.png",
           "icon-maskable-512.png",
-          "icon-192-dark.png",
-          "icon-512-dark.png",
-          "icon-maskable-512-dark.png",
         ],
         manifest: {
           name: "Yami",
@@ -46,9 +42,6 @@ export default defineConfig(({ command, mode }) => {
             { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
             { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
             { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-            { src: "icon-192-dark.png", sizes: "192x192", type: "image/png", purpose: "any" },
-            { src: "icon-512-dark.png", sizes: "512x512", type: "image/png", purpose: "any" },
-            { src: "icon-maskable-512-dark.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         },
         workbox: {
