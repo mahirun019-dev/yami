@@ -7833,22 +7833,22 @@ html[data-theme="dark"] #root {
   }
 }
 
-.career-app .metric.entity-card {
+.career-app .overview-grid > .metric.entity-card {
   position: relative;
   overflow: hidden;
   isolation: isolate;
 }
 
-.career-app .metric.entity-card::before {
+.career-app .overview-grid > .metric.entity-card::before {
   position: absolute;
   z-index: 0;
-  right: 12px;
-  bottom: 6px;
-  width: 48px;
-  height: 68px;
-  background-color: #c8a85b;
-  -webkit-mask-image: url("./assets/brand/yami-hair-watermark.svg");
-  mask-image: url("./assets/brand/yami-hair-watermark.svg");
+  right: 10px;
+  bottom: 4px;
+  width: 33px;
+  height: 44px;
+  background-color: #b99d5e;
+  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
+  mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
@@ -7856,27 +7856,39 @@ html[data-theme="dark"] #root {
   -webkit-mask-size: contain;
   mask-size: contain;
   content: "";
-  opacity: 0.045;
+  opacity: 0.06;
   pointer-events: none;
 }
 
+.career-app .overview-grid > .metric:nth-child(1)::before {
+  right: 12px;
+  bottom: 10px;
+  width: 28px;
+  height: 27px;
+  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
+  mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
+}
+
 .career-app .overview-grid > .metric:nth-child(2)::before {
-  right: 24px;
-  bottom: 9px;
-  width: 41px;
-  height: 58px;
-  transform: scaleX(-1) rotate(-6deg);
+  right: 14px;
+  bottom: 5px;
+  width: 30px;
+  height: 42px;
+  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
+  mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
 }
 
 .career-app .overview-grid > .metric:nth-child(3)::before {
-  right: 11px;
-  bottom: 4px;
-  width: 53px;
-  height: 74px;
-  transform: rotate(8deg);
+  right: 8px;
+  bottom: 3px;
+  width: 35px;
+  height: 30px;
+  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
+  mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
+  transform: scaleX(-1);
 }
 
-.career-app .metric.entity-card::after {
+.career-app .overview-grid > .metric.entity-card::after {
   position: absolute;
   z-index: 2;
   top: 13px;
@@ -7916,13 +7928,13 @@ html[data-theme="dark"] #root {
 .career-app .company-card.entity-card::before {
   position: absolute;
   z-index: 0;
-  right: 16px;
-  bottom: 10px;
-  width: 78px;
-  height: 106px;
-  background-color: #c8a85b;
-  -webkit-mask-image: url("./assets/brand/yami-hair-watermark.svg");
-  mask-image: url("./assets/brand/yami-hair-watermark.svg");
+  right: 14px;
+  bottom: 8px;
+  width: 72px;
+  height: 100px;
+  background-color: #b99d5e;
+  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
+  mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
@@ -7930,16 +7942,27 @@ html[data-theme="dark"] #root {
   -webkit-mask-size: contain;
   mask-size: contain;
   content: "";
-  opacity: 0.04;
+  opacity: 0.065;
   pointer-events: none;
 }
 
-.career-app .company-grid > .company-card.entity-card:nth-child(even)::before {
-  transform: scaleX(-1) rotate(-8deg);
+.career-app .company-grid > .company-card.entity-card:nth-child(3n + 2)::before {
+  right: 8px;
+  bottom: 4px;
+  width: 86px;
+  height: 88px;
+  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
+  mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
+  transform: scaleX(-1);
 }
 
 .career-app .company-grid > .company-card.entity-card:nth-child(3n)::before {
-  transform: rotate(8deg);
+  right: 5px;
+  bottom: 12px;
+  width: 92px;
+  height: 78px;
+  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
+  mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
 }
 
 .career-app .company-card.entity-card::after {
@@ -7957,7 +7980,7 @@ html[data-theme="dark"] #root {
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
-.career-app .metric.entity-card > *,
+.career-app .overview-grid > .metric.entity-card > *,
 .career-app .company-card.entity-card > * {
   position: relative;
   z-index: 1;
@@ -7991,22 +8014,36 @@ html[data-theme="dark"] #root {
 }
 
 @media (max-width: 767px) {
-  .career-app .metric.entity-card::before {
+  .career-app .overview-grid > .metric.entity-card::before {
     right: 8px;
     bottom: 5px;
-    width: 38px;
-    height: 52px;
-    opacity: 0.035;
+    width: 27px;
+    height: 36px;
+    opacity: 0.05;
+  }
+
+  .career-app .overview-grid > .metric:nth-child(1)::before {
+    right: 10px;
+    bottom: 8px;
+    width: 24px;
+    height: 23px;
   }
 
   .career-app .overview-grid > .metric:nth-child(2)::before {
-    right: 16px;
-    bottom: 7px;
-    width: 33px;
-    height: 45px;
+    right: 11px;
+    bottom: 4px;
+    width: 25px;
+    height: 35px;
   }
 
-  .career-app .metric.entity-card::after {
+  .career-app .overview-grid > .metric:nth-child(3)::before {
+    right: 7px;
+    bottom: 3px;
+    width: 29px;
+    height: 25px;
+  }
+
+  .career-app .overview-grid > .metric.entity-card::after {
     top: 10px;
     right: 11px;
     width: 4px;
@@ -8022,9 +8059,23 @@ html[data-theme="dark"] #root {
   .career-app .company-card.entity-card::before {
     right: 12px;
     bottom: 9px;
-    width: 58px;
-    height: 78px;
-    opacity: 0.03;
+    width: 55px;
+    height: 76px;
+    opacity: 0.055;
+  }
+
+  .career-app .company-grid > .company-card.entity-card:nth-child(3n + 2)::before {
+    right: 7px;
+    bottom: 6px;
+    width: 66px;
+    height: 68px;
+  }
+
+  .career-app .company-grid > .company-card.entity-card:nth-child(3n)::before {
+    right: 4px;
+    bottom: 12px;
+    width: 70px;
+    height: 60px;
   }
 
   .career-app .company-card.entity-card::after { display: none; }
@@ -8036,15 +8087,15 @@ html[data-theme="dark"] #root {
   }
 }
 
-[data-theme="dark"] .career-app .metric.entity-card::before,
+[data-theme="dark"] .career-app .overview-grid > .metric.entity-card::before,
 [data-theme="dark"] .career-app .company-card.entity-card::before {
   background-color: #dfc77e;
 }
 
-[data-theme="dark"] .career-app .metric.entity-card::before { opacity: 0.04; }
-[data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.035; }
+[data-theme="dark"] .career-app .overview-grid > .metric.entity-card::before { opacity: 0.07; }
+[data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.075; }
 
 @media (max-width: 767px) {
-  [data-theme="dark"] .career-app .metric.entity-card::before { opacity: 0.03; }
-  [data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.025; }
+  [data-theme="dark"] .career-app .overview-grid > .metric.entity-card::before { opacity: 0.06; }
+  [data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.06; }
 }
