@@ -7819,73 +7819,34 @@ html[data-theme="dark"] #root {
 }
 .notification-page-connection-note svg { width: 14px; height: 14px; }
 
-/* Subtle Yami accents for the dashboard and company list. */
-@media (min-width: 981px) {
-  .career-app .sidebar {
-    gap: 14px;
-    padding-top: 18px;
-  }
+/* Keep card surfaces clean; the approved avatar appears once at page level. */
+.career-app .workspace--dashboard,
+.career-app .workspace--companies {
+  --page-motif-wash: color-mix(in srgb, var(--bg-app) 97%, transparent);
+  background-image:
+    linear-gradient(var(--page-motif-wash), var(--page-motif-wash)),
+    url("./assets/brand/yami-brand-illustration.png");
+  background-repeat: no-repeat, no-repeat;
+}
 
-  .career-app .sidebar > .yami-logo--sidebar {
-    width: 140px;
-    height: 116px;
-    flex: 0 0 116px;
-  }
+.career-app .workspace--dashboard {
+  background-position: center, right 150px top 8px;
+  background-size: 100% 100%, 190px auto;
+}
+
+.career-app .workspace--companies {
+  background-position: center, right 164px top 2px;
+  background-size: 100% 100%, 190px auto;
 }
 
 .career-app .overview-grid > .metric.entity-card {
   position: relative;
-  overflow: hidden;
-  isolation: isolate;
 }
 
-.career-app .overview-grid > .metric.entity-card::before {
-  position: absolute;
-  z-index: 0;
-  right: 10px;
-  bottom: 4px;
-  width: 33px;
-  height: 44px;
-  background-color: #b99d5e;
-  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
-  mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  content: "";
-  opacity: 0.06;
-  pointer-events: none;
-}
-
-.career-app .overview-grid > .metric:nth-child(1)::before {
-  right: 12px;
-  bottom: 10px;
-  width: 28px;
-  height: 27px;
-  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
-  mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
-}
-
-.career-app .overview-grid > .metric:nth-child(2)::before {
-  right: 14px;
-  bottom: 5px;
-  width: 30px;
-  height: 42px;
-  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
-  mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
-}
-
-.career-app .overview-grid > .metric:nth-child(3)::before {
-  right: 8px;
-  bottom: 3px;
-  width: 35px;
-  height: 30px;
-  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
-  mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
-  transform: scaleX(-1);
+.career-app .overview-grid > .metric.entity-card::before,
+.career-app .company-card.entity-card::before,
+.career-app .company-card.entity-card::after {
+  content: none;
 }
 
 .career-app .overview-grid > .metric.entity-card::after {
@@ -7899,7 +7860,7 @@ html[data-theme="dark"] #root {
   clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
   background: var(--brand-gold-highlight);
   content: "";
-  opacity: 0.38;
+  opacity: 0.46;
   pointer-events: none;
 }
 
@@ -7919,183 +7880,59 @@ html[data-theme="dark"] #root {
   border-inline-start: 1px solid color-mix(in srgb, var(--brand-gold) 52%, var(--border-default));
 }
 
-.career-app .company-card.entity-card {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.career-app .company-card.entity-card::before {
-  position: absolute;
-  z-index: 0;
-  right: 14px;
-  bottom: 8px;
-  width: 72px;
-  height: 100px;
-  background-color: #b99d5e;
-  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
-  mask-image: url("./assets/brand/yami-watermark-crops/hair-right.png");
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  content: "";
-  opacity: 0.065;
-  pointer-events: none;
-}
-
-.career-app .company-grid > .company-card.entity-card:nth-child(3n + 2)::before {
-  right: 8px;
-  bottom: 4px;
-  width: 86px;
-  height: 88px;
-  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
-  mask-image: url("./assets/brand/yami-watermark-crops/hair-lower-left.png");
-  transform: scaleX(-1);
-}
-
-.career-app .company-grid > .company-card.entity-card:nth-child(3n)::before {
-  right: 5px;
-  bottom: 12px;
-  width: 92px;
-  height: 78px;
-  -webkit-mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
-  mask-image: url("./assets/brand/yami-watermark-crops/hair-top-fringe.png");
-}
-
-.career-app .company-card.entity-card::after {
-  position: absolute;
-  z-index: 2;
-  top: 31px;
-  right: 42px;
-  width: 48px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand-gold-highlight) 38%, transparent), transparent);
-  content: "";
-  opacity: 0;
-  pointer-events: none;
-  transform: rotate(-42deg) translateX(-8px);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.career-app .overview-grid > .metric.entity-card > *,
-.career-app .company-card.entity-card > * {
-  position: relative;
-  z-index: 1;
-}
-
 @media (hover: hover) and (pointer: fine) {
   .career-app .metric-link:hover {
     border-color: color-mix(in srgb, var(--border-default) 72%, var(--text-secondary));
     background: var(--bg-surface);
-    background-image: linear-gradient(112deg, transparent 38%, color-mix(in srgb, var(--brand-gold-highlight) 22%, transparent) 50%, transparent 62%);
-    background-repeat: no-repeat;
-    background-position: right 18px top 15px;
-    background-size: 54px 1px;
     box-shadow: none;
   }
 
-  .career-app .metric-link:hover::before { opacity: 0.09; }
-  .career-app .metric-link:hover::after { opacity: 0.62; }
+  .career-app .overview-grid > .metric:nth-child(1):hover::after,
+  .career-app .overview-grid > .metric:nth-child(3):hover::after { opacity: 0.76; }
 
   .career-app .company-card.entity-card:hover {
     border-color: color-mix(in srgb, var(--border-default) 68%, var(--text-secondary));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    box-shadow: none;
     transform: translateY(-1px);
   }
-
-  .career-app .company-card.entity-card:hover::before { opacity: 0.075; }
-  .career-app .company-card.entity-card:hover::after {
-    opacity: 0.34;
-    transform: rotate(-42deg) translateX(0);
-  }
+  .career-app .company-card.entity-card:hover > svg { color: var(--text-primary); }
 }
 
 @media (max-width: 767px) {
-  .career-app .overview-grid > .metric.entity-card::before {
-    right: 8px;
-    bottom: 5px;
-    width: 27px;
-    height: 36px;
-    opacity: 0.05;
-  }
-
-  .career-app .overview-grid > .metric:nth-child(1)::before {
-    right: 10px;
-    bottom: 8px;
-    width: 24px;
-    height: 23px;
-  }
-
-  .career-app .overview-grid > .metric:nth-child(2)::before {
-    right: 11px;
-    bottom: 4px;
-    width: 25px;
-    height: 35px;
-  }
-
-  .career-app .overview-grid > .metric:nth-child(3)::before {
-    right: 7px;
-    bottom: 3px;
-    width: 29px;
-    height: 25px;
-  }
-
   .career-app .overview-grid > .metric.entity-card::after {
-    top: 10px;
-    right: 11px;
-    width: 4px;
-    height: 4px;
+    top: 9px;
+    right: 9px;
+    width: 3px;
+    height: 3px;
   }
 
   .career-app .overview-grid > .metric:nth-child(3)::after {
     top: auto;
-    right: 14px;
-    bottom: 11px;
-  }
-
-  .career-app .company-card.entity-card::before {
     right: 12px;
-    bottom: 9px;
-    width: 55px;
-    height: 76px;
-    opacity: 0.055;
+    bottom: 10px;
   }
-
-  .career-app .company-grid > .company-card.entity-card:nth-child(3n + 2)::before {
-    right: 7px;
-    bottom: 6px;
-    width: 66px;
-    height: 68px;
-  }
-
-  .career-app .company-grid > .company-card.entity-card:nth-child(3n)::before {
-    right: 4px;
-    bottom: 12px;
-    width: 70px;
-    height: 60px;
-  }
-
-  .career-app .company-card.entity-card::after { display: none; }
 
   .career-app .company-card.entity-card:active {
     border-color: var(--border-default);
     background: var(--bg-surface);
     transform: none;
   }
+
+  .career-app .workspace--dashboard {
+    background-image: none;
+  }
+
+  .app-shell > .student-app > .workspace.workspace--companies {
+    background-image:
+      linear-gradient(var(--page-motif-wash), var(--page-motif-wash)),
+      url("./assets/brand/yami-brand-illustration.png") !important;
+    background-position: center, right 16px bottom 12px !important;
+    background-size: 100% 100%, 68px auto !important;
+    background-repeat: no-repeat, no-repeat !important;
+  }
 }
 
-[data-theme="dark"] .career-app .overview-grid > .metric.entity-card::before,
-[data-theme="dark"] .career-app .company-card.entity-card::before {
-  background-color: #dfc77e;
-}
-
-[data-theme="dark"] .career-app .overview-grid > .metric.entity-card::before { opacity: 0.07; }
-[data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.075; }
-
-@media (max-width: 767px) {
-  [data-theme="dark"] .career-app .overview-grid > .metric.entity-card::before { opacity: 0.06; }
-  [data-theme="dark"] .career-app .company-card.entity-card::before { opacity: 0.06; }
+[data-theme="dark"] .career-app .workspace--dashboard,
+[data-theme="dark"] .career-app .workspace--companies {
+  --page-motif-wash: color-mix(in srgb, var(--bg-app) 96%, transparent);
 }

@@ -2130,7 +2130,10 @@ export default function App() {
           <YamiLogoLockup variant="mobile" className="mobile-header-title" />
           <span className="mobile-header-spacer" aria-hidden="true" />
         </header>
-        <main ref={workspaceRef} className="workspace">
+        <main
+          ref={workspaceRef}
+          className={`workspace${view === "dashboard" ? " workspace--dashboard" : view === "companies" && !selected ? " workspace--companies" : ""}`}
+        >
           {view === "dashboard" && (
             <Dashboard
               {...{
