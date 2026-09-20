@@ -11,7 +11,7 @@ export default defineConfig(({ command, mode }) => {
   const basePathPattern = basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const cacheId = base === "/todo-apple-mobile/"
     ? "yami-legacy-todo-apple-mobile-v1"
-    : "yami-yami-brand-avatar-v1";
+    : "yami-yami-brand-avatar-v2";
 
   return {
     base,
