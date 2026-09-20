@@ -9,7 +9,7 @@ function parseColor(hex) {
   return [1, 3, 5].map((index) => Number.parseInt(hex.slice(index, index + 2), 16));
 }
 
-function parseSvgPath(data, transform = [0, 0]) {
+function parseSvgPath(data, transform = [0, 0], curveSegments = 24) {
   const tokens = [...data.matchAll(/[A-Z]|[-+]?(?:\d*\.)?\d+(?:e[-+]?\d+)?/gi)].map((match) => match[0]);
   const loops = [];
   let loop = [];
@@ -38,8 +38,8 @@ function parseSvgPath(data, transform = [0, 0]) {
       const p1 = [Number(tokens[index++]), Number(tokens[index++])];
       const p2 = [Number(tokens[index++]), Number(tokens[index++])];
       const p3 = [Number(tokens[index++]), Number(tokens[index++])];
-      for (let step = 1; step <= 24; step += 1) {
-        const t = step / 24;
+      for (let step = 1; step <= curveSegments; step += 1) {
+        const t = step / curveSegments;
         const u = 1 - t;
         add([
           u ** 3 * p0[0] + 3 * u ** 2 * t * p1[0] + 3 * u * t ** 2 * p2[0] + t ** 3 * p3[0],
@@ -61,7 +61,7 @@ function parseSvgPath(data, transform = [0, 0]) {
   return loops;
 }
 
-function readSvg(svgPath) {
+function readSvg(svgPath, curveSegments = 24) {
   const svg = fs.readFileSync(svgPath, "utf8");
   const background = parseColor(svg.match(/<rect\b[^>]*\bfill="(#[0-9a-f]{6})"/i)?.[1] ?? "");
   const paths = [...svg.matchAll(/<path\b([^>]*)\/>/g)].map(([, attributes]) => {
@@ -70,7 +70,7 @@ function readSvg(svgPath) {
     if (!fill || !data) throw new Error(`Invalid icon path in ${svgPath}`);
     return {
       color: parseColor(fill),
-      loops: parseSvgPath(data),
+      loops: parseSvgPath(data, [0, 0], curveSegments),
     };
   });
   if (!paths.length) throw new Error(`No icon glyph found in ${svgPath}`);
@@ -105,10 +105,11 @@ function fillPath(pixels, size, loops, color) {
   }
 }
 
-function renderIcon(svgPath, size) {
-  const { background, paths } = readSvg(svgPath);
-  const pixels = Buffer.alloc(size * size * 4);
-  for (let i = 0; i < size * size; i += 1) {
+function renderIcon(svgPath, size, supersample = 1) {
+  const rasterSize = size * supersample;
+  const { background, paths } = readSvg(svgPath, 24 * supersample);
+  const pixels = Buffer.alloc(rasterSize * rasterSize * 4);
+  for (let i = 0; i < rasterSize * rasterSize; i += 1) {
     const offset = i * 4;
     pixels[offset] = background[0];
     pixels[offset + 1] = background[1];
@@ -116,9 +117,26 @@ function renderIcon(svgPath, size) {
     pixels[offset + 3] = 255;
   }
   for (const pathData of paths) {
-    fillPath(pixels, size, pathData.loops, pathData.color);
+    fillPath(pixels, rasterSize, pathData.loops, pathData.color);
   }
-  return pixels;
+  if (supersample === 1) return pixels;
+
+  const reduced = Buffer.alloc(size * size * 4);
+  const sampleCount = supersample * supersample;
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const targetOffset = (y * size + x) * 4;
+      const sums = [0, 0, 0, 0];
+      for (let sy = 0; sy < supersample; sy += 1) {
+        for (let sx = 0; sx < supersample; sx += 1) {
+          const sourceOffset = (((y * supersample + sy) * rasterSize) + x * supersample + sx) * 4;
+          for (let channel = 0; channel < 4; channel += 1) sums[channel] += pixels[sourceOffset + channel];
+        }
+      }
+      for (let channel = 0; channel < 4; channel += 1) reduced[targetOffset + channel] = Math.round(sums[channel] / sampleCount);
+    }
+  }
+  return reduced;
 }
 
 const crcTable = Array.from({ length: 256 }, (_, value) => {
@@ -164,13 +182,19 @@ function encodePng(rgba, width, height) {
   ]);
 }
 
-const targets = process.argv.slice(2);
+const argumentsList = process.argv.slice(2);
+const supersampleArgument = argumentsList.find((argument) => argument.startsWith("--supersample="));
+const supersample = Number(supersampleArgument?.split("=")[1] ?? 1);
+if (!Number.isInteger(supersample) || supersample < 1 || supersample > 8) {
+  throw new Error("--supersample must be an integer from 1 to 8");
+}
+const targets = argumentsList.filter((argument) => !argument.startsWith("--"));
 const ids = targets.length ? targets : ["d1", "d2", "d3"];
 
 for (const id of ids) {
   const directory = path.join(root, id);
   for (const size of outputSizes) {
-    const image = renderIcon(path.join(directory, "icon-source.svg"), size);
+    const image = renderIcon(path.join(directory, "icon-source.svg"), size, supersample);
     const name = size === 180 ? "apple-touch-icon.png" : `icon-${size}.png`;
     fs.writeFileSync(path.join(directory, name), encodePng(image, size, size));
   }
