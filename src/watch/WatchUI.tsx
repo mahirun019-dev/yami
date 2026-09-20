@@ -5,6 +5,7 @@ import { watchText } from './i18n';
 import { companyWatchKey, useWatch } from './WatchProvider';
 import type { WatchEvent, WatchSource } from './types';
 import { YamiBrandAvatar, YamiWordmark } from '../brand/YamiLogo';
+import { getUnreadProductUpdateCount, loadReadProductUpdateIds, PRODUCT_UPDATES, saveReadProductUpdateIds, subscribeProductUpdateReadState } from './productUpdates';
 
 type Locale = 'ja' | 'zh';
 const formatDate = (value: string | null, locale: Locale) => value ? new Intl.DateTimeFormat(locale === 'ja' ? 'ja-JP' : 'zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : '—';
@@ -103,43 +104,6 @@ export function WatchConnectionSettings({ locale }: { locale: Locale }) {
 
 type NotificationPageProps = { locale: Locale; openCompany(id: string, name?: string, eventId?: string): void; openSettings(): void };
 
-type ProductUpdate = {
-  id: string;
-  date: string;
-  title: Record<Locale, string>;
-  summary: Record<Locale, string>;
-  changes: Record<Locale, string[]>;
-};
-
-const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
-const PRODUCT_UPDATES: ProductUpdate[] = [{
-  id: '2026-09-19-yami-brand-and-notification-update',
-  date: '2026-09-19T09:00:00+09:00',
-  title: { ja: 'Yamiがアップデートされました', zh: 'Yami 已更新' },
-  summary: { ja: 'デザインと使いやすさを改善しました。', zh: '我们改进了设计与易用性。' },
-  changes: {
-    ja: [
-      'Yamiのブランドデザインを刷新しました',
-      '通知画面をより見やすく改善しました',
-      'スマートフォンの操作性を調整しました',
-    ],
-    zh: [
-      '更新了 Yami 的品牌设计',
-      '优化了通知页面的阅读体验',
-      '改进了手机端的操作体验',
-    ],
-  },
-}];
-
-function loadReadProductUpdateIds() {
-  try {
-    const value: unknown = JSON.parse(localStorage.getItem(PRODUCT_UPDATE_READ_KEY) || '[]');
-    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
 type NotificationFeedItem =
   | { type: 'company'; id: string; detectedAt: string; read: boolean; companyName: string; title: string; summary: string; event: WatchEvent }
   | { type: 'product-update'; id: string; detectedAt: string; read: boolean; companyName: 'Yami'; title: string; summary: string; changes: string[] };
@@ -158,6 +122,7 @@ export function NotificationPage({ locale, openCompany, openSettings }: Notifica
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
   const [readProductUpdateIds, setReadProductUpdateIds] = useState(loadReadProductUpdateIds);
+  useEffect(() => subscribeProductUpdateReadState(() => setReadProductUpdateIds(loadReadProductUpdateIds())), []);
   const feed = useMemo<NotificationFeedItem[]>(() => {
     const companyItems: NotificationFeedItem[] = watch.authenticated ? watch.events.map((event) => ({
       type: 'company', id: event.id, detectedAt: event.detected_at, read: Boolean(event.read),
@@ -177,14 +142,14 @@ export function NotificationPage({ locale, openCompany, openSettings }: Notifica
     if (!item.read && item.type === 'company') await watch.markRead(item.id);
     if (!item.read && item.type === 'product-update') {
       const next = [...new Set([...readProductUpdateIds, item.id])];
-      try { localStorage.setItem(PRODUCT_UPDATE_READ_KEY, JSON.stringify(next)); } catch { /* Keep the current session usable if storage is unavailable. */ }
+      saveReadProductUpdateIds(next);
       setReadProductUpdateIds(next);
     }
     setExpandedNotificationId((current) => current === item.id ? null : item.id);
   };
   const markAllRead = async () => {
     const next = [...new Set([...readProductUpdateIds, ...PRODUCT_UPDATES.map((update) => update.id)])];
-    try { localStorage.setItem(PRODUCT_UPDATE_READ_KEY, JSON.stringify(next)); } catch { /* Keep the current session usable if storage is unavailable. */ }
+    saveReadProductUpdateIds(next);
     setReadProductUpdateIds(next);
     if (watch.authenticated && watch.events.some((event) => !event.read)) await watch.markAllRead();
   };
@@ -197,7 +162,7 @@ export function NotificationPage({ locale, openCompany, openSettings }: Notifica
         const productUpdate = item.type === 'product-update';
         const event = productUpdate ? null : item.event;
         return <article className={`notification-page-item${item.read ? ' is-read' : ''}${expanded ? ' is-expanded' : ''}${productUpdate ? ' is-product-update' : ''}`} key={item.id}>
-          <button type="button" className={`notification-page-row${item.read ? ' is-read' : ''}${productUpdate ? ' has-product-brand' : ''}`} aria-expanded={expanded} onClick={() => void choose(item)}>{productUpdate ? <span className="notification-page-brand" aria-hidden="true"><YamiBrandAvatar alt="" />{!item.read && <span className="notification-page-dot" />}</span> : !item.read && <span className="notification-page-dot" aria-hidden="true" />}<span className="notification-page-copy">{productUpdate ? <strong className="notification-page-product-title"><YamiWordmark label="Yami" /><span>{locale === 'ja' ? 'のアップデート' : '产品更新'}</span></strong> : <><strong>{item.companyName}</strong><b>{item.title}</b></>}<small>{item.summary}</small></span><time>{formatDate(item.detectedAt, locale)}</time></button>
+          <button type="button" className={`notification-page-row${item.read ? ' is-read' : ''}${productUpdate ? ' has-product-brand' : ''}`} aria-expanded={expanded} onClick={() => void choose(item)}>{productUpdate ? <span className="notification-page-brand" aria-hidden="true"><YamiBrandAvatar alt="" />{!item.read && <span className="notification-page-dot" />}</span> : !item.read && <span className="notification-page-dot" aria-hidden="true" />}<span className="notification-page-copy">{productUpdate ? <strong className="notification-page-product-title"><YamiWordmark label="Yami" /><span>{item.title.replace(/^Yami/, '')}</span></strong> : <><strong>{item.companyName}</strong><b>{item.title}</b></>}<small>{item.summary}</small></span><time>{formatDate(item.detectedAt, locale)}</time></button>
           <div className="notification-page-detail" aria-hidden={!expanded}>{productUpdate ? <div className="notification-page-product-detail"><strong>{locale === 'ja' ? '今回のアップデート' : '本次更新'}</strong><ul>{item.changes.map((change) => <li key={change}>{change}</li>)}</ul></div> : event && <><dl><div><dt>{text.changes}</dt><dd>{event.summary}</dd></div><div><dt>{text.sourcePage}</dt><dd>{text[event.source_type]}</dd></div><div><dt>{text.detected}</dt><dd>{formatDate(event.detected_at, locale)}</dd></div>{event.before_excerpt && <div><dt>{text.before}</dt><dd>{event.before_excerpt}</dd></div>}{event.after_excerpt && <div><dt>{text.after}</dt><dd>{event.after_excerpt}</dd></div>}</dl><div className="notification-page-detail-actions"><button type="button" className="text-button" onClick={() => openCompany(event.company_id, event.company_name, event.id)}>{text.viewCompany}</button>{event.source_url && <a className="text-button" href={event.source_url} target="_blank" rel="noreferrer">{text.openSource}<ExternalLink /></a>}</div></>}</div>
         </article>;
       })}</div></section>)}</div> : <p className="notification-page-empty">{text.noUpdates}</p>}

@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type FormEvent,
   type PointerEventHandler,
@@ -17,6 +18,7 @@ import prefectureData from "./data/japan-prefectures.json";
 import municipalityData from "./data/japan-municipalities.json";
 import { companyWatchKey, useWatch, WatchProvider } from "./watch/WatchProvider";
 import { CompanyWatchSection, CompanyWatchStatus, NotificationPage, WatchConnectionSettings } from "./watch/WatchUI";
+import { getUnreadProductUpdateCount, subscribeProductUpdateReadState } from "./watch/productUpdates";
 import { YamiAboutBrand, YamiLogoLockup } from "./brand/YamiLogo";
 import { normalizeDashboardUrl } from "./route";
 
@@ -2379,6 +2381,8 @@ function Nav({
   t: any;
 }) {
   const { events } = useWatch();
+  const unreadProductUpdates = useSyncExternalStore(subscribeProductUpdateReadState, getUnreadProductUpdateCount, () => 0);
+  const unread = events.filter((event) => !event.read).length + unreadProductUpdates;
   const [activeSection, setActiveSection] = useState<View>(view);
   useEffect(() => setActiveSection(view), [view]);
   const a: [View, any, string][] = [
@@ -2406,7 +2410,7 @@ function Nav({
           key={v}
         >
           <I />
-          <span>{t[k]}{v === "notifications" && events.filter((event) => !event.read).length > 0 && <b className="nav-unread-badge">{Math.min(99, events.filter((event) => !event.read).length)}{events.filter((event) => !event.read).length > 99 ? "+" : ""}</b>}</span>
+          <span>{t[k]}{v === "notifications" && unread > 0 && <b className="nav-unread-badge">{Math.min(99, unread)}{unread > 99 ? "+" : ""}</b>}</span>
         </button>
       ))}
     </div>
@@ -2423,7 +2427,8 @@ function MobileNav({
   t: any;
 }) {
   const { events } = useWatch();
-  const unread = events.filter((event) => !event.read).length;
+  const unreadProductUpdates = useSyncExternalStore(subscribeProductUpdateReadState, getUnreadProductUpdateCount, () => 0);
+  const unread = events.filter((event) => !event.read).length + unreadProductUpdates;
   useLayoutEffect(() => {
     const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav="true"]');
     if (!nav) return;
