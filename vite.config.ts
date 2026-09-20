@@ -64,6 +64,7 @@ export default defineConfig(({ command, mode }) => {
           navigateFallback: "index.html",
           navigateFallbackDenylist: [
             new RegExp(`^${basePathPattern}/icon-ab(?:/|$)`),
+            new RegExp(`^${basePathPattern}/icon-test(?:/|$)`),
             /^\/[^/]+\/404\.html$/,
           ],
         },

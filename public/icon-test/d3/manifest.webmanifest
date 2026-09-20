@@ -1,0 +1,18 @@
+{
+  "name": "Yami Icon Test D3",
+  "short_name": "Yami D3",
+  "id": "/yami/icon-test/d3/",
+  "lang": "zh-CN",
+  "description": "A focused workspace for Japanese job hunting.",
+  "theme_color": "#f7f7f8",
+  "background_color": "#f7f7f8",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "/yami/icon-test/d3/",
+  "scope": "/yami/icon-test/d3/",
+  "icons": [
+    { "src": "/yami/icon-test/d3/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/yami/icon-test/d3/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/yami/icon-test/d3/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
