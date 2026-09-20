@@ -31,9 +31,9 @@ export default defineConfig(({ command, mode }) => {
           start_url: base,
           scope: base,
           icons: [
-            { src: "yami-app-icon-avatar-192-light-v1.png", sizes: "192x192", type: "image/png", purpose: "any" },
-            { src: "yami-app-icon-avatar-512-light-v1.png", sizes: "512x512", type: "image/png", purpose: "any" },
-            { src: "yami-app-icon-avatar-maskable-512-light-v1.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+            { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         },
         workbox: {
