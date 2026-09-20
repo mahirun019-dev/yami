@@ -164,7 +164,10 @@ function encodePng(rgba, width, height) {
   ]);
 }
 
-for (const id of ["d1", "d2", "d3"]) {
+const targets = process.argv.slice(2);
+const ids = targets.length ? targets : ["d1", "d2", "d3"];
+
+for (const id of ids) {
   const directory = path.join(root, id);
   for (const size of outputSizes) {
     const image = renderIcon(path.join(directory, "icon-source.svg"), size);

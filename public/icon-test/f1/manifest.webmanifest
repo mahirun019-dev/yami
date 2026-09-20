@@ -1,0 +1,33 @@
+{
+  "name": "Yami Icon Test F1",
+  "short_name": "Yami F1",
+  "id": "/yami/icon-test/f1/",
+  "lang": "zh-CN",
+  "description": "A focused workspace for Japanese job hunting.",
+  "theme_color": "#f7f7f8",
+  "background_color": "#f7f7f8",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "/yami/icon-test/f1/",
+  "scope": "/yami/icon-test/",
+  "icons": [
+    {
+      "src": "/yami/icon-test/f1/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/yami/icon-test/f1/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/yami/icon-test/f1/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
