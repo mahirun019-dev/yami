@@ -7,6 +7,8 @@ export default defineConfig(({ command, mode }) => {
   const base = command === "build"
     ? (env.VITE_PAGES_BASE || "/yami/").replace(/\/?$/, "/")
     : "/";
+  const basePath = base.replace(/\/$/, "");
+  const basePathPattern = basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const cacheId = base === "/todo-apple-mobile/"
     ? "yami-legacy-todo-apple-mobile-v1"
     : "yami-yami-brand-avatar-v1";
@@ -17,7 +19,7 @@ export default defineConfig(({ command, mode }) => {
       react(),
       VitePWA({
         registerType: "autoUpdate",
-        includeAssets: ["favicon.ico", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"],
+        includeAssets: ["yami-avatar-favicon-20260920.ico", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"],
         manifest: {
           name: "Yami",
           short_name: "Yami",
@@ -39,6 +41,8 @@ export default defineConfig(({ command, mode }) => {
         workbox: {
           cacheId,
           globIgnores: [
+            "**/favicon*.{ico,png,svg}",
+            "**/yami-favicon*.{ico,png,svg}",
             "**/yami-app-icon-180-v*.png",
             "**/yami-app-icon-192-v*.png",
             "**/yami-app-icon-512-v*.png",
@@ -59,6 +63,7 @@ export default defineConfig(({ command, mode }) => {
           skipWaiting: true,
           navigateFallback: "index.html",
           navigateFallbackDenylist: [
+            new RegExp(`^${basePathPattern}/icon-ab(?:/|$)`),
             /^\/[^/]+\/404\.html$/,
           ],
         },
