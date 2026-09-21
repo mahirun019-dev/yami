@@ -7987,14 +7987,15 @@ html[data-theme="dark"] #root {
 .career-app .dashboard-summary .metric {
   position: relative;
   display: inline-flex;
-  width: auto;
+  flex: 0 0 180px;
+  width: 180px;
   min-width: 0;
-  min-height: 40px;
-  height: 40px;
+  min-height: 48px;
+  height: 48px;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  padding: 4px 18px;
+  padding: 4px 12px;
   border: 0;
   border-radius: 7px;
   color: var(--text-primary);
@@ -8008,15 +8009,15 @@ html[data-theme="dark"] #root {
   position: absolute;
   top: 50%;
   left: 0;
-  height: 22px;
+  height: 26px;
   border-left: 1px solid var(--stat-divider, #eceef0);
   content: "";
   transform: translateY(-50%);
 }
 .career-app .dashboard-summary .metric .metric-icon {
-  width: 19px;
-  height: 19px;
-  flex: 0 0 19px;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
   color: var(--text-secondary) !important;
 }
 .career-app .dashboard-summary .metric-copy {
@@ -8027,7 +8028,7 @@ html[data-theme="dark"] #root {
 }
 .career-app .dashboard-summary .metric .kpi-number {
   color: var(--text-primary);
-  font-size: 22px;
+  font-size: 27px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -8037,7 +8038,7 @@ html[data-theme="dark"] #root {
 .career-app .dashboard-summary .metric.is-overdue .kpi-number { color: var(--urgency-overdue); }
 .career-app .dashboard-summary .metric .metric-label {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.25;
 }
@@ -8102,7 +8103,7 @@ html[data-theme="dark"] #root {
 .career-app .dashboard-action-label svg { width: 13px; height: 13px; }
 .career-app .dashboard-action-banner:hover { background: var(--action-banner-hover, #eceff1); }
 .career-app .dashboard-action-banner:active { background: var(--action-banner-hover, #eceff1); }
-.career-app .dashboard-summary + .dashboard-local-grid { margin-top: 16px; }
+.career-app .dashboard-summary + .dashboard-local-grid { margin-top: 32px; }
 .career-app .dashboard-summary + .dashboard-full-width-sections { margin-top: 24px; }
 :root { --stat-divider: #eceef0; --action-banner-bg: #f5f6f7; --action-banner-hover: #eceff1; }
 [data-theme="dark"] { --stat-divider: #30353d; --action-banner-bg: #16181c; --action-banner-hover: #22262d; }
