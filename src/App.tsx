@@ -72,6 +72,13 @@ import {
   X,
   Star,
 } from "lucide-react";
+import {
+  Bell as PhosphorBell,
+  Buildings,
+  CalendarBlank,
+  House,
+  Notebook,
+} from "@phosphor-icons/react";
 import { getDeadlineUrgency, getHighestDeadlineUrgency, parseTokyoCalendarDate, selectWeeklyDeadlines } from "./deadline-selector";
 import { compareCompanyStageToEvent, isInterviewProgressStage, shouldOfferInterviewStageSync, type StageProgressionCheck } from "./interview-stage";
 
@@ -2361,23 +2368,23 @@ function Brand() {
   return <YamiLogoLockup variant="sidebar" className="brand" />;
 }
 
-const sidebarIconAssets: Record<View, string> = {
-  dashboard: "home",
-  companies: "company",
-  notifications: "notification",
-  schedule: "calendar",
-  materials: "es",
+const sidebarIcons: Record<View, typeof House> = {
+  dashboard: House,
+  companies: Buildings,
+  notifications: PhosphorBell,
+  schedule: CalendarBlank,
+  materials: Notebook,
 };
 
 function SidebarNavIcon({ view, active }: { view: View; active: boolean }) {
-  const state = active ? "filled" : "outline";
-  const iconUrl = `${import.meta.env.BASE_URL}sidebar-icons/${sidebarIconAssets[view]}-${state}.svg`;
-
+  const Icon = sidebarIcons[view];
   return (
-    <span
+    <Icon
       className="sidebar-nav-icon"
-      style={{ maskImage: `url("${iconUrl}")`, WebkitMaskImage: `url("${iconUrl}")` }}
+      size={24}
+      weight={active ? "fill" : "regular"}
       aria-hidden="true"
+      focusable="false"
     />
   );
 }
@@ -2420,8 +2427,10 @@ function Nav({
           onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
           key={v}
         >
-          <SidebarNavIcon view={v} active={activeSection === v} />
-          <span>{t[k]}{v === "notifications" && unread > 0 && <b className="nav-unread-badge">{Math.min(99, unread)}{unread > 99 ? "+" : ""}</b>}</span>
+          <span className="sidebar-nav-capsule">
+            <SidebarNavIcon view={v} active={activeSection === v} />
+            <span>{t[k]}{v === "notifications" && unread > 0 && <b className="nav-unread-badge">{Math.min(99, unread)}{unread > 99 ? "+" : ""}</b>}</span>
+          </span>
         </button>
       ))}
     </div>

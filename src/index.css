@@ -7833,27 +7833,19 @@ html[data-theme="dark"] #root {
   }
 }
 
-/* Navigation pairs use one custom SVG silhouette in both states. */
+/* Phosphor navigation glyphs share one native weight-aware component. */
 .sidebar-nav-icon {
   display: block;
   width: 24px;
   height: 24px;
   flex: 0 0 24px;
-  background-color: currentColor;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  transition: background-color 80ms ease;
 }
 
 @media (min-width: 761px) {
   .career-app .sidebar .sidebar-nav-icon {
-    width: 23px;
-    height: 23px;
-    flex-basis: 23px;
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
   }
 }
 
@@ -7868,6 +7860,165 @@ html[data-theme="dark"] #root {
   .career-mobile-nav .mobile-nav-bell {
     width: 19px;
     height: 19px;
+  }
+}
+
+@media (min-width: 761px) {
+  .career-app .sidebar > .nav-list {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .career-app .sidebar .nav-list button {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0;
+    padding: 0;
+    border-radius: 0;
+    color: #727980;
+    background: transparent !important;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: 0;
+    white-space: nowrap;
+    transition: color 140ms ease, background-color 140ms ease;
+  }
+
+  .career-app .sidebar .sidebar-nav-capsule {
+    display: inline-flex;
+    width: max-content !important;
+    max-width: 100%;
+    min-height: 44px;
+    flex: 0 0 auto;
+    align-items: center;
+    align-self: center;
+    gap: 12px;
+    padding-inline: 13px;
+    border-radius: 999px;
+    background: transparent;
+    transition: background-color 140ms ease;
+  }
+
+  .career-app .sidebar .nav-list button > .sidebar-nav-capsule > span {
+    display: flex;
+    min-width: 0;
+    width: max-content;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .career-app .sidebar .sidebar-company-action {
+    font-size: 18px;
+  }
+
+  .career-app .sidebar .nav-list button:hover {
+    color: #30363d !important;
+    background: transparent !important;
+  }
+
+  .career-app .sidebar .nav-list button:hover > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.055);
+  }
+
+  .career-app .sidebar .nav-list button:active,
+  .career-app .sidebar .nav-list button[data-pressed="true"] {
+    color: #161a1e !important;
+    background: transparent !important;
+  }
+
+  .career-app .sidebar .nav-list button:active > .sidebar-nav-capsule,
+  .career-app .sidebar .nav-list button[data-pressed="true"] > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.09);
+  }
+
+  .career-app .sidebar .nav-list button.active,
+  .career-app .sidebar .nav-list button[aria-current="page"] {
+    color: #0f1419 !important;
+    background: transparent !important;
+    font-weight: 700;
+  }
+
+  .career-app .sidebar .nav-list button.active > .sidebar-nav-capsule,
+  .career-app .sidebar .nav-list button[aria-current="page"] > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.065);
+  }
+
+  .career-app .sidebar .nav-list button svg.sidebar-nav-icon {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    transition: color 140ms ease;
+  }
+
+  .career-app .sidebar .nav-list button:focus-visible {
+    outline: none;
+  }
+
+  .career-app .sidebar .nav-list button:focus-visible > .sidebar-nav-capsule {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    background: rgba(15, 20, 25, 0.055);
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button {
+    color: #92989f;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button:hover {
+    color: #e9ecef !important;
+    background: transparent !important;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button:hover > .sidebar-nav-capsule {
+    background: rgba(255, 255, 255, 0.075);
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button:focus-visible > .sidebar-nav-capsule {
+    background: rgba(255, 255, 255, 0.075);
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button:active,
+  [data-theme="dark"] .career-app .sidebar .nav-list button[data-pressed="true"] {
+    color: #fff !important;
+    background: transparent !important;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button:active > .sidebar-nav-capsule,
+  [data-theme="dark"] .career-app .sidebar .nav-list button[data-pressed="true"] > .sidebar-nav-capsule {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button.active,
+  [data-theme="dark"] .career-app .sidebar .nav-list button[aria-current="page"] {
+    color: #f7f8f9 !important;
+    background: transparent !important;
+    font-weight: 700;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button.active > .sidebar-nav-capsule,
+  [data-theme="dark"] .career-app .sidebar .nav-list button[aria-current="page"] > .sidebar-nav-capsule {
+    background: rgba(255, 255, 255, 0.095);
+  }
+}
+
+@media (min-width: 981px) {
+  .career-app .sidebar {
+    gap: 10px;
+    padding-top: 15px;
+  }
+
+  .career-app .sidebar > .yami-logo--sidebar {
+    width: 86px;
+    height: 40px;
+    flex-basis: 40px;
   }
 }
 .notification-page-product-detail {
