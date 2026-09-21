@@ -2450,7 +2450,7 @@ function FilledSidebarIcon({ view }: { view: View }) {
             <circle cx="16" cy="18" r="1" fill="black" />
           </mask>
         </defs>
-        <rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" stroke="currentColor" strokeWidth="1.5" mask={`url(#${calendarMaskId})`} />
+        <rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" stroke="currentColor" strokeWidth="2" mask={`url(#${calendarMaskId})`} />
         <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </>;
       break;
@@ -2467,7 +2467,7 @@ function FilledSidebarIcon({ view }: { view: View }) {
             <path d={pen} fill="black" stroke="black" strokeWidth="1.4" />
           </mask>
         </defs>
-        <path d={notebook} fill="currentColor" stroke="currentColor" strokeWidth="1.5" mask={`url(#${maskId})`} />
+        <path d={notebook} fill="currentColor" stroke="currentColor" strokeWidth="2" mask={`url(#${maskId})`} />
         <path d={pen} />
       </>;
       break;
