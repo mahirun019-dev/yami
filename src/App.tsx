@@ -2425,28 +2425,28 @@ function FilledSidebarIcon({ view }: { view: View }) {
 
   switch (view) {
     case "dashboard":
-      glyph = <path fillRule="evenodd" d="M12 2.5 2 10.7l1.8 2.1 1.7-1.4V20h13v-8.6l1.7 1.4 1.8-2.1L12 2.5Zm-2 16v-5h4v5h-4Z" />;
+      glyph = <path fillRule="evenodd" d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8z" />;
       break;
     case "companies":
-      glyph = <path fillRule="evenodd" d="M5 3h14a1 1 0 0 1 1 1v17H4V4a1 1 0 0 1 1-1Zm2.2 3.2v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Zm-8 4v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Zm-3.2 4.1V21h2v-6.7h-2Z" />;
+      glyph = <path fillRule="evenodd" d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2z M10 7v2h4V7z M10 11v2h4v-2z M10 21v-3a2 2 0 0 1 4 0v3z" />;
       break;
     case "notifications":
       glyph = <>
-        <path d="M12 2.5a2.1 2.1 0 0 0-2.1 2.1v.42a7.1 7.1 0 0 0-5.15 6.82v4.2L2.9 18.5h18.2l-1.85-2.45v-4.2a7.1 7.1 0 0 0-5.15-6.82V4.6A2.1 2.1 0 0 0 12 2.5Z" />
-        <path d="M9.1 20a3 3 0 0 0 5.8 0H9.1Z" />
+        <path d="M10.268 21a2 2 0 0 0 3.464 0z" />
+        <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
       </>;
       break;
     case "schedule":
       glyph = <>
-        <path fillRule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Zm2.2 7v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Zm-8 4v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Z" />
-        <path d="M7 2h2v5H7zM15 2h2v5h-2z" />
+        <path fillRule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM3 9h18v2H3z M8 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M12 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M16 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M8 17a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M12 17a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M16 17a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+        <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </>;
       break;
     case "materials":
       glyph = <>
-        <path fillRule="evenodd" d="M6 3h13a2 2 0 0 1 2 2v16H6V3Zm3 4v1.6h8V7H9Zm0 4v1.6h8V11H9Zm0 4v1.6h5V15H9Z" />
-        <path d="M4 5v2M4 10v2M4 15v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path d="m15.2 18.2 1.1-3.1 4.8-4.8 2 2-4.8 4.8-3.1 1.1Z" />
+        <path fillRule="evenodd" d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z M4 5v2h2V5z M4 9v2h2V9z M4 13v2h2v-2z M4 17v2h2v-2z M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />
+        <path d="M2 5h2v2H2zM2 9h2v2H2zM2 13h2v2H2zM2 17h2v2H2z" />
+        <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />
       </>;
       break;
   }
