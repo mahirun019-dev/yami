@@ -2119,6 +2119,12 @@ export default function App() {
           <Brand />
           <StableNav view={view} setView={setView} settings={settings} setSettings={setSettings} t={t} />
           <div className="sidebar-flex-spacer" aria-hidden="true" />
+          <div className="sidebar-footer-actions">
+            <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
+              <Plus aria-hidden="true" />
+              {t.addCompany}
+            </PrimaryActionButton>
+          </div>
         </aside>
         <header ref={mobileHeaderRef} className="mobile-header glass-lite">
           <button className="mobile-menu-button" data-menu-open={settings ? "true" : "false"} onClick={() => {
@@ -3402,7 +3408,7 @@ function Companies({
       if (sortBy === "name") return a.name.localeCompare(b.name);
       return b.updatedAt - a.updatedAt;
     });
-  const interestLabel = t.language === "言語" ? "気になる" : t.language === "Language" ? "Interest" : "关注度";
+  const interestLabel = t.language === "言語" ? "志望度" : t.language === "Language" ? "Interest" : "志愿度";
   return (
     <>
       <div className="page-head company-page-head">

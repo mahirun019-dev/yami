@@ -180,5 +180,8 @@ export function CompanyWatchStatus({ companyId, companyName, locale }: { company
   const unread = watch.events.filter((event) => matchesCompany(event) && !event.read).length;
   if (!target && !unread) return null;
   const status = target ? targetStatus(target, text, locale) : null;
-  return <span className={`company-watch-card-status${unread ? ' has-updates' : ''}`}>{unread ? `● ${unread}${locale === 'ja' ? '件の更新' : ' 条更新'}` : status?.label}</span>;
+  return <span className={`company-watch-card-status${unread ? ' has-updates' : ''}`}>
+    {!unread && status?.tone === 'active' && <span className="company-watch-active-dot" aria-hidden="true" />}
+    {unread ? `● ${unread}${locale === 'ja' ? '件の更新' : ' 条更新'}` : status?.label}
+  </span>;
 }

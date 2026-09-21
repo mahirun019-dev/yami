@@ -8954,6 +8954,10 @@ html[data-theme="dark"] #root {
 }
 
 @media (max-width: 760px) {
+  .career-app .dashboard-head-actions {
+    display: none !important;
+  }
+
   .career-app .record-action-menu-mobile.record-action-menu-rich {
     position: fixed;
     inset: 0;
@@ -9210,6 +9214,19 @@ html[data-theme="dark"] #root {
   border-color: transparent;
   color: var(--danger);
   background: var(--danger-soft);
+}
+
+.career-app .company-watch-active-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #548c70;
+}
+
+[data-theme="dark"] .career-app .company-watch-active-dot {
+  background: #75b58e;
 }
 
 .career-app .company-card-body > p {
