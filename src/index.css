@@ -7775,18 +7775,44 @@ html[data-theme="dark"] #root {
 }
 
 @media (min-width: 761px) {
-  .career-app .sidebar .sidebar-company-action {
-    width: 100%;
-    height: 50px;
-    min-height: 50px;
-    flex: 0 0 50px;
-    padding-inline: 12px;
-    gap: 8px;
-    font-size: 13px;
+  .career-app .sidebar .sidebar-flex-spacer {
+    min-height: 0;
+    flex: 1 1 auto;
   }
 
-  .career-app .company-page-add-action {
-    display: none;
+  .career-app .sidebar .sidebar-footer-actions {
+    display: grid;
+    flex: 0 0 auto;
+    gap: 54px;
+  }
+
+  .career-app .sidebar .sidebar-company-action {
+    width: 100%;
+    height: 54px;
+    min-height: 54px;
+    flex: 0 0 54px;
+    padding-inline: 16px;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 650;
+    box-shadow: none;
+  }
+
+  .career-app .sidebar .sidebar-company-action > svg {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
+  }
+
+  .career-app .sidebar .sidebar-footer-actions > .settings-link {
+    min-height: 40px;
+    margin-top: 0;
+  }
+
+  .career-app .dashboard-head-actions,
+  .career-app .company-page-add-action,
+  .career-app .company-grid > .empty-small .empty-action {
+    display: none !important;
   }
 }
 
@@ -7802,8 +7828,8 @@ html[data-theme="dark"] #root {
     flex-basis: 46px;
   }
 
-  .career-app .sidebar .sidebar-company-action {
-    margin-top: 12px;
+  .career-app .workspace > .dashboard-page-head {
+    display: flex;
   }
 }
 .notification-page-product-detail {

@@ -1,6 +1,7 @@
 import {
   memo,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -2087,14 +2088,17 @@ export default function App() {
         <aside className="sidebar panel">
           <Brand />
           <StableNav view={view} setView={setView} t={t} />
-          <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
-            <Plus aria-hidden="true" />
-            {t.addCompany}
-          </PrimaryActionButton>
-          <button className="settings-link" onClick={() => setSettings(true)}>
-            <Settings />
-            {t.settings}
-          </button>
+          <div className="sidebar-flex-spacer" aria-hidden="true" />
+          <div className="sidebar-footer-actions">
+            <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
+              <Plus aria-hidden="true" />
+              {t.addCompany}
+            </PrimaryActionButton>
+            <button className="settings-link" onClick={() => setSettings(true)}>
+              <Settings />
+              {t.settings}
+            </button>
+          </div>
         </aside>
         <header ref={mobileHeaderRef} className="mobile-header glass-lite">
           <button className="mobile-menu-button" data-menu-open={settings ? "true" : "false"} onClick={() => {
@@ -2403,34 +2407,71 @@ function Nav({
 }
 
 function FilledSidebarIcon({ view }: { view: View }) {
+  const maskId = `sidebar-icon-${useId().replace(/:/g, "")}`;
   let glyph: ReactNode;
 
   switch (view) {
     case "dashboard":
       glyph = <path fillRule="evenodd" d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8z" />;
       break;
-    case "companies":
-      glyph = <path fillRule="evenodd" d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2z M10 7v2h4V7z M10 11v2h4v-2z M10 21v-3a2 2 0 0 1 4 0v3z" />;
+    case "companies": {
+      const building = "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2z M18 7h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2z";
+      glyph = <>
+        <defs>
+          <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+            <rect width="24" height="24" fill="black" />
+            <path d={building} fill="white" />
+            <path d="M10 8h4M10 12h4M14 21v-3a2 2 0 0 0-4 0v3" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </mask>
+        </defs>
+        <path d={building} fill="currentColor" stroke="currentColor" strokeWidth="2" mask={`url(#${maskId})`} />
+      </>;
       break;
+    }
     case "notifications":
       glyph = <>
         <path d="M10.268 21a2 2 0 0 0 3.464 0z" />
-        <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+        <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326z" />
       </>;
       break;
-    case "schedule":
+    case "schedule": {
+      const calendarMaskId = `${maskId}-calendar`;
       glyph = <>
-        <path fillRule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM3 9h18v2H3z M8 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M12 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M16 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M8 17a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M12 17a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M16 17a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+        <defs>
+          <mask id={calendarMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+            <rect width="24" height="24" fill="black" />
+            <rect x="3" y="4" width="18" height="18" rx="2" fill="white" stroke="white" strokeWidth="2" />
+            <path d="M3 10h18" fill="none" stroke="black" strokeWidth="2" />
+            <circle cx="8" cy="14" r="1" fill="black" />
+            <circle cx="12" cy="14" r="1" fill="black" />
+            <circle cx="16" cy="14" r="1" fill="black" />
+            <circle cx="8" cy="18" r="1" fill="black" />
+            <circle cx="12" cy="18" r="1" fill="black" />
+            <circle cx="16" cy="18" r="1" fill="black" />
+          </mask>
+        </defs>
+        <rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" stroke="currentColor" strokeWidth="1.5" mask={`url(#${calendarMaskId})`} />
         <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </>;
       break;
-    case "materials":
+    }
+    case "materials": {
+      const notebook = "M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4z";
+      const pen = "M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z";
       glyph = <>
-        <path fillRule="evenodd" d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z M4 5v2h2V5z M4 9v2h2V9z M4 13v2h2v-2z M4 17v2h2v-2z M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />
-        <path d="M2 5h2v2H2zM2 9h2v2H2zM2 13h2v2H2zM2 17h2v2H2z" />
-        <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />
+        <defs>
+          <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+            <rect width="24" height="24" fill="black" />
+            <path d={notebook} fill="white" stroke="white" strokeWidth="2" />
+            <path d="M2 6h4M2 10h4M2 14h4M2 18h4" fill="none" stroke="black" strokeWidth="1.6" />
+            <path d={pen} fill="black" stroke="black" strokeWidth="1.4" />
+          </mask>
+        </defs>
+        <path d={notebook} fill="currentColor" stroke="currentColor" strokeWidth="1.5" mask={`url(#${maskId})`} />
+        <path d={pen} />
       </>;
       break;
+    }
   }
 
   return (
@@ -2879,7 +2920,7 @@ function Dashboard({
   const remainingHomeModules = homeSectionOrder.filter((module: HomeSection) => module !== "upcoming" && module !== "progress" && sectionVisible(module) && homeSections[module] !== null);
   return (
     <>
-      <div className="page-head">
+      <div className="page-head dashboard-page-head">
         <div>
           <h1 className="dashboard-date">
             {new Intl.DateTimeFormat(undefined, {
