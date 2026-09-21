@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <mask id="company-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#fff"/>
+      <path d="M7.6 7.2h2.3v1.6H7.6zM14.1 7.2h2.3v1.6h-2.3zM7.6 11.2h2.3v1.6H7.6zM14.1 11.2h2.3v1.6h-2.3zM7.6 15.2h2.3v1.6H7.6zM14.1 15.2h2.3v1.6h-2.3zM9.1 21v-2.6c0-1.1.9-2 2-2h1.8c1.1 0 2 .9 2 2V21Z" fill="#000"/>
+    </mask>
+  </defs>
+  <path d="M4 21V5.2c0-.7.6-1.2 1.2-1.2h13.6c.7 0 1.2.5 1.2 1.2V21H4Z" fill="#000" mask="url(#company-cutouts)"/>
+</svg>

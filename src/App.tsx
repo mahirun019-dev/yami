@@ -1,7 +1,6 @@
 import {
   memo,
   useEffect,
-  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -2360,6 +2359,28 @@ export default function App() {
 function Brand() {
   return <YamiLogoLockup variant="sidebar" className="brand" />;
 }
+
+const sidebarIconAssets: Record<View, string> = {
+  dashboard: "home",
+  companies: "company",
+  notifications: "notification",
+  schedule: "calendar",
+  materials: "es",
+};
+
+function SidebarNavIcon({ view, active }: { view: View; active: boolean }) {
+  const state = active ? "filled" : "outline";
+  const iconUrl = `${import.meta.env.BASE_URL}sidebar-icons/${sidebarIconAssets[view]}-${state}.svg`;
+
+  return (
+    <span
+      className="sidebar-nav-icon"
+      style={{ maskImage: `url("${iconUrl}")`, WebkitMaskImage: `url("${iconUrl}")` }}
+      aria-hidden="true"
+    />
+  );
+}
+
 function Nav({
   view,
   setView,
@@ -2374,16 +2395,16 @@ function Nav({
   const unread = events.filter((event) => !event.read).length + unreadProductUpdates;
   const [activeSection, setActiveSection] = useState<View>(view);
   useEffect(() => setActiveSection(view), [view]);
-  const a: [View, any, string][] = [
-    ["dashboard", Home, "dashboard"],
-    ["companies", Building2, "companies"],
-    ["notifications", Bell, "notifications"],
-    ["schedule", CalendarDays, "schedule"],
-    ["materials", NotebookPen, "materials"],
+  const a: [View, string][] = [
+    ["dashboard", "dashboard"],
+    ["companies", "companies"],
+    ["notifications", "notifications"],
+    ["schedule", "schedule"],
+    ["materials", "materials"],
   ];
   return (
     <div className="nav-list">
-      {a.map(([v, I, k]) => (
+      {a.map(([v, k]) => (
         <button
           className={activeSection === v ? "active" : ""}
           onClick={() => {
@@ -2398,86 +2419,11 @@ function Nav({
           onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
           key={v}
         >
-          {activeSection === v ? <FilledSidebarIcon view={v} /> : <I aria-hidden="true" />}
+          <SidebarNavIcon view={v} active={activeSection === v} />
           <span>{t[k]}{v === "notifications" && unread > 0 && <b className="nav-unread-badge">{Math.min(99, unread)}{unread > 99 ? "+" : ""}</b>}</span>
         </button>
       ))}
     </div>
-  );
-}
-
-function FilledSidebarIcon({ view }: { view: View }) {
-  const maskId = `sidebar-icon-${useId().replace(/:/g, "")}`;
-  let glyph: ReactNode;
-
-  switch (view) {
-    case "dashboard":
-      glyph = <path fillRule="evenodd" d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8z" />;
-      break;
-    case "companies": {
-      const building = "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2z M18 7h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2z";
-      glyph = <>
-        <defs>
-          <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-            <rect width="24" height="24" fill="black" />
-            <path d={building} fill="white" />
-            <path d="M10 8h4M10 12h4M14 21v-3a2 2 0 0 0-4 0v3" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </mask>
-        </defs>
-        <path d={building} fill="currentColor" stroke="currentColor" strokeWidth="2" mask={`url(#${maskId})`} />
-      </>;
-      break;
-    }
-    case "notifications":
-      glyph = <>
-        <path d="M10.268 21a2 2 0 0 0 3.464 0z" />
-        <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326z" />
-      </>;
-      break;
-    case "schedule": {
-      const calendarMaskId = `${maskId}-calendar`;
-      glyph = <>
-        <defs>
-          <mask id={calendarMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-            <rect width="24" height="24" fill="black" />
-            <rect x="3" y="4" width="18" height="18" rx="2" fill="white" stroke="white" strokeWidth="2" />
-            <path d="M3 10h18" fill="none" stroke="black" strokeWidth="2" />
-            <circle cx="8" cy="14" r="1" fill="black" />
-            <circle cx="12" cy="14" r="1" fill="black" />
-            <circle cx="16" cy="14" r="1" fill="black" />
-            <circle cx="8" cy="18" r="1" fill="black" />
-            <circle cx="12" cy="18" r="1" fill="black" />
-            <circle cx="16" cy="18" r="1" fill="black" />
-          </mask>
-        </defs>
-        <rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" stroke="currentColor" strokeWidth="2" mask={`url(#${calendarMaskId})`} />
-        <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </>;
-      break;
-    }
-    case "materials": {
-      const notebook = "M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4z";
-      const pen = "M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z";
-      glyph = <>
-        <defs>
-          <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-            <rect width="24" height="24" fill="black" />
-            <path d={notebook} fill="white" stroke="white" strokeWidth="2" />
-            <path d="M2 6h4M2 10h4M2 14h4M2 18h4" fill="none" stroke="black" strokeWidth="1.6" />
-            <path d={pen} fill="black" stroke="black" strokeWidth="1.4" />
-          </mask>
-        </defs>
-        <path d={notebook} fill="currentColor" stroke="currentColor" strokeWidth="2" mask={`url(#${maskId})`} />
-        <path d={pen} />
-      </>;
-      break;
-    }
-  }
-
-  return (
-    <svg className="sidebar-nav-icon-filled" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" focusable="false">
-      {glyph}
-    </svg>
   );
 }
 
@@ -2569,7 +2515,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <Home />
+        <SidebarNavIcon view="dashboard" active={view === "dashboard"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.dashboard}</span>
       </button>
       <button
@@ -2581,7 +2527,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <Building2 />
+        <SidebarNavIcon view="companies" active={view === "companies"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.companies}</span>
       </button>
       <button
@@ -2593,7 +2539,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <span className="mobile-nav-bell"><Bell />{unread > 0 && <i>{unread > 99 ? "99+" : unread}</i>}</span>
+        <span className="mobile-nav-bell"><SidebarNavIcon view="notifications" active={view === "notifications"} />{unread > 0 && <i>{unread > 99 ? "99+" : unread}</i>}</span>
         <span className="mobile-nav-label" aria-hidden="true">{t.notifications}</span>
       </button>
       <button
@@ -2605,7 +2551,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <CalendarDays />
+        <SidebarNavIcon view="schedule" active={view === "schedule"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.schedule}</span>
       </button>
       <button
@@ -2617,7 +2563,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <NotebookPen />
+        <SidebarNavIcon view="materials" active={view === "materials"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.materials}</span>
       </button>
     </nav>

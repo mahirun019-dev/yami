@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <mask id="calendar-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#fff"/>
+      <path d="M3.2 9.4h17.6v1.35H3.2zM6.5 12.1h2v1.8h-2zM11 12.1h2v1.8h-2zM15.5 12.1h2v1.8h-2zM6.5 16.1h2v1.8h-2zM11 16.1h2v1.8h-2zM15.5 16.1h2v1.8h-2z" fill="#000"/>
+    </mask>
+  </defs>
+  <rect x="3.2" y="5.2" width="17.6" height="16" rx="2.4" fill="#000" mask="url(#calendar-cutouts)"/>
+  <path d="M7.5 2.8v4.8M16.5 2.8v4.8" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+</svg>

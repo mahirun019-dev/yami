@@ -7793,8 +7793,8 @@ html[data-theme="dark"] #root {
     flex: 0 0 54px;
     padding-inline: 16px;
     gap: 8px;
-    font-size: 16px;
-    font-weight: 650;
+    font-size: 17px;
+    font-weight: 700;
     box-shadow: none;
   }
 
@@ -7819,17 +7819,55 @@ html[data-theme="dark"] #root {
 @media (min-width: 981px) {
   .career-app .sidebar {
     gap: 12px;
-    padding-top: 25px;
+    padding-top: 19px;
   }
 
   .career-app .sidebar > .yami-logo--sidebar {
-    width: 98px;
-    height: 46px;
-    flex-basis: 46px;
+    width: 90px;
+    height: 42px;
+    flex-basis: 42px;
   }
 
   .career-app .workspace > .dashboard-page-head {
     display: flex;
+  }
+}
+
+/* Navigation pairs use one custom SVG silhouette in both states. */
+.sidebar-nav-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  transition: background-color 80ms ease;
+}
+
+@media (min-width: 761px) {
+  .career-app .sidebar .sidebar-nav-icon {
+    width: 23px;
+    height: 23px;
+    flex-basis: 23px;
+  }
+}
+
+@media (max-width: 767px) {
+  .career-mobile-nav > button > .sidebar-nav-icon,
+  .career-mobile-nav .mobile-nav-bell > .sidebar-nav-icon {
+    width: 19px;
+    height: 19px;
+    flex-basis: 19px;
+  }
+
+  .career-mobile-nav .mobile-nav-bell {
+    width: 19px;
+    height: 19px;
   }
 }
 .notification-page-product-detail {
