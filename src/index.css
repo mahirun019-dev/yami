@@ -7777,13 +7777,13 @@ html[data-theme="dark"] #root {
 @media (min-width: 981px) {
   .career-app .sidebar {
     gap: 12px;
-    padding-top: 41px;
+    padding-top: 33px;
   }
 
   .career-app .sidebar > .yami-logo--sidebar {
-    width: 132px;
-    height: 62px;
-    flex-basis: 62px;
+    width: 112px;
+    height: 53px;
+    flex-basis: 53px;
   }
 }
 .notification-page-product-detail {

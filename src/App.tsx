@@ -2412,13 +2412,52 @@ function Nav({
           onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
           key={v}
         >
-          <I />
+          {activeSection === v ? <FilledSidebarIcon view={v} /> : <I aria-hidden="true" />}
           <span>{t[k]}{v === "notifications" && unread > 0 && <b className="nav-unread-badge">{Math.min(99, unread)}{unread > 99 ? "+" : ""}</b>}</span>
         </button>
       ))}
     </div>
   );
 }
+
+function FilledSidebarIcon({ view }: { view: View }) {
+  let glyph: ReactNode;
+
+  switch (view) {
+    case "dashboard":
+      glyph = <path fillRule="evenodd" d="M12 2.5 2 10.7l1.8 2.1 1.7-1.4V20h13v-8.6l1.7 1.4 1.8-2.1L12 2.5Zm-2 16v-5h4v5h-4Z" />;
+      break;
+    case "companies":
+      glyph = <path fillRule="evenodd" d="M5 3h14a1 1 0 0 1 1 1v17H4V4a1 1 0 0 1 1-1Zm2.2 3.2v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Zm-8 4v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Zm-3.2 4.1V21h2v-6.7h-2Z" />;
+      break;
+    case "notifications":
+      glyph = <>
+        <path d="M12 2.5a2.1 2.1 0 0 0-2.1 2.1v.42a7.1 7.1 0 0 0-5.15 6.82v4.2L2.9 18.5h18.2l-1.85-2.45v-4.2a7.1 7.1 0 0 0-5.15-6.82V4.6A2.1 2.1 0 0 0 12 2.5Z" />
+        <path d="M9.1 20a3 3 0 0 0 5.8 0H9.1Z" />
+      </>;
+      break;
+    case "schedule":
+      glyph = <>
+        <path fillRule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Zm2.2 7v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Zm-8 4v2h2v-2h-2Zm4 0v2h2v-2h-2Zm4 0v2h2v-2h-2Z" />
+        <path d="M7 2h2v5H7zM15 2h2v5h-2z" />
+      </>;
+      break;
+    case "materials":
+      glyph = <>
+        <path fillRule="evenodd" d="M6 3h13a2 2 0 0 1 2 2v16H6V3Zm3 4v1.6h8V7H9Zm0 4v1.6h8V11H9Zm0 4v1.6h5V15H9Z" />
+        <path d="M4 5v2M4 10v2M4 15v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="m15.2 18.2 1.1-3.1 4.8-4.8 2 2-4.8 4.8-3.1 1.1Z" />
+      </>;
+      break;
+  }
+
+  return (
+    <svg className="sidebar-nav-icon-filled" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" focusable="false">
+      {glyph}
+    </svg>
+  );
+}
+
 const StableNav = memo(Nav);
 function MobileNav({
   view,
