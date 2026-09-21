@@ -76,6 +76,7 @@ import {
   Bell as PhosphorBell,
   Buildings,
   CalendarBlank,
+  GearSix,
   House,
   Notebook,
 } from "@phosphor-icons/react";
@@ -2097,14 +2098,20 @@ export default function App() {
           <StableNav view={view} setView={setView} t={t} />
           <div className="sidebar-flex-spacer" aria-hidden="true" />
           <div className="sidebar-footer-actions">
+            <button
+              className={`settings-link${settings ? " active" : ""}`}
+              aria-current={settings ? "page" : undefined}
+              onClick={() => setSettings(true)}
+            >
+              <span className="sidebar-nav-capsule">
+                <GearSix className="sidebar-nav-icon" size={24} weight={settings ? "fill" : "regular"} aria-hidden="true" focusable="false" />
+                <span>{t.settings}</span>
+              </span>
+            </button>
             <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
               <Plus aria-hidden="true" />
               {t.addCompany}
             </PrimaryActionButton>
-            <button className="settings-link" onClick={() => setSettings(true)}>
-              <Settings />
-              {t.settings}
-            </button>
           </div>
         </aside>
         <header ref={mobileHeaderRef} className="mobile-header glass-lite">
@@ -2653,12 +2660,24 @@ function RecordActionMenu({
   const isMobile = useMediaQuery("(max-width: 760px)");
   const menuRef = useRef<HTMLDivElement>(null);
   const actionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [popoverSide, setPopoverSide] = useState<"bottom" | "top">("bottom");
+  useLayoutEffect(() => {
+    if (!open || isMobile) return;
+    const menu = menuRef.current;
+    const trigger = menu?.parentElement?.querySelector<HTMLElement>(":scope > button");
+    if (!menu || !trigger) return;
+    const anchor = trigger.getBoundingClientRect();
+    const roomBelow = window.innerHeight - anchor.bottom - 10;
+    const roomAbove = anchor.top - 10;
+    setPopoverSide(roomBelow < menu.scrollHeight && roomAbove > roomBelow ? "top" : "bottom");
+  }, [actions.length, isMobile, open, placement]);
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         close();
+        menuRef.current?.parentElement?.querySelector<HTMLElement>(":scope > button")?.focus();
         return;
       }
       if (!menuRef.current || !["ArrowDown", "ArrowUp"].includes(event.key)) return;
@@ -2687,7 +2706,7 @@ function RecordActionMenu({
   }, [close, isMobile, open]);
   if (isMobile && !open) return null;
   const content = (
-    <div ref={menuRef} className={`record-action-menu record-action-menu--${placement}${isMobile ? " record-action-menu-mobile" : ""}`} data-open={open ? "true" : "false"} role="menu" aria-label={title} aria-hidden={!open}>
+    <div ref={menuRef} className={`record-action-menu record-action-menu--${placement}${isMobile ? " record-action-menu-mobile" : ""}`} data-open={open ? "true" : "false"} data-side={isMobile ? undefined : popoverSide} role="menu" aria-label={title} aria-hidden={!open}>
       {isMobile && <button type="button" className="record-action-backdrop" aria-label={cancelLabel} onClick={close} />}
       <section className="record-action-surface">
         {isMobile && <header className="record-action-header"><h2>{title}</h2><CloseButton className="record-action-close" onClick={close} label={cancelLabel} /></header>}

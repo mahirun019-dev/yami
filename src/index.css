@@ -8429,3 +8429,236 @@ html[data-theme="dark"] #root {
   .career-app .dashboard-action-banner > span:first-of-type { font-size: 11px; }
   .career-app .dashboard-action-label { gap: 2px; font-size: 11px; }
 }
+
+@media (min-width: 761px) {
+  .career-app .sidebar .sidebar-footer-actions {
+    gap: 20px;
+  }
+
+  .career-app .sidebar .sidebar-company-action {
+    font-size: 17px;
+  }
+
+  .career-app .sidebar .sidebar-footer-actions > .settings-link {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: #737980;
+    background: transparent !important;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.25;
+    text-align: left;
+    transition: color 140ms ease, background-color 140ms ease;
+  }
+
+  .career-app .sidebar .sidebar-footer-actions > .settings-link > .sidebar-nav-capsule {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    min-height: 44px;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 11px;
+    padding-inline: 13px;
+    border-radius: 999px;
+    background: transparent;
+    transition: background-color 140ms ease;
+  }
+
+  .career-app .sidebar .settings-link > .sidebar-nav-capsule > span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .career-app .sidebar .settings-link svg.sidebar-nav-icon {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    transition: color 140ms ease;
+  }
+
+  .career-app .sidebar .settings-link:hover,
+  .career-app .sidebar .settings-link:active {
+    color: #30363d !important;
+    background: transparent !important;
+  }
+
+  .career-app .sidebar .settings-link:hover > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.055);
+  }
+
+  .career-app .sidebar .settings-link:active > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.09);
+  }
+
+  .career-app .sidebar .settings-link.active,
+  .career-app .sidebar .settings-link[aria-current="page"] {
+    color: #111214 !important;
+    background: transparent !important;
+    font-weight: 700;
+  }
+
+  .career-app .sidebar .settings-link.active:hover > .sidebar-nav-capsule,
+  .career-app .sidebar .settings-link[aria-current="page"]:hover > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.055);
+  }
+
+  .career-app .sidebar .settings-link:focus-visible {
+    outline: none;
+  }
+
+  .career-app .sidebar .settings-link:focus-visible > .sidebar-nav-capsule {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  .career-app .sidebar .nav-list button.active > .sidebar-nav-capsule,
+  .career-app .sidebar .nav-list button[aria-current="page"] > .sidebar-nav-capsule {
+    background: transparent !important;
+  }
+
+  .career-app .sidebar .nav-list button.active:hover > .sidebar-nav-capsule,
+  .career-app .sidebar .nav-list button[aria-current="page"]:hover > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.055) !important;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .sidebar-footer-actions > .settings-link {
+    color: #92989f;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .settings-link:hover,
+  [data-theme="dark"] .career-app .sidebar .settings-link:active {
+    color: #e9ecef !important;
+    background: transparent !important;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .settings-link:hover > .sidebar-nav-capsule {
+    background: #1d1f23;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .settings-link:active > .sidebar-nav-capsule {
+    background: #25282d;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .settings-link.active,
+  [data-theme="dark"] .career-app .sidebar .settings-link[aria-current="page"] {
+    color: #f7f8f9 !important;
+    background: transparent !important;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .settings-link.active:hover > .sidebar-nav-capsule,
+  [data-theme="dark"] .career-app .sidebar .settings-link[aria-current="page"]:hover > .sidebar-nav-capsule {
+    background: #1d1f23;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .settings-link:focus-visible > .sidebar-nav-capsule {
+    outline-color: rgba(255, 255, 255, 0.75);
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list button.active:hover > .sidebar-nav-capsule,
+  [data-theme="dark"] .career-app .sidebar .nav-list button[aria-current="page"]:hover > .sidebar-nav-capsule {
+    background: #1d1f23 !important;
+  }
+
+  .career-app .record-action-menu {
+    top: calc(100% + 10px);
+    width: min(300px, calc(100vw - 32px));
+    overflow: hidden;
+    border: 1px solid rgba(15, 20, 25, 0.08);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 16px 38px rgba(15, 20, 25, 0.14);
+  }
+
+  .career-app .record-action-menu--bottom-center {
+    width: min(300px, calc(100vw - 32px));
+  }
+
+  .career-app .record-action-menu .record-action-items {
+    gap: 2px;
+    padding: 6px;
+  }
+
+  .career-app .record-action-menu .record-action-items button {
+    min-height: 56px;
+    gap: 15px;
+    padding: 0 16px;
+    border: 0 !important;
+    border-radius: 12px;
+    color: var(--text-primary);
+    background: transparent;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    transition: background-color 140ms ease;
+  }
+
+  .career-app .record-action-menu .record-action-items button svg:first-child {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+  }
+
+  .career-app .record-action-menu .record-action-items button:hover {
+    background: rgba(15, 20, 25, 0.055);
+  }
+
+  .career-app .record-action-menu .record-action-items button:active {
+    background: rgba(15, 20, 25, 0.09);
+  }
+
+  .career-app .record-action-menu .record-action-items button:focus-visible {
+    outline: 2px solid rgba(15, 20, 25, 0.32);
+    outline-offset: -2px;
+    background: rgba(15, 20, 25, 0.04);
+  }
+
+  .career-app .record-action-menu[data-side="top"] {
+    top: auto;
+    bottom: calc(100% + 10px);
+    transform: translateY(4px);
+  }
+
+  .career-app .record-action-menu[data-side="top"][data-open="true"] {
+    transform: translateY(0);
+  }
+
+  .career-app .record-action-menu--bottom-center[data-side="top"] {
+    transform: translate(-50%, 4px);
+  }
+
+  .career-app .record-action-menu--bottom-center[data-side="top"][data-open="true"] {
+    transform: translate(-50%, 0);
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu {
+    border-color: #2f3336;
+    background: #16181c;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu .record-action-surface {
+    background: #16181c;
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu .record-action-items button:hover {
+    background: #202327;
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu .record-action-items button:active {
+    background: #26292e;
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu .record-action-items button:focus-visible {
+    outline-color: rgba(255, 255, 255, 0.38);
+    background: #202327;
+  }
+}
