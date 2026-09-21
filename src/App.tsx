@@ -2119,12 +2119,6 @@ export default function App() {
           <Brand />
           <StableNav view={view} setView={setView} settings={settings} setSettings={setSettings} t={t} />
           <div className="sidebar-flex-spacer" aria-hidden="true" />
-          <div className="sidebar-footer-actions">
-            <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
-              <Plus aria-hidden="true" />
-              {t.addCompany}
-            </PrimaryActionButton>
-          </div>
         </aside>
         <header ref={mobileHeaderRef} className="mobile-header glass-lite">
           <button className="mobile-menu-button" data-menu-open={settings ? "true" : "false"} onClick={() => {
@@ -3408,6 +3402,7 @@ function Companies({
       if (sortBy === "name") return a.name.localeCompare(b.name);
       return b.updatedAt - a.updatedAt;
     });
+  const interestLabel = t.language === "言語" ? "気になる" : t.language === "Language" ? "Interest" : "关注度";
   return (
     <>
       <div className="page-head company-page-head">
@@ -3415,29 +3410,31 @@ function Companies({
           <h1>{t.companies}</h1>
           <p>{t.subtitle}</p>
         </div>
-        {data.companies.length > 0 && <PrimaryActionButton className="company-page-add-action" onClick={() => open("company")}>
-          <Plus />
-          {t.addCompany}
-        </PrimaryActionButton>}
       </div>
       {companyFilter && <div className="route-filter-bar" role="status">
         <span>{companyFilter === "active" ? t.inProgress : t.waiting}</span>
         <button type="button" onClick={clearCompanyFilter} aria-label={t.cancel}>×</button>
       </div>}
-      {data.companies.length > 0 && <div className="company-toolbar">
-        <div className="company-search-field"><Search aria-hidden="true" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.language === "言語" ? "企業を検索" : t.language === "Language" ? "Search companies" : "搜索企业"} aria-label={t.language === "言語" ? "企業を検索" : t.language === "Language" ? "Search companies" : "搜索企业"} /></div>
-        <button type="button" className={`company-filter-trigger${stageFilter !== "all" || sortBy !== "updated" ? " has-filter" : ""}`} aria-label={t.language === "言語" ? "絞り込みと並び替え" : "筛选与排序"} onClick={() => { setDraftStageFilter(stageFilter); setDraftSortBy(sortBy); setFilterSheetOpen(true); }}><SlidersHorizontal /></button>
-        <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value)} aria-label={t.stage}>
-          <option value="all">{t.all}</option>
-          {funnelStages.map((stage) => <option key={stage} value={stage}>{t[stage]}</option>)}
-        </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as CompanySort)} aria-label={t.language === "言語" ? "並び替え" : t.language === "Language" ? "Sort" : "排序"}>
-          <option value="updated">{t.language === "言語" ? "最近更新" : t.language === "Language" ? "Recently updated" : "最近更新"}</option>
-          <option value="interest">{t.interest}</option>
-          <option value="event">{t.event}</option>
-          <option value="name">{t.language === "言語" ? "企業名" : t.language === "Language" ? "Company name" : "企业名称"}</option>
-        </select>
-      </div>}
+      <div className={`company-toolbar${data.companies.length === 0 ? " is-empty" : ""}`}>
+        {data.companies.length > 0 && <>
+          <div className="company-search-field"><Search aria-hidden="true" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.language === "言語" ? "企業を検索" : t.language === "Language" ? "Search companies" : "搜索企业"} aria-label={t.language === "言語" ? "企業を検索" : t.language === "Language" ? "Search companies" : "搜索企业"} /></div>
+          <button type="button" className={`company-filter-trigger${stageFilter !== "all" || sortBy !== "updated" ? " has-filter" : ""}`} aria-label={t.language === "言語" ? "絞り込みと並び替え" : "筛选与排序"} onClick={() => { setDraftStageFilter(stageFilter); setDraftSortBy(sortBy); setFilterSheetOpen(true); }}><SlidersHorizontal /></button>
+          <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value)} aria-label={t.stage}>
+            <option value="all">{t.all}</option>
+            {funnelStages.map((stage) => <option key={stage} value={stage}>{t[stage]}</option>)}
+          </select>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as CompanySort)} aria-label={t.language === "言語" ? "並び替え" : t.language === "Language" ? "Sort" : "排序"}>
+            <option value="updated">{t.language === "言語" ? "最近更新" : t.language === "Language" ? "Recently updated" : "最近更新"}</option>
+            <option value="interest">{t.interest}</option>
+            <option value="event">{t.event}</option>
+            <option value="name">{t.language === "言語" ? "企業名" : t.language === "Language" ? "Company name" : "企业名称"}</option>
+          </select>
+        </>}
+        <PrimaryActionButton className="company-toolbar-add-action" onClick={() => open("company")}>
+          <Plus aria-hidden="true" />
+          {t.addCompany}
+        </PrimaryActionButton>
+      </div>
       {filterSheetOpen && <div className="company-filter-sheet-layer">
         <button type="button" className="company-filter-sheet-backdrop" aria-label={t.cancel} onClick={() => setFilterSheetOpen(false)} />
         <section className="company-filter-sheet" role="dialog" aria-modal="true" aria-label={t.language === "言語" ? "絞り込みと並び替え" : "筛选与排序"}>
@@ -3458,19 +3455,26 @@ function Companies({
               onClick={() => onOpenCompany(x.id)}
               key={x.id}
             >
-              <i style={{ background: x.color }} />
               <div className="company-card-body">
-                <h3 title={x.name}>{x.name}</h3>
+                <div className="company-card-topline">
+                  <h3 title={x.name}>{x.name}</h3>
+                  <div className="company-card-badges">
+                    {data.preferences.customize.companyCard.stage && <span className="company-stage-badge">{stageDisplayLabel(x.stage, t)}</span>}
+                    <CompanyWatchStatus companyId={x.id} companyName={x.name} locale={t.language === "言語" ? "ja" : "zh"} />
+                  </div>
+                </div>
                 {(data.preferences.customize.companyCard.industry || data.preferences.customize.companyCard.position) && <p>{[data.preferences.customize.companyCard.industry ? x.industry : "", data.preferences.customize.companyCard.position ? companyJobCategory(x) : ""].filter(Boolean).join(" / ") || t.notSet}</p>}
-                {(data.preferences.customize.companyCard.stage || data.preferences.customize.companyCard.interest) && <span className="company-card-stage">{data.preferences.customize.companyCard.stage ? stageDisplayLabel(x.stage, t) : ""}{data.preferences.customize.companyCard.stage && data.preferences.customize.companyCard.interest ? <span aria-hidden="true"> · </span> : null}{data.preferences.customize.companyCard.interest ? <StarRating value={x.interestLevel} /> : null}</span>}
-                {data.preferences.customize.companyCard.nextEvent && <span>{nextEvent ? `${t.nextSchedule} · ${whenForLocale(nextEvent.startsAt, t)} · ${daysUntilLabel(nextEvent.startsAt, t)}` : t.noSchedule}</span>}
-                <CompanyWatchStatus companyId={x.id} companyName={x.name} locale={t.language === "言語" ? "ja" : "zh"} />
+                {data.preferences.customize.companyCard.interest && <div className="company-card-interest"><span>{interestLabel}</span><StarRating value={x.interestLevel} /></div>}
+                {data.preferences.customize.companyCard.nextEvent && <div className={`company-card-schedule${nextEvent ? " has-event" : " is-empty"}`}>
+                  <Clock3 aria-hidden="true" />
+                  {nextEvent ? <><span><time>{whenForLocale(nextEvent.startsAt, t)}</time><strong>{scheduleDisplayTitle(nextEvent.title, nextEvent.type, t, nextEvent)}</strong></span><small>{daysUntilLabel(nextEvent.startsAt, t)}</small></> : <span>{t.language === "言語" ? "日程未設定" : t.language === "Language" ? "No schedule set" : "未设置日程"}</span>}
+                </div>}
               </div>
               <ChevronRight />
             </button>;
           })
         ) : (
-          <Empty t={t} kind="company" open={() => open("company")} />
+          <Empty t={t} kind="company" />
         )}
       </div>
     </>

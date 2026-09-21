@@ -7810,7 +7810,6 @@ html[data-theme="dark"] #root {
   }
 
   .career-app .dashboard-head-actions,
-  .career-app .company-page-add-action,
   .career-app .company-grid > .empty-small .empty-action {
     display: none !important;
   }
@@ -9094,6 +9093,320 @@ html[data-theme="dark"] #root {
   [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item:active > .sidebar-nav-capsule,
   [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item[data-pressed="true"] > .sidebar-nav-capsule {
     background: rgba(255, 255, 255, 0.12) !important;
+  }
+}
+
+/* Company page cards and toolbar stay local to this view. */
+.career-app .company-grid {
+  width: 100%;
+  max-width: none;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 14px;
+}
+
+.career-app .company-toolbar {
+  grid-template-columns: minmax(0, 1fr) minmax(148px, 180px) minmax(148px, 180px) minmax(150px, max-content);
+  align-items: stretch;
+}
+
+.career-app .company-toolbar.is-empty {
+  grid-template-columns: 1fr;
+}
+
+.career-app .company-toolbar.is-empty .company-toolbar-add-action {
+  justify-self: end;
+  width: max-content;
+}
+
+.career-app .company-toolbar-add-action {
+  width: 100%;
+  height: 42px;
+  min-height: 42px;
+  gap: 7px;
+  padding-inline: 12px;
+  font-size: 14px;
+}
+
+.career-app .company-toolbar-add-action svg {
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
+}
+
+.career-app .company-card.entity-card {
+  display: grid;
+  min-width: 0;
+  min-height: 148px;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  box-shadow: none;
+  text-align: left;
+  transform: none;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.career-app .company-card-body {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+}
+
+.career-app .company-card-topline {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.career-app .company-card-topline h3 {
+  flex: 1 1 160px;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.career-app .company-card-badges {
+  display: flex;
+  max-width: 48%;
+  min-width: 0;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.career-app .company-stage-badge,
+.career-app .company-card-badges .company-watch-card-status {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 23px;
+  align-items: center;
+  overflow: hidden;
+  padding: 3px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.career-app .company-card-badges .company-watch-card-status.has-updates {
+  border-color: transparent;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.career-app .company-card-body > p {
+  min-width: 0;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.career-app .company-card-interest {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.career-app .company-card-interest .star-rating {
+  gap: 3px;
+}
+
+.career-app .company-card-interest .star-rating svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  fill: transparent;
+  stroke-width: 1.7;
+}
+
+.career-app .company-card-interest .star-rating svg.is-filled {
+  color: var(--brand-gold);
+  fill: currentColor;
+}
+
+.career-app .company-card-schedule {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.career-app .company-card-schedule > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.career-app .company-card-schedule > span {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.career-app .company-card-schedule time {
+  color: var(--text-primary);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.career-app .company-card-schedule strong {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: inherit;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.career-app .company-card-schedule small {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.career-app .company-card-schedule.has-event {
+  color: var(--text-secondary);
+}
+
+.career-app .company-card-schedule.is-empty {
+  color: var(--text-muted);
+}
+
+.career-app .company-card-schedule.is-empty > svg {
+  color: var(--text-muted);
+}
+
+.career-app .company-card.entity-card > svg {
+  width: 16px;
+  height: 16px;
+  align-self: center;
+  margin: 0;
+  color: var(--text-muted);
+  transform: none;
+  transition: color 140ms ease;
+}
+
+.career-app .company-card.entity-card:focus-visible {
+  outline: 2px solid var(--text-secondary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .career-app .company-card.entity-card:hover {
+    border-color: #e7eaec;
+    background: #fafbfb;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .career-app .company-card.entity-card:hover > svg {
+    color: var(--text-secondary);
+    transform: none;
+  }
+}
+
+[data-theme="dark"] .career-app .company-card.entity-card {
+  border-color: #2f3336;
+  background: #08090a;
+}
+
+[data-theme="dark"] .career-app .company-card.entity-card:hover,
+[data-theme="dark"] .career-app .company-card.entity-card:active {
+  border-color: #3a3f44;
+  background: #101214;
+  box-shadow: none;
+  transform: none;
+}
+
+@media (min-width: 761px) and (max-width: 1040px) {
+  .career-app .company-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(148px, 180px) minmax(148px, 180px);
+  }
+
+  .career-app .company-toolbar-add-action {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: auto;
+    min-width: 170px;
+  }
+}
+
+@media (max-width: 760px) {
+  .career-app .company-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .career-app .company-toolbar {
+    grid-template-columns: minmax(0, 1fr) 52px;
+  }
+
+  .career-app .company-toolbar-add-action {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 48px;
+    min-height: 48px;
+  }
+
+  .career-app .company-toolbar.is-empty .company-toolbar-add-action {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .career-app .company-card.entity-card {
+    min-height: 132px;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .career-app .company-card-topline h3 {
+    flex-basis: 120px;
+    font-size: 15px;
+  }
+
+  .career-app .company-card-badges {
+    max-width: 46%;
+  }
+
+  .career-app .company-card-schedule {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .career-app .company-card-schedule small {
+    margin-left: auto;
   }
 }
 
