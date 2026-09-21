@@ -7102,7 +7102,7 @@ html[data-theme="dark"] #root {
   .main-dashboard-layout { display: block; width: min(100%, 1340px); margin-inline: auto; }
   .main-dashboard-layout > .dashboard-main { display: block; width: 100%; }
   .main-dashboard-layout > .dashboard-sidebar { width: 100%; margin-top: 36px; }
-  .dashboard-local-grid.has-supporting { grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap: 40px; align-items: start; }
+  .dashboard-local-grid.has-supporting { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: 40px; align-items: start; }
   .dashboard-local-grid:not(.has-supporting) { max-width: 860px; }
   .dashboard-full-width-sections { margin-top: 36px; }
   .dashboard-customizable-modules { gap: 36px; }

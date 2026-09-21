@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectWeeklyDeadlines } from "../src/deadline-selector.ts";
+import { getUpcomingDeadlines, selectDeadlinesWithin, selectWeeklyDeadlines } from "../src/deadline-selector.ts";
 import { getDeadlineUrgency } from "../src/deadline-selector.ts";
 import { compareCompanyStageToEvent, progressionStageForEvent, shouldOfferInterviewStageSync } from "../src/interview-stage.ts";
 
@@ -33,6 +33,27 @@ test("treats tomorrow's deadline as warning, not overdue", () => {
     getDeadlineUrgency("2026-09-19T07:27", new Date("2026-09-18T08:00:00+09:00").getTime()),
     "warning",
   );
+});
+
+test("selects only future deadlines within an exact 48-hour window", () => {
+  const now = new Date("2026-09-22T10:00:00+09:00").getTime();
+  const deadlines = getUpcomingDeadlines({
+    events: [
+      { id: "interview", type: "interview", title: "Interview", startsAt: "2026-09-23T10:00" },
+      { id: "web-test", type: "web_test", title: "Web test deadline", startsAt: "2026-09-23T11:00" },
+    ],
+    materials: [
+      { id: "past", type: "es", title: "Past", dueAt: "2026-09-22T09:59", completed: false },
+      { id: "inside", type: "es", title: "Inside", dueAt: "2026-09-24T09:00", completed: false },
+      { id: "boundary", type: "es", title: "Boundary", dueAt: "2026-09-24T10:00", completed: false },
+      { id: "outside", type: "es", title: "Outside", dueAt: "2026-09-24T10:01", completed: false },
+      { id: "done", type: "es", title: "Done", dueAt: "2026-09-23T10:00", completed: true },
+    ],
+    preparations: [],
+  }, now);
+  const imminent = selectDeadlinesWithin(deadlines, now);
+
+  assert.deepEqual(imminent.map((item) => item.id), ["web-test", "inside", "boundary"]);
 });
 
 test("offers only forward interview-stage synchronization", () => {

@@ -64,6 +64,15 @@ export function getUpcomingDeadlines<TEvent extends EventSource, TMaterial exten
   ].sort((a, b) => parseTokyoCalendarDate(a.at).getTime() - parseTokyoCalendarDate(b.at).getTime());
 }
 
+export function selectDeadlinesWithin<T extends Pick<DeadlineItem, "at" | "kind" | "type">>(items: T[], now = Date.now(), hours = 48) {
+  const horizon = hours * 36e5;
+  return items.filter((item) => {
+    const isDeadline = item.kind !== "event" || ["es", "resume", "web_test"].includes(item.type);
+    const timeUntil = parseTokyoCalendarDate(item.at).getTime() - now;
+    return isDeadline && timeUntil >= 0 && timeUntil <= horizon;
+  });
+}
+
 export function selectWeeklyDeadlines<TEvent extends EventSource, TMaterial extends MaterialSource, TPreparation extends PreparationSource>(data: DeadlineSource<TEvent, TMaterial, TPreparation>, now = Date.now()) {
   const today = getTokyoDateKey(now);
   const weekday = new Date(`${today}T12:00:00+09:00`).getDay();

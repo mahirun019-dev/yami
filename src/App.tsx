@@ -84,7 +84,7 @@ import {
   ListChecks,
   Notebook,
 } from "@phosphor-icons/react";
-import { getDeadlineUrgency, getHighestDeadlineUrgency, parseTokyoCalendarDate, selectWeeklyDeadlines } from "./deadline-selector";
+import { getDeadlineUrgency, getHighestDeadlineUrgency, getUpcomingDeadlines, parseTokyoCalendarDate, selectDeadlinesWithin, selectWeeklyDeadlines } from "./deadline-selector";
 import { compareCompanyStageToEvent, isInterviewProgressStage, shouldOfferInterviewStageSync, type StageProgressionCheck } from "./interview-stage";
 
 type View = "dashboard" | "companies" | "notifications" | "schedule" | "materials";
@@ -2942,39 +2942,37 @@ function Dashboard({
     </div>
     {data.companies.length > 3 && <button type="button" className="text-button home-featured-more" onClick={() => setView("companies")}>{t.viewAllCompanies} <ChevronRight aria-hidden="true" /></button>}
   </section> : null;
-  const deadlineKeys = new Set(due.map((item: any) => item.key));
-  const visibleUpcoming = sectionVisible("upcoming") ? upcoming.filter((item: any) => !deadlineKeys.has(`event:${item.id}`)) : [];
-  const visibleDeadlines = homeSummaryVisibility.deadlines ? due : [];
-  const nearTermEvent = due.length === 0
-    ? upcoming.find((item: any) => {
-      const hoursUntil = (parseTokyoCalendarDate(item.at).getTime() - Date.now()) / 36e5;
-      return hoursUntil >= 0 && hoursUntil <= 72 && (item.type === "interview" || item.type === "briefing");
-    })
-    : undefined;
-  const actionBanner = due.length > 0 || nearTermEvent
+  const nowMs = Date.now();
+  const upcomingDeadlines = getUpcomingDeadlines(data, nowMs);
+  const urgentDeadlines = selectDeadlinesWithin(upcomingDeadlines, nowMs);
+  const weeklyDeadlineKeys = new Set(due.map((item: any) => item.key));
+  const visibleDeadlines = homeSummaryVisibility.deadlines
+    ? [
+      ...due,
+      ...upcomingDeadlines.filter((item: any) => item.kind !== "event" && !weeklyDeadlineKeys.has(item.key)),
+    ]
+    : [];
+  const visibleDeadlineKeys = new Set(visibleDeadlines.map((item: any) => item.key));
+  const visibleUpcoming = sectionVisible("upcoming")
+    ? upcoming.filter((item: any) => !visibleDeadlineKeys.has(`event:${item.id}`)).map((item: any) => ({ ...item, isDeadline: false }))
+    : [];
+  const nextItems = [...visibleDeadlines, ...visibleUpcoming]
+    .filter((item: any) => parseTokyoCalendarDate(item.at).getTime() >= nowMs)
+    .sort((a: any, b: any) => parseTokyoCalendarDate(a.at).getTime() - parseTokyoCalendarDate(b.at).getTime())
+    .slice(0, 3);
+  const actionBanner = urgentDeadlines.length > 0
     ? {
-      message: due.length > 0
-        ? (t.language === "言語" ? `今週の締切が${due.length}件あります` : `本周有 ${due.length} 项截止事项需要确认`)
-        : (t.language === "言語"
-          ? `近日、${nearTermEvent.type === "interview" ? "面接" : "説明会"}の予定があります`
-          : `近期有${nearTermEvent.type === "interview" ? "面试" : "说明会"}安排`),
-      onClick: () => {
-        if (due.length > 0) navigate("schedule", "this-week-deadline");
-        else if (nearTermEvent) {
-          setEditEvent(nearTermEvent.event);
-          setForm("schedule");
-        }
-      },
+      message: t.language === "言語"
+        ? urgentDeadlines.length === 1 ? "48時間以内の締切があります" : `48時間以内の締切が${urgentDeadlines.length}件あります`
+        : `48小时内有 ${urgentDeadlines.length} 项截止事项`,
+      onClick: () => navigate("schedule"),
     }
     : undefined;
-  const nextAndDeadlineModule = (visibleUpcoming.length || visibleDeadlines.length) ? <section className="dashboard-section dashboard-next-deadline-module">
+  const nextAndDeadlineModule = nextItems.length ? <section className="dashboard-section dashboard-next-deadline-module">
     <Title>{t.deadlineNext}</Title>
     <div className="dashboard-next-deadline-list">
-      {visibleDeadlines.slice(0, 2).map((item: any) => <button key={`deadline-${item.key}`} type="button" className={`dashboard-next-deadline-row ${deadlineToneFor(item.at)}`} onClick={() => item.kind === "event" ? (setEditEvent(item.event), setForm("schedule")) : setView("materials")}>
-        <span><strong>{byId[item.companyId || ""]?.name || t.general}</strong><small>{item.kind === "event" ? scheduleDisplayTitle(item.title, item.type, t, item.event) : item.title || t[item.type] || t.general}</small></span><time>{whenForLocale(item.at, t)}</time>
-      </button>)}
-      {visibleUpcoming.slice(0, 3).map((item: any) => <button key={`event-${item.id}`} type="button" className="dashboard-next-deadline-row" onClick={() => { setEditEvent(item.event); setForm("schedule"); }}>
-        <span><strong>{item.company?.name || t.general}</strong><small>{item.title || t.untitledSchedule}</small></span><time>{whenForLocale(item.at, t)}</time>
+      {nextItems.map((item: any) => <button key={item.key || `${item.kind}:${item.id}`} type="button" className={`dashboard-next-deadline-row ${item.isDeadline ? deadlineToneFor(item.at) : ""}`} onClick={() => item.kind === "event" ? (setEditEvent(item.event), setForm("schedule")) : setView("materials")}>
+        <span><strong>{item.company?.name || byId[item.companyId || ""]?.name || t.general}</strong><small>{item.kind === "event" ? scheduleDisplayTitle(item.title, item.type, t, item.event) : item.title || t[item.type] || t.general}</small></span><time>{whenForLocale(item.at, t)}</time>
       </button>)}
     </div>
   </section> : null;
