@@ -7774,16 +7774,36 @@ html[data-theme="dark"] #root {
   }
 }
 
+@media (min-width: 761px) {
+  .career-app .sidebar .sidebar-company-action {
+    width: 100%;
+    height: 50px;
+    min-height: 50px;
+    flex: 0 0 50px;
+    padding-inline: 12px;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .career-app .company-page-add-action {
+    display: none;
+  }
+}
+
 @media (min-width: 981px) {
   .career-app .sidebar {
     gap: 12px;
-    padding-top: 33px;
+    padding-top: 25px;
   }
 
   .career-app .sidebar > .yami-logo--sidebar {
-    width: 112px;
-    height: 53px;
-    flex-basis: 53px;
+    width: 98px;
+    height: 46px;
+    flex-basis: 46px;
+  }
+
+  .career-app .sidebar .sidebar-company-action {
+    margin-top: 12px;
   }
 }
 .notification-page-product-detail {

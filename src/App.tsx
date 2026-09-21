@@ -1395,7 +1395,6 @@ export default function App() {
     [editInterview, setEditInterview] = useState<InterviewRecord>(),
     [editPrep, setEditPrep] = useState<Preparation>(),
     [selected, setSelected] = useState<string | undefined>(initialRoute.selectedCompanyId || undefined),
-    [companiesCollapsed, setCompaniesCollapsed] = useState(() => localStorage.getItem("careerflow-companies-collapsed") === "true"),
     [confirm, setConfirm] = useState<Company>(),
     [deleteEvent, setDeleteEvent] = useState<Event>(),
     [filter, setFilter] = useState("all"),
@@ -2088,27 +2087,10 @@ export default function App() {
         <aside className="sidebar panel">
           <Brand />
           <StableNav view={view} setView={setView} t={t} />
-          <div className={`course-nav ${companiesCollapsed ? "collapsed" : ""}`}>
-            <div className="course-nav-heading" onClick={() => { const next = !companiesCollapsed; setCompaniesCollapsed(next); localStorage.setItem("careerflow-companies-collapsed", String(next)); }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const next = !companiesCollapsed; setCompaniesCollapsed(next); localStorage.setItem("careerflow-companies-collapsed", String(next)); } }}>
-              <span>{t.companies} <b>{data.companies.length}</b></span>
-              <span className="course-nav-heading-actions">
-                {companiesCollapsed ? <ChevronDown className="collapse-chevron" /> : <ChevronUp className="collapse-chevron" />}
-              </span>
-            </div>
-            {!companiesCollapsed && data.companies.map((x) => (
-              <button
-                className={view === "companies" && selected === x.id ? "selected" : ""}
-                title={x.name}
-                key={x.id}
-                onClick={() => {
-                  selectCompany(x.id);
-                }}
-              >
-                <i style={{ background: x.color }} />
-                {x.name}
-              </button>
-            ))}
-          </div>
+          <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
+            <Plus aria-hidden="true" />
+            {t.addCompany}
+          </PrimaryActionButton>
           <button className="settings-link" onClick={() => setSettings(true)}>
             <Settings />
             {t.settings}
@@ -3319,12 +3301,12 @@ function Companies({
     });
   return (
     <>
-      <div className="page-head">
+      <div className="page-head company-page-head">
         <div>
           <h1>{t.companies}</h1>
           <p>{t.subtitle}</p>
         </div>
-        {data.companies.length > 0 && <PrimaryActionButton onClick={() => open("company")}>
+        {data.companies.length > 0 && <PrimaryActionButton className="company-page-add-action" onClick={() => open("company")}>
           <Plus />
           {t.addCompany}
         </PrimaryActionButton>}
