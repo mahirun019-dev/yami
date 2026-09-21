@@ -7929,17 +7929,17 @@ html[data-theme="dark"] #root {
 }
 
 [data-theme="dark"] .materials-empty-tile {
-  border-color: #30353d;
-  background: #181b20;
+  border-color: #2f3336;
+  background: #08090a;
 }
 
 [data-theme="dark"] .materials-empty-tile:hover {
-  border-color: #3a404a;
-  background: #1d2026;
+  border-color: #3a3f44;
+  background: #101214;
 }
 
 [data-theme="dark"] .materials-empty-tile:active {
-  background: #23272e;
+  background: #141719;
 }
 
 .record-action-copy {
@@ -9094,5 +9094,18 @@ html[data-theme="dark"] #root {
   [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item:active > .sidebar-nav-capsule,
   [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item[data-pressed="true"] > .sidebar-nav-capsule {
     background: rgba(255, 255, 255, 0.12) !important;
+  }
+}
+
+[data-theme="dark"] .career-app .timeline > .empty-small--schedule {
+  border-color: #2f3336;
+  background: #08090a !important;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-theme="dark"] .career-app .timeline > .empty-small--schedule:hover {
+    border-color: #3a3f44;
+    background: #101214 !important;
   }
 }

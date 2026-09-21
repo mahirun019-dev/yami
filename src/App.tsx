@@ -2656,7 +2656,7 @@ function Empty({ t, kind = "general", open, onPointerDown, actionMenu }: { t: an
   if (t.language === "言語") copy.schedule[1] = "説明会、筆記試験、面接などの予定を追加して、選考スケジュールを管理しましょう。";
   const [title, description, action] = copy[kind];
   return (
-    <div className="empty-small">
+    <div className={`empty-small${kind === "schedule" ? " empty-small--schedule" : ""}`}>
       <BriefcaseBusiness aria-hidden="true" />
       <strong>{title}</strong>
       <p>{description}</p>
