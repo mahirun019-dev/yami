@@ -27,6 +27,7 @@ import {
   DatabaseArrowDown,
   DatabaseArrowUp,
   ArrowLeft,
+  ArrowRight,
   BarChart3,
   Bell,
   BriefcaseBusiness,
@@ -2851,6 +2852,28 @@ function Dashboard({
   const deadlineKeys = new Set(due.map((item: any) => item.key));
   const visibleUpcoming = sectionVisible("upcoming") ? upcoming.filter((item: any) => !deadlineKeys.has(`event:${item.id}`)) : [];
   const visibleDeadlines = homeSummaryVisibility.deadlines ? due : [];
+  const nearTermEvent = due.length === 0
+    ? upcoming.find((item: any) => {
+      const hoursUntil = (parseTokyoCalendarDate(item.at).getTime() - Date.now()) / 36e5;
+      return hoursUntil >= 0 && hoursUntil <= 72 && (item.type === "interview" || item.type === "briefing");
+    })
+    : undefined;
+  const actionBanner = due.length > 0 || nearTermEvent
+    ? {
+      message: due.length > 0
+        ? (t.language === "言語" ? `今週の締切が${due.length}件あります` : `本周有 ${due.length} 项截止事项需要确认`)
+        : (t.language === "言語"
+          ? `近日、${nearTermEvent.type === "interview" ? "面接" : "説明会"}の予定があります`
+          : `近期有${nearTermEvent.type === "interview" ? "面试" : "说明会"}安排`),
+      onClick: () => {
+        if (due.length > 0) navigate("schedule", "this-week-deadline");
+        else if (nearTermEvent) {
+          setEditEvent(nearTermEvent.event);
+          setForm("schedule");
+        }
+      },
+    }
+    : undefined;
   const nextAndDeadlineModule = (visibleUpcoming.length || visibleDeadlines.length) ? <section className="dashboard-section dashboard-next-deadline-module">
     <Title>{t.deadlineNext}</Title>
     <div className="dashboard-next-deadline-list">
@@ -2885,12 +2908,19 @@ function Dashboard({
         </div>
         <div className="main-dashboard-layout">
           <div className="dashboard-main">
-            <div className="overview-grid">
+            <div className="dashboard-summary">
+              <div className="overview-grid">
                 {homeSummaryOrder.filter((module: HomeSummaryModule) => homeSummaryVisibility[module]).map((module: HomeSummaryModule) => module === "active"
-                  ? <Metric key={module} n={active.length} l={t.inProgress} i={BriefcaseBusiness} onClick={() => navigate("companies", "active")} />
+                  ? <Metric key={module} n={active.length} l={t.inProgress} compactLabel={t.inProgress} i={BriefcaseBusiness} onClick={() => navigate("companies", "active")} />
                   : module === "deadlines"
-                    ? <Metric key={module} n={due.length} l={t.dueWeek} i={Clock3} tone={due.length ? getHighestDeadlineUrgency(due) : undefined} iconTone="neutral" onClick={() => navigate("schedule", "this-week-deadline")} />
-                    : <Metric key={module} n={waiting.length} l={t.waiting} i={Timer} onClick={() => navigate("companies", "waiting-result")} />)}
+                    ? <Metric key={module} n={due.length} l={t.dueWeek} compactLabel={t.language === "言語" ? "締切" : "截止"} i={Clock3} tone={due.length ? getHighestDeadlineUrgency(due) : undefined} onClick={() => navigate("schedule", "this-week-deadline")} />
+                    : <Metric key={module} n={waiting.length} l={t.waiting} compactLabel={t.waiting} i={Timer} onClick={() => navigate("companies", "waiting-result")} />)}
+              </div>
+              {actionBanner && <button type="button" className="dashboard-action-banner" onClick={actionBanner.onClick}>
+                <CalendarClock aria-hidden="true" />
+                <span>{actionBanner.message}</span>
+                <span className="dashboard-action-label">{t.language === "言語" ? "確認する" : "查看"}<ArrowRight aria-hidden="true" /></span>
+              </button>}
             </div>
             {(sectionVisible("progress") || nextAndDeadlineModule) && <div className={`dashboard-local-grid${nextAndDeadlineModule ? " has-supporting" : ""}`}>
               {sectionVisible("progress") && progressModule}
@@ -2930,15 +2960,14 @@ function Dashboard({
     </>
   );
 }
-function Metric({ n, l, i: I, onClick, tone, iconTone }: { n: number; l: string; i: any; onClick: () => void; tone?: string; iconTone?: "neutral" }) {
+function Metric({ n, l, compactLabel, i: I, onClick, tone }: { n: number; l: string; compactLabel: string; i: any; onClick: () => void; tone?: string }) {
   return (
-    <button type="button" className={`metric metric-link entity-card${tone ? ` is-${tone}` : ""}${iconTone ? ` icon-${iconTone}` : ""}`} onClick={onClick} aria-label={`${l}: ${n}`}>
+    <button type="button" className={`metric metric-link${tone ? ` is-${tone}` : ""}`} onClick={onClick} aria-label={`${l}: ${n}`}>
       <I className="metric-icon" aria-hidden="true" />
-      <div>
+      <span className="metric-copy">
         <strong className="kpi-number">{n}</strong>
-        <span>{l}</span>
-      </div>
-      <ChevronRight className="metric-chevron" aria-hidden="true" />
+        <span className="metric-label"><span className="metric-label-full">{l}</span><span className="metric-label-compact">{compactLabel}</span></span>
+      </span>
     </button>
   );
 }
