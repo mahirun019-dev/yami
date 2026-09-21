@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <defs>
-    <mask id="calendar-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-      <rect width="24" height="24" fill="#fff"/>
-      <path d="M3.2 9.4h17.6v1.35H3.2zM6.5 12.1h2v1.8h-2zM11 12.1h2v1.8h-2zM15.5 12.1h2v1.8h-2zM6.5 16.1h2v1.8h-2zM11 16.1h2v1.8h-2zM15.5 16.1h2v1.8h-2z" fill="#000"/>
-    </mask>
-  </defs>
-  <rect x="3.2" y="5.2" width="17.6" height="16" rx="2.4" fill="#000" mask="url(#calendar-cutouts)"/>
-  <path d="M7.5 2.8v4.8M16.5 2.8v4.8" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+<defs><mask id="calendar-filled-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><path d="M5.3 5.4h13.4c1.3 0 2.3 1 2.3 2.3v10.8c0 1.4-1 2.4-2.3 2.4H5.3C4 20.9 3 19.9 3 18.5V7.7c0-1.3 1-2.3 2.3-2.3Z" fill="#fff"/>
+<path d="M6.3 12h2v1.9h-2zM11 12h2v1.9h-2zM15.7 12h2v1.9h-2zM6.3 16h2v1.9h-2zM11 16h2v1.9h-2zM15.7 16h2v1.9h-2z" fill="#000" stroke="#000" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.2 9.6h17.6" fill="none" stroke="#000" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+</mask></defs><path data-geometry="silhouette" d="M5.3 5.4h13.4c1.3 0 2.3 1 2.3 2.3v10.8c0 1.4-1 2.4-2.3 2.4H5.3C4 20.9 3 19.9 3 18.5V7.7c0-1.3 1-2.3 2.3-2.3Z" fill="#000" mask="url(#calendar-filled-mask)"/>
+<path data-geometry="accents" d="M7.5 2.8v4.6M16.5 2.8v4.6" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

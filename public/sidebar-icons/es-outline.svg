@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M6.5 3.2h8.1l4.2 4.2v13.2c0 .9-.7 1.6-1.6 1.6H6.5c-.9 0-1.6-.7-1.6-1.6V4.8c0-.9.7-1.6 1.6-1.6Z" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M14.6 3.4v3c0 .8.6 1.4 1.4 1.4h2.6M3 7.2h2M3 11.3h2M3 15.4h2M3 19.5h2M9 11.2h6.5M9 15.2h6.5M9 19.2h4.6" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<defs><clipPath id="es-outline-clip" clipPathUnits="userSpaceOnUse"><path d="M7 3.1h7.2l5 5v11.5c0 1.2-.9 2.1-2.1 2.1H7c-1.2 0-2.1-.9-2.1-2.1V5.2C4.9 4 5.8 3.1 7 3.1Z"/></clipPath></defs>
+<g clip-path="url(#es-outline-clip)"><path data-geometry="silhouette" d="M7 3.1h7.2l5 5v11.5c0 1.2-.9 2.1-2.1 2.1H7c-1.2 0-2.1-.9-2.1-2.1V5.2C4.9 4 5.8 3.1 7 3.1Z" fill="none" stroke="#000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<path data-geometry="cutouts" d="M6.8 10.3h1.1v1.5H6.8zM6.8 13.8h1.1v1.5H6.8zM6.8 17.3h1.1v1.5H6.8z" fill="none" stroke="#000" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+<path data-geometry="details" d="M14.2 3.4v3.1c0 .9.7 1.6 1.6 1.6h3M10 11.1h5.6M10 14.6h5.6M10 18.1h4.3" fill="none" stroke="#000" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

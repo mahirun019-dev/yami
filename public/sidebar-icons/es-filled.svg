@@ -1,10 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <defs>
-    <mask id="es-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-      <rect width="24" height="24" fill="#fff"/>
-      <path d="M14.6 3.2v3.2c0 1.1.9 2 2 2h2.3v-.9L14.6 3.2ZM8.3 10.5h7.9v1.35H8.3zM8.3 14.5h7.9v1.35H8.3zM8.3 18.5h5.7v1.35H8.3zM2.6 6.5h2.5v1.4H2.6zM2.6 10.6h2.5V12H2.6zM2.6 14.7h2.5v1.4H2.6zM2.6 18.8h2.5v1.4H2.6z" fill="#000"/>
-    </mask>
-  </defs>
-  <path d="M6.5 3.2h8.1l4.2 4.2v13.2c0 .9-.7 1.6-1.6 1.6H6.5c-.9 0-1.6-.7-1.6-1.6V4.8c0-.9.7-1.6 1.6-1.6Z" fill="#000" mask="url(#es-cutouts)"/>
-  <path d="M3 7.2h2M3 11.3h2M3 15.4h2M3 19.5h2" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round"/>
+<defs><mask id="es-filled-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><path d="M7 3.1h7.2l5 5v11.5c0 1.2-.9 2.1-2.1 2.1H7c-1.2 0-2.1-.9-2.1-2.1V5.2C4.9 4 5.8 3.1 7 3.1Z" fill="#fff"/>
+<path d="M6.8 10.3h1.1v1.5H6.8zM6.8 13.8h1.1v1.5H6.8zM6.8 17.3h1.1v1.5H6.8z" fill="#000" stroke="#000" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.2 3.4v3.1c0 .9.7 1.6 1.6 1.6h3M10 11.1h5.6M10 14.6h5.6M10 18.1h4.3" fill="none" stroke="#000" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+</mask></defs><path data-geometry="silhouette" d="M7 3.1h7.2l5 5v11.5c0 1.2-.9 2.1-2.1 2.1H7c-1.2 0-2.1-.9-2.1-2.1V5.2C4.9 4 5.8 3.1 7 3.1Z" fill="#000" mask="url(#es-filled-mask)"/>
 </svg>
