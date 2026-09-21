@@ -7833,6 +7833,172 @@ html[data-theme="dark"] #root {
   }
 }
 
+.materials-empty-state {
+  display: grid;
+  width: min(100%, 940px);
+  justify-items: center;
+  gap: 24px;
+  margin: 46px auto 0;
+  padding: 12px 0 20px;
+}
+
+.materials-empty-copy {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.materials-empty-copy h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.materials-empty-copy p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.materials-empty-actions {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.materials-empty-tile {
+  display: flex;
+  min-width: 0;
+  min-height: 96px;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 17px 16px;
+  border: 1px solid #e9eaed;
+  border-radius: 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.materials-empty-tile:hover {
+  border-color: #dfe1e5;
+  background: #f8f8f9;
+}
+
+.materials-empty-tile:active {
+  background: #f2f3f4;
+}
+
+.materials-empty-tile:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.materials-empty-tile > svg {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  margin-top: 1px;
+  color: var(--text-secondary);
+}
+
+.materials-empty-tile-copy {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.materials-empty-tile-copy strong {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.materials-empty-tile-copy small {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+[data-theme="dark"] .materials-empty-tile {
+  border-color: #30353d;
+  background: #181b20;
+}
+
+[data-theme="dark"] .materials-empty-tile:hover {
+  border-color: #3a404a;
+  background: #1d2026;
+}
+
+[data-theme="dark"] .materials-empty-tile:active {
+  background: #23272e;
+}
+
+.record-action-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.record-action-copy > span {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.record-action-copy small {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .materials-empty-state {
+    gap: 20px;
+    margin-top: 28px;
+    padding: 8px 0 16px;
+  }
+
+  .materials-empty-copy h2 {
+    font-size: 17px;
+  }
+
+  .materials-empty-copy p {
+    max-width: 340px;
+    font-size: 13px;
+  }
+
+  .materials-empty-actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .materials-empty-tile {
+    min-height: 76px;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: 13px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .materials-empty-tile {
+    transition: none;
+  }
+}
+
 /* Phosphor navigation glyphs share one native weight-aware component. */
 .sidebar-nav-icon {
   display: block;
@@ -8660,5 +8826,273 @@ html[data-theme="dark"] #root {
   [data-theme="dark"] .career-app .record-action-menu .record-action-items button:focus-visible {
     outline-color: rgba(255, 255, 255, 0.38);
     background: #202327;
+  }
+}
+
+/* Rich ES record choices override the shared compact menu without changing
+   the company-detail action menu that uses the same component. */
+@media (min-width: 761px) {
+  .career-app .record-action-menu.record-action-menu-rich {
+    width: min(348px, calc(100vw - 32px));
+    padding: 0;
+    border: 1px solid rgba(15, 20, 25, 0.08);
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 20px 48px rgba(15, 20, 25, 0.14);
+  }
+
+  .career-app .record-action-menu--bottom-center.record-action-menu-rich {
+    width: min(348px, calc(100vw - 32px));
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-surface {
+    background: #fff;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-header {
+    min-height: 0;
+    gap: 14px;
+    padding: 15px 17px 12px;
+    border-bottom: 1px solid rgba(15, 20, 25, 0.07);
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-header > div {
+    display: grid;
+    gap: 4px;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-header h2 {
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-items {
+    gap: 2px;
+    padding: 7px;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-items button {
+    display: flex;
+    min-height: 72px;
+    align-items: center;
+    gap: 13px;
+    padding: 10px 12px;
+    border: 0 !important;
+    border-radius: 11px;
+    color: var(--text-primary);
+    background: transparent;
+    text-align: left;
+    transition: background-color 150ms ease;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-items button > svg:first-child {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    color: var(--text-secondary);
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-copy {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-copy > span {
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-copy small {
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-items button:hover,
+  .career-app .record-action-menu.record-action-menu-rich .record-action-items button:focus-visible {
+    background: rgba(15, 20, 25, 0.055);
+  }
+
+  .career-app .record-action-menu.record-action-menu-rich .record-action-items button:active {
+    background: rgba(15, 20, 25, 0.09);
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu.record-action-menu-rich {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: #16181c;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu.record-action-menu-rich .record-action-surface {
+    background: #16181c;
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu.record-action-menu-rich .record-action-header {
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu.record-action-menu-rich .record-action-items button:hover,
+  [data-theme="dark"] .career-app .record-action-menu.record-action-menu-rich .record-action-items button:focus-visible {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  [data-theme="dark"] .career-app .record-action-menu.record-action-menu-rich .record-action-items button:active {
+    background: rgba(255, 255, 255, 0.11);
+  }
+}
+
+@media (max-width: 760px) {
+  .career-app .record-action-menu-mobile.record-action-menu-rich {
+    position: fixed;
+    inset: 0;
+    width: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .career-app .record-action-menu-mobile.record-action-menu-rich .record-action-surface {
+    max-height: min(78dvh, 680px);
+    background: var(--bg-surface);
+  }
+
+  .career-app .record-action-menu-mobile.record-action-menu-rich .record-action-header {
+    padding: 10px 0 12px;
+  }
+
+  .career-app .record-action-menu-mobile.record-action-menu-rich .record-action-items {
+    gap: 2px;
+    padding: 7px 0;
+  }
+
+  .career-app .record-action-menu-mobile.record-action-menu-rich .record-action-items button {
+    min-height: 74px;
+    padding-inline: 7px;
+    border: 0 !important;
+    border-radius: 11px;
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-surface {
+    background: #fff;
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-header {
+    min-height: 0;
+    gap: 14px;
+    padding: 10px 0 12px;
+    border-color: rgba(15, 20, 25, 0.07);
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-header > div {
+    display: grid;
+    gap: 4px;
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-header h2 {
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-items {
+    gap: 2px;
+    padding: 7px 0;
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-items button {
+    min-height: 74px;
+    align-items: center;
+    gap: 13px;
+    padding: 10px 7px;
+    border: 0 !important;
+    border-radius: 11px;
+    transition: background-color 150ms ease;
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-items button > svg:first-child {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    color: var(--text-secondary);
+  }
+
+  .record-action-menu-mobile.record-action-menu-rich .record-action-items button:hover,
+  .record-action-menu-mobile.record-action-menu-rich .record-action-items button:focus-visible,
+  .record-action-menu-mobile.record-action-menu-rich .record-action-items button:active {
+    background: rgba(15, 20, 25, 0.055);
+  }
+
+  [data-theme="dark"] .record-action-menu-mobile.record-action-menu-rich .record-action-surface {
+    background: #16181c;
+  }
+
+  [data-theme="dark"] .record-action-menu-mobile.record-action-menu-rich .record-action-header {
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+
+  [data-theme="dark"] .record-action-menu-mobile.record-action-menu-rich .record-action-items button:hover,
+  [data-theme="dark"] .record-action-menu-mobile.record-action-menu-rich .record-action-items button:focus-visible,
+  [data-theme="dark"] .record-action-menu-mobile.record-action-menu-rich .record-action-items button:active {
+    background: rgba(255, 255, 255, 0.07);
+  }
+}
+
+@media (min-width: 761px) {
+  .career-app .sidebar .nav-list > .settings-nav-item.active,
+  .career-app .sidebar .nav-list > .settings-nav-item[aria-current="page"] {
+    color: var(--text-primary) !important;
+    background: transparent !important;
+    font-weight: 700;
+  }
+
+  .career-app .sidebar .nav-list > .settings-nav-item.active > .sidebar-nav-capsule,
+  .career-app .sidebar .nav-list > .settings-nav-item[aria-current="page"] > .sidebar-nav-capsule {
+    background: transparent !important;
+  }
+
+  .career-app .sidebar .nav-list > .settings-nav-item:hover > .sidebar-nav-capsule,
+  .career-app .sidebar .nav-list > .settings-nav-item:focus-visible > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.055) !important;
+  }
+
+  .career-app .sidebar .nav-list > .settings-nav-item:active > .sidebar-nav-capsule,
+  .career-app .sidebar .nav-list > .settings-nav-item[data-pressed="true"] > .sidebar-nav-capsule {
+    background: rgba(15, 20, 25, 0.09) !important;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item {
+    color: #92989f;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item:hover > .sidebar-nav-capsule,
+  [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item:focus-visible > .sidebar-nav-capsule {
+    background: rgba(255, 255, 255, 0.075) !important;
+  }
+
+  [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item:active > .sidebar-nav-capsule,
+  [data-theme="dark"] .career-app .sidebar .nav-list > .settings-nav-item[data-pressed="true"] > .sidebar-nav-capsule {
+    background: rgba(255, 255, 255, 0.12) !important;
   }
 }

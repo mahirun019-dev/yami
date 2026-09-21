@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
   type FormEvent,
   type PointerEventHandler,
+  type Ref,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -75,9 +76,12 @@ import {
 import {
   Bell as PhosphorBell,
   Buildings,
+  ChatCircleText,
+  FileText as PhosphorFileText,
   CalendarBlank,
   GearSix,
   House,
+  ListChecks,
   Notebook,
 } from "@phosphor-icons/react";
 import { getDeadlineUrgency, getHighestDeadlineUrgency, parseTokyoCalendarDate, selectWeeklyDeadlines } from "./deadline-selector";
@@ -522,6 +526,12 @@ const tr = {
     addMaterial: "添加材料",
     addInterview: "新增面试记录",
     addPrep: "新增准备事项",
+    chooseRecordType: "选择要登记的内容",
+    emptyRecordsTitle: "还没有资料或面试记录",
+    emptyRecordsDescription: "添加 ES 或面试记录，整理你的就活准备。",
+    materialActionDescription: "管理 ES、履历书草稿和提交状态",
+    interviewActionDescription: "记录问题、反问与面试反馈",
+    preparationActionDescription: "整理企业研究笔记和当天携带物品",
     deleteEventTitle: "删除此日程？",
     deleteEventDescription: "删除后无法恢复。",
     deleteAction: "删除",
@@ -694,6 +704,12 @@ const tr = {
     addMaterial: "書類を追加",
     addInterview: "面接記録を追加",
     addPrep: "準備事項を追加",
+    chooseRecordType: "追加する内容を選択してください",
+    emptyRecordsTitle: "資料・面接記録がまだありません",
+    emptyRecordsDescription: "ESや面接記録を登録して、就活の準備を整理しましょう。",
+    materialActionDescription: "ES・履歴書のドラフト、提出状況を管理",
+    interviewActionDescription: "質問内容・逆質問・フィードバックを記録",
+    preparationActionDescription: "企業研究メモ・当日の持ち物を整理",
     deleteEventTitle: "この日程を削除しますか？",
     deleteEventDescription: "削除すると元に戻せません。",
     deleteAction: "削除",
@@ -866,6 +882,12 @@ const tr = {
     addMaterial: "Add document",
     addInterview: "Add interview record",
     addPrep: "Add preparation",
+    chooseRecordType: "Choose what to add",
+    emptyRecordsTitle: "No documents or interview records yet",
+    emptyRecordsDescription: "Add ES documents or interview notes to organize your job search.",
+    materialActionDescription: "Manage ES and resume drafts and submission status",
+    interviewActionDescription: "Record questions, follow-ups and interview feedback",
+    preparationActionDescription: "Organize company research and items for the day",
     deleteEventTitle: "Delete this schedule?",
     deleteEventDescription: "This cannot be undone.",
     deleteAction: "Delete",
@@ -2095,19 +2117,9 @@ export default function App() {
       <div className="student-app career-app">
         <aside className="sidebar panel">
           <Brand />
-          <StableNav view={view} setView={setView} t={t} />
+          <StableNav view={view} setView={setView} settings={settings} setSettings={setSettings} t={t} />
           <div className="sidebar-flex-spacer" aria-hidden="true" />
           <div className="sidebar-footer-actions">
-            <button
-              className={`settings-link${settings ? " active" : ""}`}
-              aria-current={settings ? "page" : undefined}
-              onClick={() => setSettings(true)}
-            >
-              <span className="sidebar-nav-capsule">
-                <GearSix className="sidebar-nav-icon" size={24} weight={settings ? "fill" : "regular"} aria-hidden="true" focusable="false" />
-                <span>{t.settings}</span>
-              </span>
-            </button>
             <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
               <Plus aria-hidden="true" />
               {t.addCompany}
@@ -2399,10 +2411,14 @@ function SidebarNavIcon({ view, active }: { view: View; active: boolean }) {
 function Nav({
   view,
   setView,
+  settings,
+  setSettings,
   t,
 }: {
   view: View;
   setView: (v: View) => void;
+  settings: boolean;
+  setSettings: (open: boolean) => void;
   t: any;
 }) {
   const { events } = useWatch();
@@ -2421,25 +2437,39 @@ function Nav({
     <div className="nav-list">
       {a.map(([v, k]) => (
         <button
-          className={activeSection === v ? "active" : ""}
+          className={!settings && activeSection === v ? "active" : ""}
           onClick={() => {
             setActiveSection(v);
+            setSettings(false);
             requestAnimationFrame(() => {
               setView(v);
             });
           }}
-          aria-current={view === v ? "page" : undefined}
+          aria-current={!settings && view === v ? "page" : undefined}
           onPointerDown={(e) => { e.currentTarget.dataset.pressed = "true"; }}
           onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
           onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
           key={v}
         >
           <span className="sidebar-nav-capsule">
-            <SidebarNavIcon view={v} active={activeSection === v} />
+            <SidebarNavIcon view={v} active={!settings && activeSection === v} />
             <span>{t[k]}{v === "notifications" && unread > 0 && <b className="nav-unread-badge">{Math.min(99, unread)}{unread > 99 ? "+" : ""}</b>}</span>
           </span>
         </button>
       ))}
+      <button
+        className={`settings-nav-item${settings ? " active" : ""}`}
+        onClick={() => setSettings(true)}
+        aria-current={settings ? "page" : undefined}
+        onPointerDown={(e) => { e.currentTarget.dataset.pressed = "true"; }}
+        onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
+        onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
+      >
+        <span className="sidebar-nav-capsule">
+          <GearSix className="sidebar-nav-icon" size={24} weight={settings ? "fill" : "regular"} aria-hidden="true" focusable="false" />
+          <span>{t.settings}</span>
+        </span>
+      </button>
     </div>
   );
 }
@@ -2606,15 +2636,17 @@ function PrimaryActionButton({
   children,
   onClick,
   onPointerDown,
+  buttonRef,
   className = "",
 }: {
   children: ReactNode;
   onClick: () => void;
   onPointerDown?: PointerEventHandler<HTMLButtonElement>;
+  buttonRef?: Ref<HTMLButtonElement>;
   className?: string;
 }) {
   return (
-    <button type="button" className={`primary-action ${className}`} onClick={onClick} onPointerDown={onPointerDown}>
+    <button ref={buttonRef} type="button" className={`primary-action ${className}`} onClick={onClick} onPointerDown={onPointerDown}>
       {children}
     </button>
   );
@@ -2638,6 +2670,7 @@ function Empty({ t, kind = "general", open, onPointerDown, actionMenu }: { t: an
 type RecordAction = {
   id: RecordActionId;
   label: string;
+  description?: string;
   icon: any;
   choose: () => void;
 };
@@ -2645,16 +2678,20 @@ type RecordAction = {
 function RecordActionMenu({
   open,
   title,
+  description,
   actions,
   cancelLabel,
   close,
+  restoreFocus,
   placement = "bottom-end",
 }: {
   open: boolean;
   title: string;
+  description?: string;
   actions: RecordAction[];
   cancelLabel: string;
   close: () => void;
+  restoreFocus?: () => void;
   placement?: "bottom-center" | "bottom-end";
 }) {
   const isMobile = useMediaQuery("(max-width: 760px)");
@@ -2677,7 +2714,10 @@ function RecordActionMenu({
       if (event.key === "Escape") {
         event.preventDefault();
         close();
-        menuRef.current?.parentElement?.querySelector<HTMLElement>(":scope > button")?.focus();
+        requestAnimationFrame(() => {
+          if (restoreFocus) restoreFocus();
+          else menuRef.current?.parentElement?.querySelector<HTMLElement>(":scope > button")?.focus();
+        });
         return;
       }
       if (!menuRef.current || !["ArrowDown", "ArrowUp"].includes(event.key)) return;
@@ -2703,15 +2743,16 @@ function RecordActionMenu({
       document.removeEventListener("pointerdown", onPointerDown);
       if (isMobile) body.style.overflow = previousOverflow;
     };
-  }, [close, isMobile, open]);
+  }, [close, isMobile, open, restoreFocus]);
   if (isMobile && !open) return null;
+  const hasDescriptions = actions.some((action) => action.description);
   const content = (
-    <div ref={menuRef} className={`record-action-menu record-action-menu--${placement}${isMobile ? " record-action-menu-mobile" : ""}`} data-open={open ? "true" : "false"} data-side={isMobile ? undefined : popoverSide} role="menu" aria-label={title} aria-hidden={!open}>
+    <div ref={menuRef} className={`record-action-menu record-action-menu--${placement}${hasDescriptions ? " record-action-menu-rich" : ""}${isMobile ? " record-action-menu-mobile" : ""}`} data-open={open ? "true" : "false"} data-side={isMobile ? undefined : popoverSide} role="menu" aria-label={title} aria-hidden={!open}>
       {isMobile && <button type="button" className="record-action-backdrop" aria-label={cancelLabel} onClick={close} />}
       <section className="record-action-surface">
-        {isMobile && <header className="record-action-header"><h2>{title}</h2><CloseButton className="record-action-close" onClick={close} label={cancelLabel} /></header>}
+        {(isMobile || description) && <header className="record-action-header"><div><h2>{title}</h2>{description && <p>{description}</p>}</div>{isMobile && <CloseButton className="record-action-close" onClick={close} label={cancelLabel} />}</header>}
         <div className="record-action-items">
-          {actions.map(({ id, label, icon: Icon, choose }, index) => <button type="button" role="menuitem" tabIndex={open ? 0 : -1} key={id} ref={(button) => { actionRefs.current[index] = button; }} onClick={choose}><Icon aria-hidden="true" /><span>{label}</span></button>)}
+          {actions.map(({ id, label, description: itemDescription, icon: Icon, choose }, index) => <button type="button" role="menuitem" tabIndex={open ? 0 : -1} key={id} ref={(button) => { actionRefs.current[index] = button; }} onClick={choose}><Icon aria-hidden="true" /><span className="record-action-copy"><span>{label}</span>{itemDescription && <small>{itemDescription}</small>}</span></button>)}
         </div>
         {isMobile && <button type="button" className="record-action-cancel" onClick={close}>{cancelLabel}</button>}
       </section>
@@ -2725,24 +2766,48 @@ function CreateRecordPicker({
   t,
   close,
   choose,
+  restoreFocus,
 }: {
   open: boolean;
   t: any;
   close: () => void;
   choose: (kind: CreateType) => void;
+  restoreFocus?: () => void;
 }) {
   return <RecordActionMenu
     open={open}
     title={t.addRecord}
+    description={t.chooseRecordType}
     cancelLabel={t.cancel}
     close={close}
+    restoreFocus={restoreFocus}
     placement="bottom-center"
     actions={[
-      { id: "document", label: t.addMaterial, icon: FileJson, choose: () => choose("es") },
-      { id: "interview", label: t.addInterview, icon: BriefcaseBusiness, choose: () => choose("interview") },
-      { id: "preparation", label: t.addPrep, icon: Target, choose: () => choose("preparation") },
+      { id: "document", label: t.addMaterial, description: t.materialActionDescription, icon: PhosphorFileText, choose: () => choose("es") },
+      { id: "interview", label: t.addInterview, description: t.interviewActionDescription, icon: ChatCircleText, choose: () => choose("interview") },
+      { id: "preparation", label: t.addPrep, description: t.preparationActionDescription, icon: ListChecks, choose: () => choose("preparation") },
     ]}
   />;
+}
+
+function MaterialsEmptyState({ t, onChoose }: { t: any; onChoose: (kind: CreateType) => void }) {
+  const actions = [
+    { id: "document", title: t.materialCategory, description: t.materialActionDescription, icon: PhosphorFileText, kind: "es" as const },
+    { id: "interview", title: t.interviewCategory, description: t.interviewActionDescription, icon: ChatCircleText, kind: "interview" as const },
+    { id: "preparation", title: t.preparationCategory, description: t.preparationActionDescription, icon: ListChecks, kind: "preparation" as const },
+  ];
+  return <section className="materials-empty-state" aria-labelledby="materials-empty-title">
+    <div className="materials-empty-copy">
+      <h2 id="materials-empty-title">{t.emptyRecordsTitle}</h2>
+      <p>{t.emptyRecordsDescription}</p>
+    </div>
+    <div className="materials-empty-actions">
+      {actions.map(({ id, title, description, icon: Icon, kind }) => <button type="button" className="materials-empty-tile" key={id} onClick={() => onChoose(kind)}>
+        <Icon size={24} weight="regular" aria-hidden="true" />
+        <span className="materials-empty-tile-copy"><strong>{title}</strong><small>{description}</small></span>
+      </button>)}
+    </div>
+  </section>;
 }
 
 function BackNavigation({ label, onClick }: { label: string; onClick: () => void }) {
@@ -3506,10 +3571,12 @@ function Materials({
   recordPickerOpen,
   setRecordPickerOpen,
 }: any) {
+  const recordPickerTriggerRef = useRef<HTMLButtonElement>(null);
   const matchesStatus = (completed: boolean) => filter !== "incomplete" && filter !== "completed" || filter === "completed" === completed;
   const materials = data.materials.filter((x: Material) => (filter === "all" || filter === "material" || filter === "incomplete" || filter === "completed") && (filter !== "material" || x.category === "material") && matchesStatus(!!x.completed));
   const interviews = data.interviews.filter((x: InterviewRecord) => (filter === "all" || filter === "interview" || filter === "incomplete" || filter === "completed") && (filter !== "interview" || x.category === "interview") && matchesStatus(!!x.result));
   const preps = data.preparations.filter((x: Preparation) => (filter === "all" || filter === "preparation" || filter === "incomplete" || filter === "completed") && (filter !== "preparation" || x.category === "preparation") && matchesStatus(x.completed));
+  const hasAnyRecords = data.materials.length + data.interviews.length + data.preparations.length > 0;
   const toggleCreateRecordPicker = () => setRecordPickerOpen((current: boolean) => !current);
   const chooseCreateRecord = (kind: CreateType) => {
     setRecordPickerOpen(false);
@@ -3522,12 +3589,12 @@ function Materials({
           <h1>{t.materials}</h1>
           <p>{t.materialsSub}</p>
         </div>
-        {(materials.length > 0 || interviews.length > 0 || preps.length > 0) && <div className="record-action-wrap">
-          <PrimaryActionButton onClick={toggleCreateRecordPicker} onPointerDown={(event) => event.stopPropagation()}><Plus />{t.addRecord}</PrimaryActionButton>
-          <CreateRecordPicker open={recordPickerOpen} t={t} close={() => setRecordPickerOpen(false)} choose={chooseCreateRecord} />
+        {hasAnyRecords && <div className="record-action-wrap">
+          <PrimaryActionButton buttonRef={recordPickerTriggerRef} onClick={toggleCreateRecordPicker} onPointerDown={(event) => event.stopPropagation()}><Plus />{t.addRecord}</PrimaryActionButton>
+          <CreateRecordPicker open={recordPickerOpen} t={t} close={() => setRecordPickerOpen(false)} choose={chooseCreateRecord} restoreFocus={() => recordPickerTriggerRef.current?.focus()} />
         </div>}
       </div>
-      <div className="filter-bar entity-card">
+      {hasAnyRecords && <div className="filter-bar entity-card">
         {[
           "all",
           "incomplete",
@@ -3544,8 +3611,9 @@ function Materials({
             {x === "material" ? t.materialCategory : x === "interview" ? t.interviewCategory : x === "preparation" ? t.preparationCategory : t[x]}
           </button>
         ))}
-      </div>
+      </div>}
       <div className="deadline-list">
+        {!hasAnyRecords && <MaterialsEmptyState t={t} onChoose={chooseCreateRecord} />}
         {materials.map((x: any) => (
           <Swipe key={x.id} remove={() => removeMaterial(x)}>
             <MaterialRow
@@ -3589,15 +3657,7 @@ function Materials({
             </button>
           </Swipe>
         ))}
-        {!materials.length && !interviews.length && !preps.length && <>
-          <Empty
-            t={t}
-            kind="materials"
-            open={toggleCreateRecordPicker}
-            onPointerDown={(event) => event.stopPropagation()}
-            actionMenu={<CreateRecordPicker open={recordPickerOpen} t={t} close={() => setRecordPickerOpen(false)} choose={chooseCreateRecord} />}
-          />
-        </>}
+        {hasAnyRecords && !materials.length && !interviews.length && !preps.length && <Empty t={t} kind="materials" />}
       </div>
     </>
   );
