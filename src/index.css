@@ -3587,13 +3587,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* Unified semantic theme layer. Component rules below intentionally use these tokens. */
 :root {
-  --bg-app: #f7f7f8;
+  --bg-app: #ffffff;
   --bg-sidebar: #f1f1f2;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #ffffff;
   --bg-input: #ffffff;
   --bg-selected: #ececee;
   --bg-hover: #f1f2f3;
+  --border-card: #eff3f4;
+  --bg-card-hover: #f7f9f9;
   --bg-overlay: rgba(0, 0, 0, 0.28);
   --text-primary: #17181a;
   --text-secondary: #646a73;
@@ -3626,6 +3628,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   --bg-input: #0b0d0f;
   --bg-selected: #1d2024;
   --bg-hover: #16181c;
+  --border-card: #2f3336;
+  --bg-card-hover: #1d2024;
   --bg-overlay: rgba(0, 0, 0, 0.58);
   --text-primary: #f2f2f2;
   --text-secondary: #a7adb3;
@@ -7772,13 +7776,14 @@ html[data-theme="dark"] #root {
 
 @media (min-width: 981px) {
   .career-app .sidebar {
-    gap: 16px;
-    padding-top: 22px;
+    gap: 12px;
+    padding-top: 41px;
   }
 
   .career-app .sidebar > .yami-logo--sidebar {
-    height: 128px;
-    flex-basis: 128px;
+    width: 132px;
+    height: 62px;
+    flex-basis: 62px;
   }
 }
 .notification-page-product-detail {
@@ -7819,120 +7824,62 @@ html[data-theme="dark"] #root {
 }
 .notification-page-connection-note svg { width: 14px; height: 14px; }
 
-/* Keep card surfaces clean; the approved avatar appears once at page level. */
-.career-app .workspace--dashboard,
-.career-app .workspace--companies {
-  --page-motif-wash: color-mix(in srgb, var(--bg-app) 97%, transparent);
-  background-image:
-    linear-gradient(var(--page-motif-wash), var(--page-motif-wash)),
-    url("./assets/brand/yami-brand-illustration.png");
-  background-repeat: no-repeat, no-repeat;
+/* Quiet card surfaces: content panels stay distinct without shadow or ornament. */
+.career-app,
+.career-app .workspace {
+  background: var(--bg-app);
 }
 
-.career-app .workspace--dashboard {
-  background-position: center, right 150px top 8px;
-  background-size: 100% 100%, 190px auto;
+.career-app .entity-card,
+.career-app .company-card.entity-card,
+.career-app .timeline-row.entity-card,
+.career-app .timeline > .empty-small {
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  background: var(--bg-surface);
+  box-shadow: none;
 }
 
-.career-app .workspace--companies {
-  background-position: center, right 164px top 2px;
-  background-size: 100% 100%, 190px auto;
+.career-app .metric-link,
+.career-app .company-card.entity-card,
+.career-app .timeline-row.entity-card {
+  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
-.career-app .overview-grid > .metric.entity-card {
-  position: relative;
+.career-app .timeline > .empty-small {
+  color: var(--text-secondary);
 }
 
-.career-app .overview-grid > .metric.entity-card::before,
-.career-app .company-card.entity-card::before,
-.career-app .company-card.entity-card::after {
-  content: none;
-}
-
-.career-app .overview-grid > .metric.entity-card::after {
-  position: absolute;
-  z-index: 2;
-  top: 13px;
-  right: 15px;
-  display: none;
-  width: 5px;
-  height: 5px;
-  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
-  background: var(--brand-gold-highlight);
-  content: "";
-  opacity: 0.46;
-  pointer-events: none;
-}
-
-.career-app .overview-grid > .metric:nth-child(1)::after,
-.career-app .overview-grid > .metric:nth-child(3)::after {
-  display: block;
-}
-
-.career-app .overview-grid > .metric:nth-child(3)::after {
-  top: auto;
-  right: 19px;
-  bottom: 15px;
-}
-
-.career-app .dashboard-progress-module > .section-title {
-  padding-inline-start: 10px;
-  border-inline-start: 1px solid color-mix(in srgb, var(--brand-gold) 52%, var(--border-default));
+.career-app .dashboard-progress-module .funnel,
+.career-app .dashboard-progress-module .funnel-row,
+.career-app .dashboard-next-deadline-list,
+.career-app .dashboard-next-deadline-row,
+.career-app .home-month-day-detail {
+  border-color: var(--border-card);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .career-app .metric-link:hover {
-    border-color: color-mix(in srgb, var(--border-default) 72%, var(--text-secondary));
-    background: var(--bg-surface);
+  .career-app .metric-link:hover,
+  .career-app .company-card.entity-card:hover,
+  .career-app .timeline-row.entity-card:hover {
+    border-color: var(--border-card);
+    background: var(--bg-card-hover);
     box-shadow: none;
-  }
-
-  .career-app .overview-grid > .metric:nth-child(1):hover::after,
-  .career-app .overview-grid > .metric:nth-child(3):hover::after { opacity: 0.76; }
-
-  .career-app .company-card.entity-card:hover {
-    border-color: color-mix(in srgb, var(--border-default) 68%, var(--text-secondary));
-    box-shadow: none;
-    transform: translateY(-1px);
-  }
-  .career-app .company-card.entity-card:hover > svg { color: var(--text-primary); }
-}
-
-@media (max-width: 767px) {
-  .career-app .overview-grid > .metric.entity-card::after {
-    top: 9px;
-    right: 9px;
-    width: 3px;
-    height: 3px;
-  }
-
-  .career-app .overview-grid > .metric:nth-child(3)::after {
-    top: auto;
-    right: 12px;
-    bottom: 10px;
-  }
-
-  .career-app .company-card.entity-card:active {
-    border-color: var(--border-default);
-    background: var(--bg-surface);
     transform: none;
   }
-
-  .career-app .workspace--dashboard {
-    background-image: none;
-  }
-
-  .app-shell > .student-app > .workspace.workspace--companies {
-    background-image:
-      linear-gradient(var(--page-motif-wash), var(--page-motif-wash)),
-      url("./assets/brand/yami-brand-illustration.png") !important;
-    background-position: center, right 16px bottom 12px !important;
-    background-size: 100% 100%, 68px auto !important;
-    background-repeat: no-repeat, no-repeat !important;
-  }
 }
 
-[data-theme="dark"] .career-app .workspace--dashboard,
-[data-theme="dark"] .career-app .workspace--companies {
-  --page-motif-wash: color-mix(in srgb, var(--bg-app) 96%, transparent);
+.career-app .metric-link:active,
+.career-app .company-card.entity-card:active,
+.career-app .timeline-row.entity-card:active {
+  background: var(--bg-card-hover);
+  transform: none;
+}
+
+[data-theme="dark"] .career-app {
+  background: var(--bg-app);
+}
+
+[data-theme="dark"] .career-app .workspace {
+  background: var(--bg-app);
 }

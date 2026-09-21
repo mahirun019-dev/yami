@@ -2132,7 +2132,7 @@ export default function App() {
         </header>
         <main
           ref={workspaceRef}
-          className={`workspace${view === "dashboard" ? " workspace--dashboard" : view === "companies" && !selected ? " workspace--companies" : ""}`}
+          className="workspace"
         >
           {view === "dashboard" && (
             <Dashboard
