@@ -5149,5 +5149,5 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
   </div>;
 }
 function SettingsNavItem({ label, icon: Icon, active, onClick }: { label: string; icon: React.ComponentType<any>; active: boolean; onClick: () => void }) {
-  return <button type="button" className={`settings-nav-item ${active ? "active" : ""}`} aria-selected={active} onClick={onClick}><Icon size={19} aria-hidden="true" /><span className="settings-nav-label">{label}</span><ChevronRight className="settings-nav-chevron" size={16} aria-hidden="true" /></button>;
+  return <button type="button" className={`settings-nav-item ${active ? "active" : ""}`} aria-selected={active} onClick={onClick}><span className="settings-nav-inner"><Icon size={19} aria-hidden="true" /><span className="settings-nav-label">{label}</span><ChevronRight className="settings-nav-chevron" size={16} aria-hidden="true" /></span></button>;
 }

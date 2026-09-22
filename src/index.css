@@ -9722,7 +9722,7 @@ html[data-theme="dark"] #root {
     min-height: 100dvh;
     max-height: none;
     overflow-y: auto;
-    padding: 32px 14px;
+    padding: 32px 0;
     box-sizing: border-box;
     border-right: 1px solid var(--border-default);
     background: var(--bg-sidebar);
@@ -9767,11 +9767,12 @@ html[data-theme="dark"] #root {
   }
 
   .settings-page-scope .settings-sidebar {
-    padding: 26px 8px;
+    padding: 26px 0;
   }
 
   .settings-menu-heading {
-    padding-inline: 10px;
+    margin-inline: 0;
+    padding-inline: 18px;
   }
 
   .settings-page-scope .settings-nav-item,
@@ -9833,7 +9834,7 @@ html[data-theme="dark"] #root {
   }
 
   .settings-menu-heading {
-    margin: 0 -14px 14px;
+    margin: 0 0 14px;
     padding: 0 28px 17px;
     border-bottom: 1px solid var(--settings-column-divider);
   }
@@ -9956,7 +9957,7 @@ html[data-theme="dark"] #root {
 
 @media (min-width: 768px) and (max-width: 1023px) {
   .settings-page-scope .settings-menu-heading {
-    margin-inline: -8px;
+    margin-inline: 0;
     padding-inline: 18px;
   }
 }
@@ -10008,21 +10009,37 @@ html[data-theme="dark"] #root {
     --settings-hover-row: #111315;
   }
 
-  .settings-page-scope .settings-sidebar { padding-top: 22px; }
+  .settings-page-scope .settings-sidebar { padding-top: 22px; padding-inline: 0; }
   .settings-page-scope .settings-menu-heading { margin-bottom: 14px; }
   .settings-page-scope .desktop-settings-content { padding-top: 22px; }
-  .settings-page-scope .settings-nav-list { width: auto; gap: 0; margin-inline: -14px; }
+  .settings-page-scope .settings-nav-list { width: 100%; gap: 0; margin: 0; }
   .settings-page-scope .settings-nav-item,
   .settings-page-scope .settings-nav-item.is-active {
-    display: grid;
+    display: block;
+    position: relative;
+    width: 100%;
     min-height: 49px;
-    grid-template-columns: 19px minmax(0, 1fr) 16px;
-    gap: 12px;
-    padding: 0 18px 0 20px;
+    height: 49px;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border: 0;
     border-radius: 0;
     box-shadow: none;
   }
-  .settings-page-scope .settings-nav-item > svg:first-child { width: 19px; height: 19px; }
+  .settings-page-scope .settings-nav-inner {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: 19px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 9px;
+    padding: 0 14px 0 16px;
+    box-sizing: border-box;
+    background: transparent;
+    text-align: left;
+  }
+  .settings-page-scope .settings-nav-inner > svg:first-child { width: 19px; height: 19px; }
   .settings-page-scope .settings-nav-item .settings-nav-chevron {
     width: 16px;
     height: 16px;
@@ -10054,8 +10071,7 @@ html[data-theme="dark"] #root {
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-  .settings-page-scope .settings-nav-item,
-  .settings-page-scope .settings-nav-item.is-active { gap: 10px; padding: 0 16px 0 12px; }
+  .settings-page-scope .settings-nav-inner { gap: 8px; padding-inline: 12px 11px; }
   .settings-page-scope .settings-sidebar { padding-top: 22px; }
   .settings-page-scope .desktop-settings-content { padding-top: 22px; }
 }
