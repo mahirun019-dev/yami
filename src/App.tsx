@@ -5136,7 +5136,9 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
     ? { general: "一般", data: "データとバックアップ", about: "Yamiについて" }
     : { general: "常规", data: "数据与备份", about: "关于 Yami" };
   const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["about", ui.about, Info]] as const;
-  return <div className="settings-page-scope desktop-settings-page"><nav className="desktop-settings-nav settings-sidebar"><div className="settings-menu-heading"><h2>{t.settings}</h2></div><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
+  const currentTitle = tabs.find(([key]) => key === tab)?.[1] ?? ui.general;
+  return <div className="settings-page-scope desktop-settings-page"><nav className="desktop-settings-nav settings-sidebar"><header className="settings-column-header settings-menu-heading"><h2 className="settings-column-title">{t.settings}</h2></header><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
+    <header className="settings-column-header"><h2 className="settings-column-title">{currentTitle}</h2></header>
     {tab === "general" && <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} />}
     {tab === "job-settings" && <JobHuntSettings t={t} data={data} updatePreferences={updatePreferences} />}
     {tab === "customize" && <CustomizeSettings t={t} data={data} updatePreferences={updatePreferences} />}

@@ -10076,6 +10076,40 @@ html[data-theme="dark"] #root {
   .settings-page-scope .desktop-settings-content { padding-top: 22px; }
 }
 
+@media (min-width: 768px) {
+  .settings-page-scope .settings-column-header {
+    display: flex;
+    width: 100%;
+    min-height: 52px;
+    align-items: flex-start;
+    box-sizing: border-box;
+    margin: 0 0 14px;
+    padding-top: 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--settings-column-divider);
+  }
+
+  .settings-page-scope .settings-column-header .settings-column-title {
+    margin: 0;
+    padding: 0;
+    color: var(--text-primary);
+    font-size: calc(22px * var(--reading-scale, 1));
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .settings-page-scope .desktop-settings-content > .settings-column-header {
+    width: min(100%, 760px);
+    padding-inline: 0;
+  }
+
+  .settings-page-scope .desktop-settings-content > .settings-section > h3,
+  .settings-page-scope .desktop-settings-content > .watch-connection-settings > h3 {
+    display: none;
+  }
+}
+
 @media (max-width: 767px) {
   .settings-font-size-content { width: 100%; }
 }
