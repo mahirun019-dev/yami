@@ -9961,32 +9961,41 @@ html[data-theme="dark"] #root {
   }
 }
 
-/* Reading-size preference scales typography only; fixed navigation and controls keep their geometry. */
-:root { --reading-scale: 1; }
-:root[data-font-size="small"] { --reading-scale: .94; }
-:root[data-font-size="normal"] { --reading-scale: 1; }
-:root[data-font-size="large"] { --reading-scale: 1.08; }
+/* Typography scales from one persisted root preference; fixed control geometry stays unchanged. */
+:root {
+  --font-scale: 1;
+  --reading-scale: var(--font-scale);
+  --text-xs: calc(11px * var(--font-scale));
+  --text-sm: calc(13px * var(--font-scale));
+  --text-base: calc(15px * var(--font-scale));
+  --text-lg: calc(18px * var(--font-scale));
+  --text-xl: calc(21px * var(--font-scale));
+}
+:root[data-font-size="xs"] { --font-scale: .91; }
+:root[data-font-size="small"] { --font-scale: .955; }
+:root[data-font-size="normal"] { --font-scale: 1; }
+:root[data-font-size="large"] { --font-scale: 1.055; }
+:root[data-font-size="xl"] { --font-scale: 1.11; }
 
-.career-app .sidebar,
-.mobile-header,
-.career-mobile-nav,
-.settings-page-scope .settings-sidebar,
-button,
-input,
-select,
-textarea { --reading-scale: 1; }
-
-.settings-font-size-content { display: grid; width: min(100%, 460px); min-width: 0; gap: 2px; }
+.settings-font-size-content { display: grid; width: min(100%, 460px); min-width: 0; gap: 3px; }
 .settings-font-size-slider-row { display: grid; min-width: 0; min-height: 44px; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; gap: 10px; }
 .settings-font-size-a { color: var(--text-secondary); text-align: center; line-height: 1; }
 .settings-font-size-a-small { font-size: 13px; }
 .settings-font-size-a-large { font-size: 18px; }
-.settings-font-size-slider-row input[type="range"] { width: 100%; min-width: 0; min-height: 44px; margin: 0; padding: 0; border: 0; background: transparent; accent-color: var(--brand-gold); cursor: pointer; touch-action: pan-y; }
-.settings-font-size-slider-row input[type="range"]:focus { outline: none; }
-.settings-font-size-slider-row input[type="range"]:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; border-radius: 8px; }
-.settings-font-size-labels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-inline: 38px; color: var(--text-secondary); font-size: 12px; text-align: center; }
-.settings-font-size-labels span { min-width: 0; }
-.settings-font-size-labels .is-selected { color: var(--text-primary); font-weight: 600; }
+.settings-font-size-track { position: relative; width: 100%; height: 44px; min-width: 0; touch-action: pan-y; cursor: pointer; user-select: none; }
+.settings-font-size-track:focus { outline: none; }
+.settings-font-size-track:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; border-radius: 8px; }
+.settings-font-size-track-line,
+.settings-font-size-track-progress { position: absolute; top: 50%; left: 0; height: 2px; transform: translateY(-50%); }
+.settings-font-size-track-line { right: 0; background: var(--border-strong); }
+.settings-font-size-track-progress { background: var(--brand-gold); }
+.settings-font-size-stop,
+.settings-font-size-thumb { position: absolute; top: 50%; border-radius: 50%; transform: translate(-50%, -50%); }
+.settings-font-size-stop { z-index: 1; width: 8px; height: 8px; box-sizing: border-box; border: 1px solid var(--border-strong); background: var(--bg-surface); }
+.settings-font-size-stop.is-passed { border-color: var(--brand-gold); background: var(--brand-gold); }
+.settings-font-size-stop.is-current { width: 10px; height: 10px; }
+.settings-font-size-thumb { z-index: 2; width: 18px; height: 18px; box-sizing: border-box; border: 2px solid var(--bg-surface); background: var(--brand-gold); }
+.settings-font-size-current-label { min-height: 18px; color: var(--text-primary); font-size: var(--text-sm); font-weight: 600; line-height: 1.35; text-align: center; }
 
 @media (min-width: 768px) {
   .app-shell.app-shell-settings {
@@ -10045,7 +10054,6 @@ textarea { --reading-scale: 1; }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-  .settings-page-scope .settings-nav-list { margin-inline: -8px; }
   .settings-page-scope .settings-nav-item,
   .settings-page-scope .settings-nav-item.is-active { gap: 10px; padding: 0 16px 0 12px; }
   .settings-page-scope .settings-sidebar { padding-top: 22px; }

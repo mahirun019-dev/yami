@@ -133,7 +133,7 @@ type AppPreferences = {
     launchPage: LaunchPage;
     externalLinks: "new-tab" | "same-tab";
     weekStartsOn: 0 | 1;
-    fontSize: "small" | "normal" | "large";
+    fontSize: "xs" | "small" | "normal" | "large" | "xl";
   };
   jobHunt: {
     homeRegion: string;
@@ -1291,7 +1291,7 @@ function normalize(x: any): Data {
       launchPage: (["home", "last", "companies", "notifications", "schedule", "materials"] as LaunchPage[]).includes(rawGeneral.launchPage as LaunchPage) ? rawGeneral.launchPage as LaunchPage : defaults.general.launchPage,
       externalLinks: rawGeneral.externalLinks === "same-tab" ? "same-tab" : "new-tab",
       weekStartsOn: rawGeneral.weekStartsOn === 1 ? 1 : 0,
-      fontSize: (["small", "normal", "large"] as const).includes(rawGeneral.fontSize as "small" | "normal" | "large") ? rawGeneral.fontSize as "small" | "normal" | "large" : defaults.general.fontSize,
+      fontSize: (["xs", "small", "normal", "large", "xl"] as const).includes(rawGeneral.fontSize as AppPreferences["general"]["fontSize"]) ? rawGeneral.fontSize as AppPreferences["general"]["fontSize"] : defaults.general.fontSize,
     },
     jobHunt: {
       homeRegion: typeof rawJobHunt.homeRegion === "string" ? rawJobHunt.homeRegion : defaults.jobHunt.homeRegion,
@@ -4794,15 +4794,28 @@ function GeneralSettings({ t, data, updatePreferences, locale, theme, setTheme, 
   };
   const update = (patch: Partial<AppPreferences["general"]>) => updatePreferences((current: AppPreferences) => ({ ...current, general: { ...current.general, ...patch } }));
   const copy = ja
-    ? { title: "一般", basics: "基本動作", display: "表示", theme: "テーマ", themeHint: "Yami の表示テーマを選択します。", systemFollow: "システム設定に従う", systemFollowOnHint: "端末の外観設定に合わせてテーマを自動で切り替えます。", systemFollowOffHint: "ライトまたはダークを手動で選択できます。", fontSize: "文字サイズ", fontSizeHint: "読みやすい文字の大きさを選択します。", fontSizeSmall: "小さめ", fontSizeNormal: "標準", fontSizeLarge: "大きめ", language: "言語", languageLabel: "表示言語", week: "週の開始曜日", weekHint: "カレンダーの表示開始曜日を選択します。", sunday: "日曜日", monday: "月曜日", japanese: "日本語", chinese: "简体中文", launch: "起動時に表示するページ", launchHint: "Yamiを開いたときに最初に表示するページ", external: "外部リンクの開き方", externalHint: "企業サイトや採用ページなどの外部リンク", home: "ホーム", last: "前回開いていたページ", companies: "企業", notifications: "通知", schedule: "日程", materials: "ES・面接" }
-    : { title: "常规", basics: "基本操作", display: "显示", theme: "主题", themeHint: "选择 Yami 的显示主题。", systemFollow: "跟随系统设置", systemFollowOnHint: "根据设备的外观设置自动切换主题。", systemFollowOffHint: "可以手动选择浅色或深色主题。", fontSize: "文字大小", fontSizeHint: "选择适合阅读的文字大小。", fontSizeSmall: "较小", fontSizeNormal: "标准", fontSizeLarge: "较大", language: "语言", languageLabel: "显示语言", week: "每周起始日", weekHint: "选择日历每周的起始日。", sunday: "星期日", monday: "星期一", japanese: "日本語", chinese: "简体中文", launch: "启动时显示的页面", launchHint: "打开 Yami 时首先显示的页面", external: "外部链接的打开方式", externalHint: "企业官网、招聘页面等外部链接", home: "主页", last: "上次打开的页面", companies: "企业", notifications: "通知", schedule: "日程", materials: "ES・面试" };
+    ? { title: "一般", basics: "基本動作", display: "表示", theme: "テーマ", themeHint: "Yami の表示テーマを選択します。", systemFollow: "システム設定に従う", systemFollowOnHint: "端末の外観設定に合わせてテーマを自動で切り替えます。", systemFollowOffHint: "ライトまたはダークを手動で選択できます。", fontSize: "文字サイズ", fontSizeHint: "読みやすい文字の大きさを選択します。", fontSizeMinimum: "最小", fontSizeSmall: "小さめ", fontSizeNormal: "標準", fontSizeLarge: "大きめ", fontSizeMaximum: "最大", language: "言語", languageLabel: "表示言語", week: "週の開始曜日", weekHint: "カレンダーの表示開始曜日を選択します。", sunday: "日曜日", monday: "月曜日", japanese: "日本語", chinese: "简体中文", launch: "起動時に表示するページ", launchHint: "Yamiを開いたときに最初に表示するページ", external: "外部リンクの開き方", externalHint: "企業サイトや採用ページなどの外部リンク", home: "ホーム", last: "前回開いていたページ", companies: "企業", notifications: "通知", schedule: "日程", materials: "ES・面接" }
+    : { title: "常规", basics: "基本操作", display: "显示", theme: "主题", themeHint: "选择 Yami 的显示主题。", systemFollow: "跟随系统设置", systemFollowOnHint: "根据设备的外观设置自动切换主题。", systemFollowOffHint: "可以手动选择浅色或深色主题。", fontSize: "文字大小", fontSizeHint: "选择适合阅读的文字大小。", fontSizeMinimum: "最小", fontSizeSmall: "较小", fontSizeNormal: "标准", fontSizeLarge: "较大", fontSizeMaximum: "最大", language: "语言", languageLabel: "显示语言", week: "每周起始日", weekHint: "选择日历每周的起始日。", sunday: "星期日", monday: "星期一", japanese: "日本語", chinese: "简体中文", launch: "启动时显示的页面", launchHint: "打开 Yami 时首先显示的页面", external: "外部链接的打开方式", externalHint: "企业官网、招聘页面等外部链接", home: "主页", last: "上次打开的页面", companies: "企业", notifications: "通知", schedule: "日程", materials: "ES・面试" };
   const destinations: Array<[LaunchPage, string]> = [["home", copy.home], ["last", copy.last], ["companies", copy.companies], ["notifications", copy.notifications], ["schedule", copy.schedule], ["materials", copy.materials]];
   const fontSizeOptions = [
+    { value: "xs", label: copy.fontSizeMinimum },
     { value: "small", label: copy.fontSizeSmall },
     { value: "normal", label: copy.fontSizeNormal },
     { value: "large", label: copy.fontSizeLarge },
+    { value: "xl", label: copy.fontSizeMaximum },
   ] as const;
-  const fontSizeIndex = fontSizeOptions.findIndex((option) => option.value === settings.fontSize);
+  const fontSizeIndex = Math.max(0, fontSizeOptions.findIndex((option) => option.value === settings.fontSize));
+  const selectFontSizeIndex = (index: number) => {
+    const value = fontSizeOptions[index].value;
+    if (value !== settings.fontSize) update({ fontSize: value });
+  };
+  const updateFontSizeFromPointer = (element: HTMLDivElement, clientX: number) => {
+    const bounds = element.getBoundingClientRect();
+    if (!bounds.width) return;
+    const progress = Math.min(1, Math.max(0, (clientX - bounds.left) / bounds.width));
+    const index = Math.round(progress * (fontSizeOptions.length - 1));
+    selectFontSizeIndex(index);
+  };
   return <section className={`settings-section settings-form-section settings-general${mobile ? " mobile-settings-subpage" : ""}`}>
     {mobile ? <h2>{copy.title}</h2> : <h3>{copy.title}</h3>}
     <section className="settings-general-group"><h4>{copy.display}</h4>
@@ -4827,8 +4840,30 @@ function GeneralSettings({ t, data, updatePreferences, locale, theme, setTheme, 
       </div>
       <div className="settings-general-control settings-font-size-control"><div><strong>{copy.fontSize}</strong><p>{copy.fontSizeHint}</p></div>
         <div className="settings-font-size-content">
-          <div className="settings-font-size-slider-row"><span className="settings-font-size-a settings-font-size-a-small" aria-hidden="true">Aa</span><input type="range" min={0} max={2} step={1} value={fontSizeIndex} aria-label={copy.fontSize} aria-valuetext={fontSizeOptions[fontSizeIndex]?.label || copy.fontSizeNormal} onChange={(event) => update({ fontSize: fontSizeOptions[Number(event.target.value)].value })} /><span className="settings-font-size-a settings-font-size-a-large" aria-hidden="true">Aa</span></div>
-          <div className="settings-font-size-labels" aria-hidden="true">{fontSizeOptions.map((option, index) => <span className={index === fontSizeIndex ? "is-selected" : ""} key={option.value}>{option.label}</span>)}</div>
+          <div className="settings-font-size-slider-row"><span className="settings-font-size-a settings-font-size-a-small" aria-hidden="true">Aa</span><div className="settings-font-size-track" role="slider" tabIndex={0} aria-label={copy.fontSize} aria-valuemin={0} aria-valuemax={fontSizeOptions.length - 1} aria-valuenow={fontSizeIndex} aria-valuetext={fontSizeOptions[fontSizeIndex].label} onKeyDown={(event) => {
+            let nextIndex = fontSizeIndex;
+            if (event.key === "ArrowLeft" || event.key === "ArrowDown") nextIndex -= 1;
+            else if (event.key === "ArrowRight" || event.key === "ArrowUp") nextIndex += 1;
+            else if (event.key === "Home") nextIndex = 0;
+            else if (event.key === "End") nextIndex = fontSizeOptions.length - 1;
+            else return;
+            event.preventDefault();
+            nextIndex = Math.min(fontSizeOptions.length - 1, Math.max(0, nextIndex));
+            selectFontSizeIndex(nextIndex);
+          }} onPointerDown={(event) => {
+            if (event.button !== 0) return;
+            event.currentTarget.focus();
+            event.currentTarget.setPointerCapture(event.pointerId);
+            updateFontSizeFromPointer(event.currentTarget, event.clientX);
+          }} onPointerMove={(event) => {
+            if (event.buttons > 0) updateFontSizeFromPointer(event.currentTarget, event.clientX);
+          }}>
+            <span className="settings-font-size-track-line" aria-hidden="true" />
+            <span className="settings-font-size-track-progress" aria-hidden="true" style={{ width: `${fontSizeIndex * 25}%` }} />
+            {fontSizeOptions.map((option, index) => <span className={`settings-font-size-stop${index <= fontSizeIndex ? " is-passed" : ""}${index === fontSizeIndex ? " is-current" : ""}`} aria-hidden="true" style={{ left: `${index * 25}%` }} key={option.value} />)}
+            <span className="settings-font-size-thumb" aria-hidden="true" style={{ left: `${fontSizeIndex * 25}%` }} />
+          </div><span className="settings-font-size-a settings-font-size-a-large" aria-hidden="true">Aa</span></div>
+          <div className="settings-font-size-current-label" aria-live="polite">{fontSizeOptions[fontSizeIndex].label}</div>
         </div>
       </div>
       <div className="settings-general-control settings-language-control"><div><strong>{copy.languageLabel}</strong></div>
