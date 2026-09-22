@@ -10011,7 +10011,7 @@ html[data-theme="dark"] #root {
   .settings-page-scope .settings-sidebar { padding-top: 22px; }
   .settings-page-scope .settings-menu-heading { margin-bottom: 14px; }
   .settings-page-scope .desktop-settings-content { padding-top: 22px; }
-  .settings-page-scope .settings-nav-list { gap: 0; margin-inline: -14px; }
+  .settings-page-scope .settings-nav-list { width: auto; gap: 0; margin-inline: -14px; }
   .settings-page-scope .settings-nav-item,
   .settings-page-scope .settings-nav-item.is-active {
     display: grid;
