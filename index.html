@@ -73,6 +73,13 @@
           const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
           root.dataset.theme = isDark ? "dark" : "light";
           root.dataset.displayMode = isStandalone ? "standalone" : "browser";
+          try {
+            const savedData = JSON.parse(localStorage.getItem("career-flow-data-v5") || "null");
+            const fontSize = savedData?.preferences?.general?.fontSize;
+            root.dataset.fontSize = ["small", "normal", "large"].includes(fontSize) ? fontSize : "normal";
+          } catch {
+            root.dataset.fontSize = "normal";
+          }
           root.style.colorScheme = isDark ? "dark" : "light";
           document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColor);
           const statusBarStyle = isStandalone ? "black-translucent" : (isDark ? "black" : "default");

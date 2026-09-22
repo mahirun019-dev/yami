@@ -133,6 +133,7 @@ type AppPreferences = {
     launchPage: LaunchPage;
     externalLinks: "new-tab" | "same-tab";
     weekStartsOn: 0 | 1;
+    fontSize: "small" | "normal" | "large";
   };
   jobHunt: {
     homeRegion: string;
@@ -309,7 +310,7 @@ function isDeadlineEvent(event: Event) {
 function defaultPreferences(): AppPreferences {
   const savedRegion = typeof localStorage !== "undefined" ? localStorage.getItem("careerflow-home-region") || "" : "";
   return {
-    general: { launchPage: "home", externalLinks: "new-tab", weekStartsOn: 0 },
+    general: { launchPage: "home", externalLinks: "new-tab", weekStartsOn: 0, fontSize: "normal" },
     jobHunt: {
       homeRegion: savedRegion,
       defaultCompanyStage: "saved",
@@ -1290,6 +1291,7 @@ function normalize(x: any): Data {
       launchPage: (["home", "last", "companies", "notifications", "schedule", "materials"] as LaunchPage[]).includes(rawGeneral.launchPage as LaunchPage) ? rawGeneral.launchPage as LaunchPage : defaults.general.launchPage,
       externalLinks: rawGeneral.externalLinks === "same-tab" ? "same-tab" : "new-tab",
       weekStartsOn: rawGeneral.weekStartsOn === 1 ? 1 : 0,
+      fontSize: (["small", "normal", "large"] as const).includes(rawGeneral.fontSize as "small" | "normal" | "large") ? rawGeneral.fontSize as "small" | "normal" | "large" : defaults.general.fontSize,
     },
     jobHunt: {
       homeRegion: typeof rawJobHunt.homeRegion === "string" ? rawJobHunt.homeRegion : defaults.jobHunt.homeRegion,
@@ -1714,6 +1716,9 @@ export default function App() {
     };
   }, [isMobile, view, selected, settings]);
   useEffect(() => localStorage.setItem(KEY, JSON.stringify(data)), [data]);
+  useLayoutEffect(() => {
+    document.documentElement.dataset.fontSize = data.preferences.general.fontSize;
+  }, [data.preferences.general.fontSize]);
   useEffect(() => localStorage.setItem(LAST_VIEW, view), [view]);
   useEffect(() => {
     if (firstDataRender.current) {
@@ -4789,9 +4794,15 @@ function GeneralSettings({ t, data, updatePreferences, locale, theme, setTheme, 
   };
   const update = (patch: Partial<AppPreferences["general"]>) => updatePreferences((current: AppPreferences) => ({ ...current, general: { ...current.general, ...patch } }));
   const copy = ja
-    ? { title: "一般", basics: "基本動作", display: "表示", theme: "テーマ", themeHint: "Yami の表示テーマを選択します。", systemFollow: "システム設定に従う", systemFollowHint: "端末の外観設定に合わせてテーマを切り替えます。", language: "言語", languageLabel: "表示言語", week: "週の開始曜日", weekHint: "カレンダーの表示開始曜日を選択します。", sunday: "日曜日", monday: "月曜日", japanese: "日本語", chinese: "简体中文", launch: "起動時に表示するページ", launchHint: "Yamiを開いたときに最初に表示するページ", external: "外部リンクの開き方", externalHint: "企業サイトや採用ページなどの外部リンク", home: "ホーム", last: "前回開いていたページ", companies: "企業", notifications: "通知", schedule: "日程", materials: "ES・面接" }
-    : { title: "常规", basics: "基本操作", display: "显示", theme: "主题", themeHint: "选择 Yami 的显示主题。", systemFollow: "跟随系统设置", systemFollowHint: "根据设备的外观设置自动切换主题。", language: "语言", languageLabel: "显示语言", week: "每周起始日", weekHint: "选择日历每周的起始日。", sunday: "星期日", monday: "星期一", japanese: "日本語", chinese: "简体中文", launch: "启动时显示的页面", launchHint: "打开 Yami 时首先显示的页面", external: "外部链接的打开方式", externalHint: "企业官网、招聘页面等外部链接", home: "主页", last: "上次打开的页面", companies: "企业", notifications: "通知", schedule: "日程", materials: "ES・面试" };
+    ? { title: "一般", basics: "基本動作", display: "表示", theme: "テーマ", themeHint: "Yami の表示テーマを選択します。", systemFollow: "システム設定に従う", systemFollowOnHint: "端末の外観設定に合わせてテーマを自動で切り替えます。", systemFollowOffHint: "ライトまたはダークを手動で選択できます。", fontSize: "文字サイズ", fontSizeHint: "読みやすい文字の大きさを選択します。", fontSizeSmall: "小さめ", fontSizeNormal: "標準", fontSizeLarge: "大きめ", language: "言語", languageLabel: "表示言語", week: "週の開始曜日", weekHint: "カレンダーの表示開始曜日を選択します。", sunday: "日曜日", monday: "月曜日", japanese: "日本語", chinese: "简体中文", launch: "起動時に表示するページ", launchHint: "Yamiを開いたときに最初に表示するページ", external: "外部リンクの開き方", externalHint: "企業サイトや採用ページなどの外部リンク", home: "ホーム", last: "前回開いていたページ", companies: "企業", notifications: "通知", schedule: "日程", materials: "ES・面接" }
+    : { title: "常规", basics: "基本操作", display: "显示", theme: "主题", themeHint: "选择 Yami 的显示主题。", systemFollow: "跟随系统设置", systemFollowOnHint: "根据设备的外观设置自动切换主题。", systemFollowOffHint: "可以手动选择浅色或深色主题。", fontSize: "文字大小", fontSizeHint: "选择适合阅读的文字大小。", fontSizeSmall: "较小", fontSizeNormal: "标准", fontSizeLarge: "较大", language: "语言", languageLabel: "显示语言", week: "每周起始日", weekHint: "选择日历每周的起始日。", sunday: "星期日", monday: "星期一", japanese: "日本語", chinese: "简体中文", launch: "启动时显示的页面", launchHint: "打开 Yami 时首先显示的页面", external: "外部链接的打开方式", externalHint: "企业官网、招聘页面等外部链接", home: "主页", last: "上次打开的页面", companies: "企业", notifications: "通知", schedule: "日程", materials: "ES・面试" };
   const destinations: Array<[LaunchPage, string]> = [["home", copy.home], ["last", copy.last], ["companies", copy.companies], ["notifications", copy.notifications], ["schedule", copy.schedule], ["materials", copy.materials]];
+  const fontSizeOptions = [
+    { value: "small", label: copy.fontSizeSmall },
+    { value: "normal", label: copy.fontSizeNormal },
+    { value: "large", label: copy.fontSizeLarge },
+  ] as const;
+  const fontSizeIndex = fontSizeOptions.findIndex((option) => option.value === settings.fontSize);
   return <section className={`settings-section settings-form-section settings-general${mobile ? " mobile-settings-subpage" : ""}`}>
     {mobile ? <h2>{copy.title}</h2> : <h3>{copy.title}</h3>}
     <section className="settings-general-group"><h4>{copy.display}</h4>
@@ -4809,9 +4820,15 @@ function GeneralSettings({ t, data, updatePreferences, locale, theme, setTheme, 
             })}
           </div>
           <label className="settings-system-follow">
-            <span className="settings-system-follow-copy"><strong>{copy.systemFollow}</strong><small>{copy.systemFollowHint}</small></span>
+            <span className="settings-system-follow-copy"><strong>{copy.systemFollow}</strong><small>{theme === "system" ? copy.systemFollowOnHint : copy.systemFollowOffHint}</small></span>
             <span className="settings-system-switch"><input type="checkbox" role="switch" aria-label={copy.systemFollow} checked={theme === "system"} onChange={(event) => setTheme(event.target.checked ? "system" : manualTheme)} /><span className="settings-system-switch-track" aria-hidden="true" /></span>
           </label>
+        </div>
+      </div>
+      <div className="settings-general-control settings-font-size-control"><div><strong>{copy.fontSize}</strong><p>{copy.fontSizeHint}</p></div>
+        <div className="settings-font-size-content">
+          <div className="settings-font-size-slider-row"><span className="settings-font-size-a settings-font-size-a-small" aria-hidden="true">Aa</span><input type="range" min={0} max={2} step={1} value={fontSizeIndex} aria-label={copy.fontSize} aria-valuetext={fontSizeOptions[fontSizeIndex]?.label || copy.fontSizeNormal} onChange={(event) => update({ fontSize: fontSizeOptions[Number(event.target.value)].value })} /><span className="settings-font-size-a settings-font-size-a-large" aria-hidden="true">Aa</span></div>
+          <div className="settings-font-size-labels" aria-hidden="true">{fontSizeOptions.map((option, index) => <span className={index === fontSizeIndex ? "is-selected" : ""} key={option.value}>{option.label}</span>)}</div>
         </div>
       </div>
       <div className="settings-general-control settings-language-control"><div><strong>{copy.languageLabel}</strong></div>
@@ -5097,5 +5114,5 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
   </div>;
 }
 function SettingsNavItem({ label, icon: Icon, active, onClick }: { label: string; icon: React.ComponentType<any>; active: boolean; onClick: () => void }) {
-  return <button type="button" className={`settings-nav-item ${active ? "active" : ""}`} aria-selected={active} onClick={onClick}><Icon size={19} aria-hidden="true" /><span className="settings-nav-label">{label}</span></button>;
+  return <button type="button" className={`settings-nav-item ${active ? "active" : ""}`} aria-selected={active} onClick={onClick}><Icon size={19} aria-hidden="true" /><span className="settings-nav-label">{label}</span><ChevronRight className="settings-nav-chevron" size={16} aria-hidden="true" /></button>;
 }
