@@ -9439,3 +9439,124 @@ html[data-theme="dark"] #root {
     background: #101214 !important;
   }
 }
+
+.delete-event-confirm-layer {
+  z-index: 1100 !important;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.delete-event-confirm-layer > .drawer {
+  position: relative;
+  inset: auto;
+  width: min(460px, calc(100vw - 48px));
+  height: auto;
+  min-height: 0;
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  background: var(--bg-surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+}
+
+.delete-event-confirm-layer > .drawer > header {
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 22px 24px 0;
+  border: 0;
+}
+
+.delete-event-confirm-layer > .drawer > header h2 {
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.delete-event-confirm-layer > .drawer > header .close-button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 9px;
+}
+
+.delete-event-confirm-layer > .drawer > header .close-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.delete-event-confirm-copy {
+  margin: 12px 24px 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.delete-event-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding: 0 24px 24px;
+}
+
+.delete-event-confirm-actions > button {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 88px;
+  min-height: 42px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.delete-event-confirm-actions > .delete-event-cancel {
+  border-color: var(--border-default);
+  color: var(--button-secondary-text);
+  background: var(--button-secondary-bg);
+}
+
+.delete-event-confirm-actions > .delete-event-cancel:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-surface-elevated);
+}
+
+@media (max-width: 760px) {
+  .delete-event-confirm-layer {
+    min-height: 100dvh;
+    height: 100dvh;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  .delete-event-confirm-layer > .drawer {
+    z-index: 1110 !important;
+    width: min(460px, calc(100vw - 40px));
+    max-height: calc(100dvh - 40px);
+    border-radius: 16px;
+  }
+
+  .delete-event-confirm-layer > .drawer > header {
+    padding: 20px 20px 0;
+  }
+
+  .delete-event-confirm-copy {
+    margin: 12px 20px 22px;
+  }
+
+  .delete-event-confirm-actions {
+    gap: 8px;
+    padding: 0 20px 20px;
+  }
+
+  .delete-event-confirm-actions > button {
+    min-width: 84px;
+  }
+}

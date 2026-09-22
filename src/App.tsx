@@ -4495,11 +4495,11 @@ function DeleteEventConfirm({
   remove: () => void;
 }) {
   return (
-    <Modal title={t.deleteEventTitle} close={close}>
-      <p className="confirm-copy">{t.deleteEventDescription}</p>
-      <div className="confirm-actions">
-        <button onClick={close}>{t.cancel}</button>
-        <button className="danger-solid" onClick={remove}>{t.deleteAction}</button>
+    <Modal title={t.deleteEventTitle} close={close} className="delete-event-confirm-layer">
+      <p className="confirm-copy delete-event-confirm-copy">{t.deleteEventDescription}</p>
+      <div className="confirm-actions delete-event-confirm-actions">
+        <button type="button" className="delete-event-cancel" onClick={close}>{t.cancel}</button>
+        <button type="button" className="danger-solid" onClick={remove}>{t.deleteAction}</button>
       </div>
     </Modal>
   );
