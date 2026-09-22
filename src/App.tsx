@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
   type ChangeEvent,
   type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEventHandler,
   type Ref,
@@ -54,7 +55,6 @@ import {
   Home,
   MoreHorizontal,
   Menu,
-  Monitor,
   Moon,
   NotebookPen,
   Palette,
@@ -376,6 +376,7 @@ const KEY = "career-flow-data-v5",
   BACKUP = "career-flow-pre-v5-backup",
   CLEAN = "career-flow-demo-cleaned-v1",
   THEME = "careerflow-theme",
+  LAST_MANUAL_THEME = "careerflow-last-manual-theme",
   LOCALE = "careerflow-locale",
   ICON = "careerflow-custom-icon",
   LAST_VIEW = "yami-last-main-view";
@@ -4731,19 +4732,63 @@ function JobHuntSettings({ t, data, updatePreferences }: any) {
 function GeneralSettings({ t, data, updatePreferences, locale, theme, setTheme, setLocale, mobile = false }: any) {
   const settings = data.preferences.general;
   const ja = locale === "ja";
+  const [manualTheme, setManualTheme] = useState<"light" | "dark">(() => {
+    if (theme === "light" || theme === "dark") return theme;
+    const saved = localStorage.getItem(LAST_MANUAL_THEME);
+    if (saved === "light" || saved === "dark") return saved;
+    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  });
+  useEffect(() => {
+    if (theme === "light" || theme === "dark") localStorage.setItem(LAST_MANUAL_THEME, theme);
+  }, [theme]);
+  const chooseManualTheme = (value: "light" | "dark") => {
+    setManualTheme(value);
+    localStorage.setItem(LAST_MANUAL_THEME, value);
+    setTheme(value);
+  };
+  const onThemeChoiceKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, value: "light" | "dark") => {
+    if (!["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? "light" : event.key === "End" ? "dark" : value === "light" ? "dark" : "light";
+    chooseManualTheme(next);
+    event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-theme-choice="${next}"]`)?.focus();
+  };
+  const onLocaleChoiceKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, value: Locale) => {
+    if (!["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next: Locale = event.key === "Home" ? "ja" : event.key === "End" ? "zh" : value === "ja" ? "zh" : "ja";
+    setLocale(next);
+    event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-locale-choice="${next}"]`)?.focus();
+  };
   const update = (patch: Partial<AppPreferences["general"]>) => updatePreferences((current: AppPreferences) => ({ ...current, general: { ...current.general, ...patch } }));
   const copy = ja
-    ? { title: "一般", basics: "基本動作", display: "表示", theme: "テーマ", themeHint: "Yami の表示テーマを選択します。", language: "言語", languageLabel: "表示言語", week: "週の開始曜日", weekHint: "カレンダーの表示開始曜日を選択します。", sunday: "日曜日", monday: "月曜日", japanese: "日本語", chinese: "简体中文", launch: "起動時に表示するページ", launchHint: "Yamiを開いたときに最初に表示するページ", external: "外部リンクの開き方", externalHint: "企業サイトや採用ページなどの外部リンク", home: "ホーム", last: "前回開いていたページ", companies: "企業", notifications: "通知", schedule: "日程", materials: "ES・面接" }
-    : { title: "常规", basics: "基本操作", display: "显示", theme: "主题", themeHint: "选择 Yami 的显示主题。", language: "语言", languageLabel: "显示语言", week: "每周起始日", weekHint: "选择日历每周的起始日。", sunday: "星期日", monday: "星期一", japanese: "日本語", chinese: "简体中文", launch: "启动时显示的页面", launchHint: "打开 Yami 时首先显示的页面", external: "外部链接的打开方式", externalHint: "企业官网、招聘页面等外部链接", home: "主页", last: "上次打开的页面", companies: "企业", notifications: "通知", schedule: "日程", materials: "ES・面试" };
+    ? { title: "一般", basics: "基本動作", display: "表示", theme: "テーマ", themeHint: "Yami の表示テーマを選択します。", systemFollow: "システム設定に従う", systemFollowHint: "端末の外観設定に合わせてテーマを切り替えます。", language: "言語", languageLabel: "表示言語", week: "週の開始曜日", weekHint: "カレンダーの表示開始曜日を選択します。", sunday: "日曜日", monday: "月曜日", japanese: "日本語", chinese: "简体中文", launch: "起動時に表示するページ", launchHint: "Yamiを開いたときに最初に表示するページ", external: "外部リンクの開き方", externalHint: "企業サイトや採用ページなどの外部リンク", home: "ホーム", last: "前回開いていたページ", companies: "企業", notifications: "通知", schedule: "日程", materials: "ES・面接" }
+    : { title: "常规", basics: "基本操作", display: "显示", theme: "主题", themeHint: "选择 Yami 的显示主题。", systemFollow: "跟随系统设置", systemFollowHint: "根据设备的外观设置自动切换主题。", language: "语言", languageLabel: "显示语言", week: "每周起始日", weekHint: "选择日历每周的起始日。", sunday: "星期日", monday: "星期一", japanese: "日本語", chinese: "简体中文", launch: "启动时显示的页面", launchHint: "打开 Yami 时首先显示的页面", external: "外部链接的打开方式", externalHint: "企业官网、招聘页面等外部链接", home: "主页", last: "上次打开的页面", companies: "企业", notifications: "通知", schedule: "日程", materials: "ES・面试" };
   const destinations: Array<[LaunchPage, string]> = [["home", copy.home], ["last", copy.last], ["companies", copy.companies], ["notifications", copy.notifications], ["schedule", copy.schedule], ["materials", copy.materials]];
   return <section className={`settings-section settings-form-section settings-general${mobile ? " mobile-settings-subpage" : ""}`}>
     {mobile ? <h2>{copy.title}</h2> : <h3>{copy.title}</h3>}
     <section className="settings-general-group"><h4>{copy.display}</h4>
-      <div className="settings-general-control"><div><strong>{copy.theme}</strong><p>{copy.themeHint}</p></div>
-        <div className="settings-segmented settings-theme-options">{(["light", "dark", "system"] as Theme[]).map((value) => { const Icon = value === "light" ? Sun : value === "dark" ? Moon : Monitor; return <button type="button" aria-pressed={theme === value} className={theme === value ? "active" : ""} onClick={() => setTheme(value)} key={value}><Icon aria-hidden="true" />{t[value]}</button>; })}</div>
+      <div className="settings-general-control settings-theme-control"><div><strong>{copy.theme}</strong><p>{copy.themeHint}</p></div>
+        <div className="settings-theme-content">
+          <div className={`settings-theme-options${theme === "system" ? " is-system" : ""}`} role="radiogroup" aria-label={copy.theme}>
+            {(["light", "dark"] as const).map((value) => {
+              const selected = theme === value;
+              const Icon = value === "light" ? Sun : Moon;
+              return <button type="button" role="radio" aria-checked={selected} aria-label={t[value]} data-theme-choice={value} tabIndex={selected ? 0 : -1} disabled={theme === "system"} className={`settings-theme-choice ${value === "light" ? "is-light" : "is-dark"}${selected ? " is-selected" : ""}`} onClick={() => chooseManualTheme(value)} onKeyDown={(event) => onThemeChoiceKeyDown(event, value)} key={value}>
+                <span className="settings-theme-preview" aria-hidden="true"><span className="settings-theme-preview-top"><i /><i /><i /></span><span className="settings-theme-preview-lines"><i /><i /><i /></span></span>
+                <span className="settings-theme-choice-label"><Icon aria-hidden="true" />{t[value]}</span>
+                {selected && <Check className="settings-theme-choice-check" aria-hidden="true" />}
+              </button>;
+            })}
+          </div>
+          <label className="settings-system-follow">
+            <span className="settings-system-follow-copy"><strong>{copy.systemFollow}</strong><small>{copy.systemFollowHint}</small></span>
+            <span className="settings-system-switch"><input type="checkbox" role="switch" aria-label={copy.systemFollow} checked={theme === "system"} onChange={(event) => setTheme(event.target.checked ? "system" : manualTheme)} /><span className="settings-system-switch-track" aria-hidden="true" /></span>
+          </label>
+        </div>
       </div>
-      <div className="settings-general-control"><div><strong>{copy.languageLabel}</strong></div>
-        <div className="settings-segmented settings-language-options">{(["ja", "zh"] as Locale[]).map((value) => <button type="button" aria-pressed={locale === value} className={locale === value ? "active" : ""} onClick={() => setLocale(value)} key={value}>{value === "ja" ? copy.japanese : copy.chinese}</button>)}</div>
+      <div className="settings-general-control settings-language-control"><div><strong>{copy.languageLabel}</strong></div>
+        <div className="settings-language-list" role="radiogroup" aria-label={copy.languageLabel}>{(["ja", "zh"] as Locale[]).map((value) => <button type="button" role="radio" aria-checked={locale === value} data-locale-choice={value} tabIndex={locale === value ? 0 : -1} className={locale === value ? "is-selected" : ""} onClick={() => setLocale(value)} onKeyDown={(event) => onLocaleChoiceKeyDown(event, value)} key={value}><span>{value === "ja" ? copy.japanese : copy.chinese}</span>{locale === value && <Check aria-hidden="true" />}</button>)}</div>
       </div>
     </section>
     <section className="settings-general-group"><h4>{copy.basics}</h4>
