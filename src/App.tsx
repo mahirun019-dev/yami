@@ -4606,8 +4606,8 @@ function BackupControls({ data, theme, locale, json }: any) {
   const [lastExport, setLastExport] = useState<number>(() => Number(localStorage.getItem("careerflow-last-export") || 0));
   const snapshot = (): BackupSnapshot => makeBackupSnapshot(data, theme, locale);
   const labels = locale === "ja"
-    ? { title: "バックアップ", export: "バックアップを書き出す", exportDescription: "現在の Yami データをバックアップファイルとして保存します。", download: "ブラウザの既定のダウンロード先に保存されます。", restore: "バックアップを復元", restoreDescription: "以前に書き出したバックアップファイルからデータを復元します。", choose: "バックアップファイルを選択", notes: "バックアップについて", contents: "企業、日程、資料、面接記録、準備タスク、アプリ設定が含まれます。", device: "バックアップファイルはこのデバイスに保存されます。", format: "ファイル形式：JSON", last: "前回の書き出し", never: "まだバックアップを書き出していません", generated: "バックアップファイルを生成しました", shared: "ファイルに保存を選択してください", failed: "書き出しに失敗しました" }
-    : { title: "备份", export: "导出备份", exportDescription: "将当前 Yami 数据保存为备份文件。", download: "文件将保存到浏览器的默认下载位置。", restore: "恢复备份", restoreDescription: "从此前导出的备份文件恢复数据。", choose: "选择备份文件", notes: "备份说明", contents: "包含企业、日程、资料、面试记录、准备任务和应用设置。", device: "备份文件保存在此设备中。", format: "文件格式：JSON", last: "上次导出", never: "尚未导出备份", generated: "备份文件已生成", shared: "请在分享菜单中选择保存文件", failed: "导出失败" };
+    ? { title: "バックアップ", export: "バックアップを書き出す", exportDescription: "現在の Yami データをバックアップファイルとして保存します。", download: "ブラウザの既定のダウンロード先に保存されます。", restore: "バックアップを復元", restoreDescription: "以前に書き出したバックアップファイルからデータを復元します。", choose: "バックアップファイルを選択", fileHint: "システムの「ファイル」から .json バックアップファイルを選択できます。", restoreWarning: "復元すると、現在のデータはバックアップの内容に置き換えられます。", notes: "バックアップについて", contents: "企業、日程、資料、面接記録、準備タスク、アプリ設定が含まれます。", device: "バックアップファイルはこのデバイスにのみ保存されます。", format: "ファイル形式：JSON", last: "前回の書き出し", noExport: "まだありません", generated: "バックアップファイルを生成しました", shared: "ファイルに保存を選択してください", failed: "書き出しに失敗しました" }
+    : { title: "备份", export: "导出备份", exportDescription: "将当前 Yami 数据保存为备份文件。", download: "文件将保存到浏览器的默认下载位置。", restore: "恢复备份", restoreDescription: "从此前导出的备份文件恢复数据。", choose: "选择备份文件", fileHint: "可以从系统“文件”App 中选择 .json 备份文件。", restoreWarning: "恢复后，当前数据将被备份内容替换。", notes: "备份说明", contents: "包含企业、日程、资料、面试记录、准备任务和应用设置。", device: "备份文件仅保存在此设备中。", format: "文件格式：JSON", last: "上次导出", noExport: "尚未导出", generated: "备份文件已生成", shared: "请在分享菜单中选择保存文件", failed: "导出失败" };
   const exportBackup = async () => {
     const now = new Date();
     const pad = (value: number) => String(value).padStart(2, "0");
@@ -4640,10 +4640,9 @@ function BackupControls({ data, theme, locale, json }: any) {
   const formattedLastExport = lastExport ? new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "zh-CN", { year: "numeric", month: "numeric", day: "numeric" }).format(lastExport) : "";
   return <div className="backup-management">
     <h4>{labels.title}</h4>
-    <section className="backup-action-block"><div><h5>{labels.export}</h5><p>{labels.exportDescription}</p></div><button type="button" className="primary" onClick={() => void exportBackup()}>{labels.export}</button><small>{labels.download}</small>{formattedLastExport && <small>{labels.last}: {formattedLastExport}</small>}</section>
-    <section className="backup-action-block"><div><h5>{labels.restore}</h5><p>{labels.restoreDescription}</p></div><button type="button" onClick={() => json.current?.click()}>{labels.choose}</button></section>
+    <section className="backup-action-block"><div><h5>{labels.export}</h5><p>{labels.exportDescription}</p></div><button type="button" className="primary" onClick={() => void exportBackup()}>{labels.export}</button><small>{labels.download}</small><small className="backup-export-status">{labels.last}: {formattedLastExport || labels.noExport}</small>{message && <p className="backup-feedback" role="status">{message}</p>}</section>
+    <section className="backup-action-block backup-restore-block"><div><h5>{labels.restore}</h5><p>{labels.restoreDescription}</p></div><button type="button" onClick={() => json.current?.click()}>{labels.choose}</button><small className="backup-file-hint">{labels.fileHint}</small><small className="backup-restore-warning">{labels.restoreWarning}</small></section>
     <section className="backup-notes"><strong>{labels.notes}</strong><span>{labels.contents}</span><span>{labels.device}</span><span>{labels.format}</span></section>
-    {!formattedLastExport && <p className="settings-muted">{labels.never}</p>}{message && <p className="backup-feedback" role="status">{message}</p>}
   </div>;
 }
 const templateCategoryKeys: Array<[TemplateCategory, string]> = [

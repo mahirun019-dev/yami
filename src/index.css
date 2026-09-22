@@ -9799,3 +9799,81 @@ html[data-theme="dark"] #root {
   .settings-star-rating button { width: 44px; height: 44px; }
   .settings-star-rating svg { width: 21px; height: 21px; }
 }
+
+.settings-saved-data dl {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+.settings-saved-data dl > div {
+  min-height: 66px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 0;
+}
+.settings-saved-data dl > div:last-child { border-right: 0; }
+.settings-saved-data dt {
+  color: color-mix(in srgb, var(--text-secondary) 82%, var(--text-primary));
+  font-size: 12px;
+}
+.settings-saved-data dd { font-size: 17px; }
+.backup-export-status { font-weight: 550; }
+.backup-restore-warning {
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+}
+.backup-file-hint { display: none; }
+.backup-feedback { grid-column: 1 / -1; }
+
+@media (min-width: 981px) {
+  .settings-drawer-panel .desktop-settings-content { padding-bottom: 32px; }
+  .settings-drawer-panel .desktop-settings-content > .settings-data-section { padding-bottom: 24px; }
+}
+
+@media (max-width: 767px) {
+  .mobile-settings-content-layer .settings-data-section {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    padding: 24px 22px calc(32px + env(safe-area-inset-bottom));
+  }
+  .mobile-settings-content-layer .settings-saved-data dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mobile-settings-content-layer .settings-saved-data dl > div {
+    min-height: 46px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .mobile-settings-content-layer .settings-saved-data dl > div:nth-child(2n) { border-right: 0; }
+  .mobile-settings-content-layer .settings-saved-data dl > div:last-child {
+    grid-column: 1 / -1;
+    border-right: 0;
+    border-bottom: 0;
+  }
+  .mobile-settings-content-layer .settings-saved-data dt { font-size: 13px; }
+  .mobile-settings-content-layer .settings-saved-data dd { font-size: 14px; }
+  .backup-action-block { gap: 9px 12px; }
+  .backup-file-hint { display: block; }
+  .backup-restore-warning { padding: 9px 10px; }
+  .backup-notes {
+    display: grid;
+    gap: 7px;
+    margin-top: 8px;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--border-color);
+  }
+  .backup-notes strong { display: block; color: var(--text-primary); font-size: 14px; }
+}
