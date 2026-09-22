@@ -4714,17 +4714,18 @@ function TemplateManager({ t, data, setData }: any) {
 }
 function JobHuntSettings({ t, data, updatePreferences }: any) {
   const settings = data.preferences.jobHunt;
+  const [previewInterestLevel, setPreviewInterestLevel] = useState<number | null>(null);
   const update = (patch: Partial<AppPreferences["jobHunt"]>) => updatePreferences((current: AppPreferences) => ({ ...current, jobHunt: { ...current.jobHunt, ...patch } }));
   const interestLabel = t.language === "言語" ? "志望度" : "志望度";
   return <section className="settings-section settings-form-section"><h3>{t.jobSettings}</h3>
     <label className="settings-field"><span>{t.homeRegion}</span><select value={settings.homeRegion} onChange={(event) => { update({ homeRegion: event.target.value }); localStorage.setItem("careerflow-home-region", event.target.value); }}><option value="">{t.notSet}</option>{prefectures.map((region) => <option key={region} value={region}>{region}</option>)}</select><small>{t.homeRegionHint}</small></label>
     <fieldset className="settings-default-company-values"><legend>{t.companyDefaultsTitle}</legend><p>{t.companyDefaultsHint}</p>
       <label className="settings-field"><span>{t.defaultStage}</span><select value={settings.defaultCompanyStage} onChange={(event) => update({ defaultCompanyStage: event.target.value as Stage })}>{stages.map((stage) => <option key={stage} value={stage}>{t[stage]}</option>)}</select></label>
-      <div className="settings-field settings-interest-field"><span id="default-interest-label">{t.defaultInterest}</span><div className="settings-star-rating" role="radiogroup" aria-labelledby="default-interest-label">{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" role="radio" aria-checked={settings.defaultInterestLevel === value} aria-label={`${interestLabel} ${value} / 5`} tabIndex={settings.defaultInterestLevel === value ? 0 : -1} onClick={() => update({ defaultInterestLevel: value })} onKeyDown={(event) => {
+      <div className="settings-field settings-interest-field"><span id="default-interest-label">{t.defaultInterest}</span><div className="settings-star-rating" role="radiogroup" aria-labelledby="default-interest-label" onPointerLeave={() => setPreviewInterestLevel(null)}>{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" role="radio" aria-checked={settings.defaultInterestLevel === value} aria-label={`${interestLabel} ${value} / 5`} tabIndex={settings.defaultInterestLevel === value ? 0 : -1} onPointerEnter={(event) => { if (event.pointerType === "mouse") setPreviewInterestLevel(value); }} onClick={() => { update({ defaultInterestLevel: value }); setPreviewInterestLevel(null); }} onKeyDown={(event) => {
         const direction = event.key === "ArrowRight" || event.key === "ArrowUp" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -1 : 0;
         if (direction) { event.preventDefault(); const next = Math.min(5, Math.max(1, value + direction)); update({ defaultInterestLevel: next }); event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next - 1]?.focus(); }
         if (event.key === "Home" || event.key === "End") { event.preventDefault(); const next = event.key === "Home" ? 1 : 5; update({ defaultInterestLevel: next }); event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next - 1]?.focus(); }
-      }}><Star aria-hidden="true" className={value <= settings.defaultInterestLevel ? "is-filled" : ""} /></button>)}</div></div>
+      }}><Star aria-hidden="true" className={value <= (previewInterestLevel ?? settings.defaultInterestLevel) ? "is-filled" : ""} /></button>)}</div></div>
     </fieldset>
   </section>;
 }

@@ -9712,3 +9712,90 @@ html[data-theme="dark"] #root {
   .backup-restore-dialog footer, .watch-disconnect-dialog footer, .template-delete-dialog footer { gap: 8px; }
   .backup-restore-dialog footer button, .watch-disconnect-dialog footer button, .template-delete-dialog footer button { min-width: 0; flex: 1; padding-inline: 8px; }
 }
+
+.settings-general-control .settings-segmented {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  box-sizing: border-box;
+  padding: 4px;
+  border: 1px solid #d5dbe3;
+  border-radius: 14px;
+  background: #fff;
+}
+.settings-general-control .settings-language-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.settings-general-control .settings-segmented button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #515b66;
+  background: transparent;
+  font-weight: 550;
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.settings-general-control .settings-segmented button.active {
+  color: #245f9e;
+  border-color: #8db5df;
+  background: #eef5ff;
+}
+.settings-general-control .settings-segmented button:not(.active):hover {
+  color: #344354;
+  border-color: #dbe4ee;
+  background: #f7f9fc;
+}
+.settings-general-control .settings-segmented button:focus { outline: none; }
+.settings-general-control .settings-segmented button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+[data-theme="dark"] .settings-general-control .settings-segmented {
+  border-color: #2f3336;
+  background: #08090a;
+}
+[data-theme="dark"] .settings-general-control .settings-segmented button { color: #c2c8d0; }
+[data-theme="dark"] .settings-general-control .settings-segmented button.active {
+  color: #93c5fd !important;
+  border-color: #3b82f6 !important;
+  background: #142338 !important;
+}
+[data-theme="dark"] .settings-general-control .settings-segmented button:not(.active):hover {
+  color: #e3e8ef;
+  border-color: #394657;
+  background: #111820;
+}
+[data-theme="dark"] .settings-general-control .settings-segmented button:focus-visible { outline-color: #60a5fa; }
+
+.settings-star-rating { gap: 4px; }
+.settings-star-rating button {
+  width: 44px;
+  height: 44px;
+  border-radius: 9px;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+.settings-star-rating button:hover,
+.settings-star-rating button:active { background: transparent !important; }
+.settings-star-rating button:focus { outline: none; }
+.settings-star-rating button:focus-visible {
+  outline: 2px solid var(--brand-gold);
+  outline-offset: 2px;
+}
+.settings-star-rating svg { width: 22px; height: 22px; transition: color 120ms ease, fill 120ms ease; }
+.settings-star-rating svg.is-filled { color: var(--brand-gold); fill: currentColor; }
+
+@media (max-width: 767px) {
+  .settings-general-control .settings-segmented button { min-height: 44px; padding-inline: 4px; font-size: 12px; }
+  .settings-general-control .settings-segmented button svg { width: 16px; height: 16px; flex: 0 0 16px; }
+  .settings-star-rating button { width: 44px; height: 44px; }
+  .settings-star-rating svg { width: 21px; height: 21px; }
+}
