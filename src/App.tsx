@@ -484,8 +484,8 @@ function isActiveCompany(company: Company): boolean {
 function isWaitingResultCompany(company: Company, events: Event[]): boolean {
   return ["web_test", "first_interview", "second_interview", "final_interview"].includes(company.stage) && !getUpcomingEvent(events, company.id);
 }
-function readRouteState(): { view: View; companyFilter: CompanyRouteFilter | null; scheduleFilter: ScheduleRouteFilter | null; selectedCompanyId: string | null } {
-  if (typeof window === "undefined") return { view: "dashboard", companyFilter: null, scheduleFilter: null, selectedCompanyId: null };
+function readRouteState(): { view: View; companyFilter: CompanyRouteFilter | null; scheduleFilter: ScheduleRouteFilter | null; selectedCompanyId: string | null; settings: boolean } {
+  if (typeof window === "undefined") return { view: "dashboard", companyFilter: null, scheduleFilter: null, selectedCompanyId: null, settings: false };
   const params = new URLSearchParams(window.location.search);
   const routeByPath: Record<string, View> = {
     "/home": "dashboard",
@@ -497,7 +497,11 @@ function readRouteState(): { view: View; companyFilter: CompanyRouteFilter | nul
   };
   const path = window.location.pathname.replace(/\/$/, "");
   const requestedView = params.get("view");
-  const view = (["dashboard", "companies", "notifications", "schedule", "materials"] as View[]).includes(requestedView as View)
+  const settings = requestedView === "settings";
+  const settingsReturnView = params.get("from");
+  const view = settings && (["dashboard", "companies", "notifications", "schedule", "materials"] as string[]).includes(settingsReturnView || "")
+    ? settingsReturnView as View
+    : (["dashboard", "companies", "notifications", "schedule", "materials"] as View[]).includes(requestedView as View)
     ? requestedView as View
     : routeByPath[path.slice(path.lastIndexOf("/"))] || "dashboard";
   const filter = params.get("filter");
@@ -506,12 +510,14 @@ function readRouteState(): { view: View; companyFilter: CompanyRouteFilter | nul
     companyFilter: view === "companies" && (filter === "active" || filter === "waiting-result") ? filter : null,
     scheduleFilter: view === "schedule" && filter === "this-week-deadline" ? filter : null,
     selectedCompanyId: view === "companies" ? params.get("company") : null,
+    settings,
   };
 }
 function getStartupView(data: Data, route: ReturnType<typeof readRouteState>): View {
   if (typeof window === "undefined") return route.view;
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("view");
+  if (route.settings) return route.view;
   const routePath = window.location.pathname.replace(/\/$/, "");
   const routedPath = ["/home", "/companies", "/notifications", "/schedule", "/materials", "/es-interview"].some((path) => routePath.endsWith(path));
   if ((requested && ["dashboard", "companies", "notifications", "schedule", "materials"].includes(requested)) || routedPath) return route.view;
@@ -1446,7 +1452,7 @@ export default function App() {
       const saved = localStorage.getItem(LOCALE);
       return saved === "ja" ? "ja" : "zh";
     }),
-    [settings, setSettings] = useState(false),
+    [settings, setSettings] = useState(() => !isMobile && initialRoute.settings),
     [mobileSettingsPage, setMobileSettingsPage] = useState<string | null>(null),
     [form, setForm] = useState<CreateType | null>(null),
     [eventFormPreset, setEventFormPreset] = useState<EventFormPreset>(),
@@ -1506,6 +1512,29 @@ export default function App() {
     setSelected(nextView === "companies" ? nextCompanyId : undefined);
   };
   const setView = (nextView: View) => navigate(nextView);
+  const setSettingsOpen = (open: boolean) => {
+    if (open && !isMobile && !settings) {
+      const params = new URLSearchParams(window.location.search);
+      params.set("from", view);
+      params.set("view", "settings");
+      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}${window.location.hash}`);
+    }
+    setSettings(open);
+  };
+  const closeSettingsPage = () => {
+    if (!isMobile) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("view") === "settings") {
+        const returnView = params.get("from");
+        params.delete("from");
+        if (returnView && returnView !== "dashboard") params.set("view", returnView);
+        else params.delete("view");
+        const query = params.toString();
+        window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+      }
+    }
+    setSettings(false);
+  };
   const selectCompany = (companyId?: string) => {
     const route = readRouteState();
     navigate("companies", route.companyFilter || undefined, companyId);
@@ -1520,7 +1549,7 @@ export default function App() {
     if (isMobile) {
       setMobileSettingsPage("watch");
     }
-    setSettings(true);
+    setSettingsOpen(true);
   };
   const backToCompanies = () => {
     const route = readRouteState();
@@ -1529,13 +1558,14 @@ export default function App() {
   useEffect(() => {
     const onPopState = () => {
       const route = readRouteState();
-      if (route.view === "dashboard") normalizeDashboardUrl();
+      if (route.view === "dashboard" && !route.settings) normalizeDashboardUrl();
       if (route.view === "companies" && route.selectedCompanyId) {
         restoreCompanyListScrollRef.current = false;
       } else if (route.view === "companies") {
         restoreCompanyListScrollRef.current = true;
       }
       setViewState(route.view);
+      setSettings(!isMobile && route.settings);
       setCompanyFilter(route.companyFilter);
       setScheduleFilter(route.scheduleFilter);
       setSelected(route.selectedCompanyId || undefined);
@@ -1545,7 +1575,7 @@ export default function App() {
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [isMobile]);
   useEffect(() => {
     if (view !== "companies") return;
     const frame = requestAnimationFrame(() => {
@@ -1561,7 +1591,7 @@ export default function App() {
     });
     return () => cancelAnimationFrame(frame);
   }, [view, selected]);
-  const hasOpenOverlay = Boolean(form || settings || confirm || deleteEvent || recordPickerOpen || companyFilterOpen || companyRecordMenuOpen || pendingBackupRestore);
+  const hasOpenOverlay = Boolean(form || (isMobile && settings) || confirm || deleteEvent || recordPickerOpen || companyFilterOpen || companyRecordMenuOpen || pendingBackupRestore);
   useEffect(() => {
     if (hasOpenOverlay) document.body.dataset.overlayOpen = "true";
     else delete document.body.dataset.overlayOpen;
@@ -2126,7 +2156,7 @@ export default function App() {
         await createBackup(makeBackupSnapshot(data, theme, locale));
         setData(parsed.data);
         setPendingBackupRestore(null);
-        setSettings(false);
+        closeSettingsPage();
         setMobileSettingsPage(null);
         setToast({ text: locale === "ja" ? "バックアップを復元しました" : "备份已恢复", undo: () => undefined });
       } catch (error) {
@@ -2169,11 +2199,11 @@ export default function App() {
     setForm("schedule");
   };
   return (
-    <WatchProvider><div className="app-shell" data-app-shell="true">
-      <div className="student-app career-app" onClickCapture={handleExternalLinkClick}>
+    <WatchProvider><div className={`app-shell${!isMobile && settings ? " app-shell-settings" : ""}`} data-app-shell="true">
+      <div className={`student-app career-app${!isMobile && settings ? " has-desktop-settings" : ""}`} onClickCapture={handleExternalLinkClick}>
         <aside className="sidebar panel">
           <Brand />
-          <StableNav view={view} setView={setView} settings={settings} setSettings={setSettings} t={t} />
+          <StableNav view={view} setView={setView} settings={settings} setSettings={setSettingsOpen} t={t} />
           <div className="sidebar-flex-spacer" aria-hidden="true" />
           <div className="sidebar-footer-actions">
             <PrimaryActionButton className="sidebar-company-action" onClick={() => open("company")}>
@@ -2191,7 +2221,7 @@ export default function App() {
             // The global hamburger always opens at the root level. This must happen
             // before the persistent navigation surface begins its existing reveal.
             setMobileSettingsPage(null);
-            setSettings(true);
+            setSettingsOpen(true);
           }} aria-label={settings ? t.cancel : t.settings}>
             {settings ? <X /> : <Menu />}
           </button>
@@ -2200,8 +2230,24 @@ export default function App() {
         </header>
         <main
           ref={workspaceRef}
-          className="workspace"
+          className={`workspace${!isMobile && settings ? " workspace-settings" : ""}`}
         >
+          {!isMobile && settings ? (
+            <SettingsPanel
+              t={t}
+              theme={theme}
+              setTheme={setTheme}
+              locale={locale}
+              setLocale={setLocale}
+              data={data}
+              setData={setData}
+              json={json}
+              iconRef={iconRef}
+              upload={upload}
+              updatePreferences={updatePreferences}
+              exportCalendar={exportCalendar}
+            />
+          ) : <>
           {view === "dashboard" && (
             <Dashboard
               {...{
@@ -2290,6 +2336,7 @@ export default function App() {
               }}
             />
           )}
+          </>}
         </main>
         {isMobile && (
           <MobileSettingsDrawer
@@ -2314,26 +2361,6 @@ export default function App() {
             exportCalendar={exportCalendar}
           />
         )}
-        {!isMobile && settings && (
-          <SettingsPanel
-            t={t}
-            theme={theme}
-            setTheme={setTheme}
-            locale={locale}
-            setLocale={setLocale}
-            close={() => setSettings(false)}
-            data={data}
-            setData={setData}
-            icon={icon}
-            json={json}
-            iconRef={iconRef}
-            importJson={importJson}
-            upload={upload}
-            download={download}
-            updatePreferences={updatePreferences}
-            exportCalendar={exportCalendar}
-          />
-        )}{" "}
         <input hidden ref={json} type="file" accept=".json,application/json" onChange={importJson} />
         {pendingBackupRestore && <BackupRestoreDialog locale={locale} busy={restoringBackup} onCancel={() => setPendingBackupRestore(null)} onConfirm={confirmBackupRestore} />}
         {form === "company" && (
@@ -5050,21 +5077,14 @@ function MobileSettingsDrawer({
     </aside>
   </div>;
 }
-function SettingsDrawer({ close, children, title }: { close: () => void; children: ReactNode; title: string }) {
-  const [closing, setClosing] = useState(false);
-  const startX = useRef<number | null>(null);
-  const dismiss = () => { if (closing) return; setClosing(true); window.setTimeout(close, 160); };
-  useEffect(() => { const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); }; document.addEventListener("keydown", onKey); document.body.classList.add("settings-drawer-open"); return () => { document.removeEventListener("keydown", onKey); document.body.classList.remove("settings-drawer-open"); }; }, []);
-  return <div className={`settings-drawer-layer ${closing ? "closing" : ""}`}><button className="settings-drawer-backdrop" onClick={dismiss} aria-label="Close settings"/><aside className="settings-drawer-panel" role="dialog" aria-modal="true" aria-label={title} onTouchStart={(e) => { startX.current = e.touches[0].clientX; }} onTouchEnd={(e) => { if (startX.current !== null && e.changedTouches[0].clientX - startX.current > 70) dismiss(); startX.current = null; }}><header><h2>{title}</h2><CloseButton onClick={dismiss} label="Close settings" /></header><div className="settings-drawer-scroll">{children}</div></aside></div>;
-}
-function SettingsPanel({ t, theme, setTheme, locale, setLocale, close, data, setData, iconRef, json, upload, updatePreferences, exportCalendar }: any) {
+function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, json, iconRef, upload, updatePreferences, exportCalendar }: any) {
   const [tab, setTab] = useState("general");
   const ja = locale === "ja";
   const ui = locale === "ja"
     ? { general: "一般", data: "データとバックアップ", about: "Yamiについて" }
     : { general: "常规", data: "数据与备份", about: "关于 Yami" };
   const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["about", ui.about, Info]] as const;
-  return <SettingsDrawer title={t.settings} close={close}><div className="desktop-settings-layout"><nav className="desktop-settings-nav settings-sidebar"><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
+  return <div className="settings-page-scope desktop-settings-page"><nav className="desktop-settings-nav settings-sidebar"><div className="settings-menu-heading"><h2>{t.settings}</h2></div><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
     {tab === "general" && <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} />}
     {tab === "job-settings" && <JobHuntSettings t={t} data={data} updatePreferences={updatePreferences} />}
     {tab === "customize" && <CustomizeSettings t={t} data={data} updatePreferences={updatePreferences} />}
@@ -5073,7 +5093,8 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, close, data, set
     {tab === "watch" && <WatchConnectionSettings locale={locale} />}
     {tab === "data" && <DataSettings data={data} theme={theme} locale={locale} json={json} />}
     {tab === "about" && <AboutSettings locale={locale} />}
-  </div></div><input hidden ref={iconRef} type="file" accept="image/*" onChange={upload} /></SettingsDrawer>;
+  </div><input hidden ref={iconRef} type="file" accept="image/*" onChange={upload} />
+  </div>;
 }
 function SettingsNavItem({ label, icon: Icon, active, onClick }: { label: string; icon: React.ComponentType<any>; active: boolean; onClick: () => void }) {
   return <button type="button" className={`settings-nav-item ${active ? "active" : ""}`} aria-selected={active} onClick={onClick}><Icon size={19} aria-hidden="true" /><span className="settings-nav-label">{label}</span></button>;

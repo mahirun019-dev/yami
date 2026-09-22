@@ -85,14 +85,7 @@
   font-synthesis: none;
 }
 
-.settings-drawer-layer { position: fixed; inset: 0; z-index: 140; display: flex; justify-content: flex-end; overflow: hidden; }
-.settings-drawer-backdrop { position: absolute; inset: 0; border: 0; background: rgba(12,22,36,.28); opacity: 1; transition: opacity .26s ease; }
-.settings-drawer-panel { position: relative; z-index: 1; display: flex; flex-direction: column; width: min(420px,92vw); height: 100dvh; padding: max(18px,env(safe-area-inset-top)) 20px max(18px,env(safe-area-inset-bottom)); border-radius: 30px 0 0 30px; background: #f8fafc; box-shadow: -12px 0 36px rgba(18,35,57,.16); transform: translateX(0); animation: settings-slide-in .26s cubic-bezier(.2,.8,.2,1); will-change: transform; }
-.settings-drawer-panel > header { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; }.settings-drawer-panel h2 { margin: 0; font-size: 20px; }.settings-close-button { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid #d8e1eb; border-radius: 50%; color: #55667b; background: rgba(229,235,242,.82); }.settings-close-button svg { width: 18px; }.settings-drawer-scroll { min-height: 0; overflow-y: auto; padding-top: 16px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }.settings-drawer-layer.closing .settings-drawer-panel { animation: settings-slide-out .26s ease forwards; }.settings-drawer-layer.closing .settings-drawer-backdrop { opacity: 0; }[data-theme="dark"] .settings-drawer-panel { background: #182333; box-shadow: -12px 0 36px rgba(0,0,0,.3); }[data-theme="dark"] .settings-drawer-panel > header { border-color: #304054; }[data-theme="dark"] .settings-close-button { border-color: #3b4b60; color: #e1e9f2; background: #253346; }.settings-drawer-panel .settings-content { gap: 14px; }.settings-drawer-panel .settings-content > span { color: #2a6eb7; font-size: 12px; }[data-theme="dark"] .settings-drawer-panel .settings-content > span { color: #8dc8ff; }.settings-drawer-panel .settings-actions button, .settings-drawer-panel .choice-row button { min-height: 48px; border-radius: 12px; }[data-theme="dark"] .settings-drawer-panel .settings-actions button, [data-theme="dark"] .settings-drawer-panel .choice-row button { border-color: #35465b; color: #dce6f0; background: #253346; }[data-theme="dark"] .settings-drawer-panel .choice-row button.active { color: #b9ddff; background: #21456c; border-color: #3979b9; }
-@keyframes settings-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } } @keyframes settings-slide-out { from { transform: translateX(0); } to { transform: translateX(100%); } }
-@media (max-width: 760px) { .settings-drawer-panel { width: min(92vw,420px); }.settings-drawer-backdrop { backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }.settings-drawer-panel .backup-cloud-actions { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .settings-drawer-panel, .settings-drawer-backdrop { animation: none !important; transition: none !important; } }
-body.settings-drawer-open { overflow: hidden; overscroll-behavior: none; }
+.settings-page-scope .settings-content { gap: 14px; }.settings-page-scope .settings-content > span { color: #2a6eb7; font-size: 12px; }[data-theme="dark"] .settings-page-scope .settings-content > span { color: #8dc8ff; }.settings-page-scope .settings-actions button, .settings-page-scope .choice-row button { min-height: 48px; border-radius: 12px; }[data-theme="dark"] .settings-page-scope .settings-actions button, [data-theme="dark"] .settings-page-scope .choice-row button { border-color: #35465b; color: #dce6f0; background: #253346; }[data-theme="dark"] .settings-page-scope .choice-row button.active { color: #b9ddff; background: #21456c; border-color: #3979b9; }
 
 /* Desktop shell: the workspace owns the middle and right columns. */
 @media (min-width: 1440px) {
@@ -105,7 +98,6 @@ body.settings-drawer-open { overflow: hidden; overscroll-behavior: none; }
   .entity-card { border-radius: 15px; }
   .metric { min-height: 78px; padding: 13px; }
   .page-head { margin-bottom: 18px; }
-  .settings-drawer-panel { width: min(420px, 30vw); }
 }
 @media (min-width: 981px) and (max-width: 1439px) {
   .student-app { grid-template-columns: 240px minmax(0, 1fr); }
@@ -121,24 +113,14 @@ body.settings-drawer-open { overflow: hidden; overscroll-behavior: none; }
 @media (min-width: 981px) {
   .dashboard-date { margin: 0; color: #0f1419; font-size: 38px; font-weight: 700; line-height: 1.2; }
   .dashboard-date + p { display: none; }
-  .settings-drawer-layer {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    padding: 10px 0 0 280px;
-    box-sizing: border-box;
-  }
   .right-column .entity-card { width: 100%; min-width: 280px; }
   .right-column .section-title h2,
   .right-column .entity-card strong,
   .right-column .entity-card span { white-space: normal; word-break: keep-all; overflow-wrap: normal; }
-  .settings-drawer-panel { width: min(420px, 440px); padding-inline: 22px; }
-  .settings-drawer-panel .backup-cloud-actions { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .settings-drawer-panel .backup-cloud-actions button { min-height: 48px; height: 48px; border-radius: 11px; }
-  .settings-drawer-panel .backup-list button { min-width: 44px; min-height: 44px; }
-  .settings-drawer-panel .danger-button { color: #c45752 !important; background: transparent !important; }
+  .settings-page-scope .backup-cloud-actions { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .settings-page-scope .backup-cloud-actions button { min-height: 48px; height: 48px; border-radius: 11px; }
+  .settings-page-scope .backup-list button { min-width: 44px; min-height: 44px; }
+  .settings-page-scope .danger-button { color: #c45752 !important; background: transparent !important; }
   .deadline-list .empty-small { min-height: 0; padding: 18px 16px; }
   .deadline-list .empty-small p { margin: 0; max-width: 300px; }
 }
@@ -1355,7 +1337,7 @@ textarea:focus-visible {
   font-size: 14px;
 }
 .drawer > header .close-button,
-.settings-drawer-panel .close-button {
+.settings-page-scope .close-button {
   display: grid;
   width: 48px;
   height: 48px;
@@ -1370,36 +1352,36 @@ textarea:focus-visible {
   transition: background-color 100ms ease, color 100ms ease, border-color 100ms ease;
 }
 .drawer > header .close-button:hover,
-.settings-drawer-panel .close-button:hover {
+.settings-page-scope .close-button:hover {
   background: #e5e6e8;
 }
 .drawer > header .close-button:active,
-.settings-drawer-panel .close-button:active {
+.settings-page-scope .close-button:active {
   background: #dcdde0;
 }
 .drawer > header .close-button:focus-visible,
-.settings-drawer-panel .close-button:focus-visible {
+.settings-page-scope .close-button:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 .drawer > header .close-button svg,
-.settings-drawer-panel .close-button svg {
+.settings-page-scope .close-button svg {
   width: 22px;
   height: 22px;
   stroke-width: 2;
 }
 [data-theme="dark"] .drawer > header .close-button,
-[data-theme="dark"] .settings-drawer-panel .close-button {
+[data-theme="dark"] .settings-page-scope .close-button {
   border-color: #3b424b;
   color: #c6ccd3;
   background: #252a31;
 }
 [data-theme="dark"] .drawer > header .close-button:hover,
-[data-theme="dark"] .settings-drawer-panel .close-button:hover {
+[data-theme="dark"] .settings-page-scope .close-button:hover {
   background: #30363e;
 }
 [data-theme="dark"] .drawer > header .close-button:active,
-[data-theme="dark"] .settings-drawer-panel .close-button:active {
+[data-theme="dark"] .settings-page-scope .close-button:active {
   background: #3a414a;
 }
 .wait-row small {
@@ -3051,8 +3033,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 [data-theme="dark"] button:focus-visible, [data-theme="dark"] input:focus-visible, [data-theme="dark"] select:focus-visible, [data-theme="dark"] textarea:focus-visible { outline-color: rgba(245,245,245,.45); }
 .backup-panel, .document-question { background: var(--bg-muted); border-color: var(--border-color); }
 .backup-cloud-actions button, .backup-panel button:not(.primary) { color: var(--text-primary); background: var(--bg-surface); border-color: var(--border-color); }
-.settings-drawer-panel { background: var(--bg-surface); }
-.settings-drawer-panel > header { border-color: var(--border-color); }
+.settings-page-scope { background: var(--bg-surface); }
 
 /* Company selection follows the monochrome navigation system. */
 .course-nav > button.selected {
@@ -3276,15 +3257,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   opacity: 1 !important;
 }
 @media (min-width: 981px) {
-  .settings-drawer-panel { display: flex; flex-direction: column; width: min(960px, calc(100vw - 64px)); height: calc(100dvh - 10px); max-height: none; margin: 0 0 0 0; align-self: flex-end; bottom: 0; padding: 0; border-radius: 28px; overflow: hidden; background: #fff; }
-  .settings-drawer-panel > header { height: 72px; padding: 0 28px; flex-shrink: 0; }
-  .settings-drawer-scroll { min-height: 0; padding: 0; overflow: hidden; }
-  .desktop-settings-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); height: 100%; min-height: 0; }
   .desktop-settings-nav { padding: 20px 14px; border-right: 1px solid var(--border-color); background: var(--bg-muted); }
   .desktop-settings-nav button { display: flex; width: calc(100% - 24px); min-height: 48px; height: 48px; align-items: center; gap: 11px; margin: 0 12px; padding: 0 16px; box-sizing: border-box; border: 0; border-radius: 12px; color: var(--text-secondary); background: transparent; text-align: left; font-size: 14px; }
   .desktop-settings-nav button svg { flex: 0 0 19px; color: inherit; stroke: currentColor; }
   .desktop-settings-nav button.active { color: #0f1419; background: rgba(15,20,25,.06); font-weight: 700; }
-  .desktop-settings-content { min-width: 0; overflow-y: auto; padding: 28px 32px 36px; }
+  .desktop-settings-content { min-width: 0; padding: 28px 32px 36px; }
   .settings-section { display: grid; gap: 18px; max-width: 760px; }
   .settings-section h3 { margin: 0; color: var(--text-primary); font-size: 18px; }
   .settings-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -3312,18 +3289,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .settings-about-list { display: grid; gap: 0; border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
   .settings-about-list p { margin: 0; padding: 15px 16px; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); }
   .settings-about-list p:last-child { border-bottom: 0; }
-  .desktop-settings-panel > header .close-button,
-  .settings-drawer-panel > header .close-button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 12px; }
   .desktop-settings-content > .settings-section { width: min(100%, 720px); }
   .settings-data-section { padding-top: 4px; }
   .settings-data-section > h3 { margin-top: 0; }
   .settings-sidebar { padding: 16px 12px; }
-  .settings-drawer-panel > header + .settings-drawer-scroll { flex: 1 1 auto; min-height: 0; overflow: hidden; }
-  .settings-drawer-panel .desktop-settings-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); flex: 1 1 auto; width: 100%; height: 100%; min-height: 0; align-items: stretch; }
-  .settings-drawer-panel .settings-sidebar { align-self: stretch; height: 100%; min-height: 0; background: #f5f5f5; border-right: 1px solid #e5e7eb; }
-  .settings-drawer-panel .desktop-settings-content { align-self: stretch; height: 100%; min-height: 0; overflow-y: auto; padding: 32px 40px; box-sizing: border-box; background: #fff; }
-  [data-theme="dark"] .settings-drawer-panel .settings-sidebar { background: var(--bg-muted); border-color: var(--border-color); }
-  [data-theme="dark"] .settings-drawer-panel .desktop-settings-content { background: var(--bg-surface); }
   .settings-nav-list { display: flex; width: 100%; flex-direction: column; gap: 4px; }
   .settings-nav-item,
   .settings-nav-item.is-active {
@@ -3668,7 +3637,7 @@ html, body { background: var(--bg-app); color: var(--text-primary); }
 /* All regular controls share the same dark-mode contrast and focus treatment. */
 .career-app input:not([type="hidden"]), .career-app select, .career-app textarea,
 .modal-layer input:not([type="hidden"]), .modal-layer select, .modal-layer textarea,
-.settings-drawer-panel input:not([type="hidden"]), .settings-drawer-panel select, .settings-drawer-panel textarea {
+.settings-page-scope input:not([type="hidden"]), .settings-page-scope select, .settings-page-scope textarea {
   color: var(--text-primary);
   background: var(--bg-input);
   border-color: var(--border-strong);
@@ -3683,10 +3652,10 @@ option { color: var(--text-primary); background: var(--bg-input); }
 
 /* Modal, sheet and drawer surfaces use one continuous surface in both themes. */
 .modal-backdrop, .mobile-settings-backdrop { background: var(--bg-overlay); }
-.modal-layer .drawer, .settings-drawer-panel, .mobile-settings-drawer { color: var(--text-primary); background: var(--bg-surface); border-color: var(--border-default); }
-.modal-layer .drawer > header, .settings-drawer-panel > header { color: var(--text-primary); background: var(--bg-surface); border-color: var(--border-default); }
+.modal-layer .drawer, .settings-page-scope, .mobile-settings-drawer { color: var(--text-primary); background: var(--bg-surface); border-color: var(--border-default); }
+.modal-layer .drawer > header { color: var(--text-primary); background: var(--bg-surface); border-color: var(--border-default); }
 .modal-layer .form-actions { background: var(--bg-surface); border-color: var(--border-default); }
-.close-button, .settings-drawer-panel .close-button { color: var(--text-secondary); background: var(--bg-surface-elevated); border-color: var(--border-default); }
+.close-button, .settings-page-scope .close-button { color: var(--text-secondary); background: var(--bg-surface-elevated); border-color: var(--border-default); }
 .form-actions > .primary, .settings-actions > .primary { color: var(--button-primary-text) !important; background: var(--button-primary-bg) !important; border-color: var(--button-primary-bg); }
 .form-actions > button:not(.primary), .settings-actions button:not(.primary) { color: var(--button-secondary-text); background: var(--button-secondary-bg); border-color: var(--border-default); }
 .danger-button { color: var(--danger) !important; background: transparent !important; border-color: var(--danger) !important; }
@@ -4124,8 +4093,7 @@ option { color: var(--text-primary); background: var(--bg-input); }
 [data-theme="dark"] .modal-layer .drawer,
 [data-theme="dark"] .modal-layer .drawer > header,
 [data-theme="dark"] .modal-layer .form-actions,
-[data-theme="dark"] .settings-drawer-panel,
-[data-theme="dark"] .settings-drawer-panel > header,
+[data-theme="dark"] .settings-page-scope,
 [data-theme="dark"] .mobile-settings-drawer,
 [data-theme="dark"] .mobile-settings-brand,
 [data-theme="dark"] .drawer-header { background: var(--bg-surface) !important; color: var(--text-primary); border-color: var(--border-default); }
@@ -4138,7 +4106,7 @@ option { color: var(--text-primary); background: var(--bg-input); }
 [data-theme="dark"] .modal-layer .form-actions > button:not(.primary), [data-theme="dark"] .settings-actions button:not(.primary) { color: var(--button-secondary-text); background: var(--button-secondary-bg); border-color: var(--border-default); }
 [data-theme="dark"] .timeline > .empty-small { background: var(--bg-surface) !important; }
 [data-theme="dark"] .filter-bar button.active { color: var(--text-primary); background: var(--bg-selected); }
-[data-theme="dark"] .settings-drawer-panel .close-button, [data-theme="dark"] .close-button { color: var(--text-secondary); background: var(--bg-surface-elevated); border-color: var(--border-default); }
+[data-theme="dark"] .settings-page-scope .close-button, [data-theme="dark"] .close-button { color: var(--text-secondary); background: var(--bg-surface-elevated); border-color: var(--border-default); }
 [data-theme="dark"] .mobile-settings-nav button, [data-theme="dark"] .mobile-settings-subpage-list > button { color: var(--text-primary); }
 [data-theme="dark"] .mobile-settings-nav button.active { color: var(--text-primary); background: var(--bg-selected); }
 [data-theme="dark"] .segmented-control span { color: var(--text-secondary); background: transparent; border-color: var(--border-strong); }
@@ -4386,117 +4354,14 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
 
 }
 
-/* PC settings center: keep the modal compact, centered, and independently scrollable. */
+/* PC Settings menu and content styling. */
 @media (min-width: 981px) {
-  .settings-drawer-layer {
-    align-items: center;
-    justify-content: center;
-    padding: 50px 60px;
-    background: rgba(20, 24, 30, 0.08);
-    backdrop-filter: blur(3px) saturate(102%);
-    -webkit-backdrop-filter: blur(3px) saturate(102%);
-  }
-
-  .settings-drawer-backdrop {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-
-  .settings-drawer-panel {
-    width: min(980px, calc(100vw - 120px));
-    height: min(700px, calc(100dvh - 100px));
-    max-width: 980px;
-    max-height: 700px;
-    align-self: center;
-    margin: 0 auto;
-    bottom: auto;
-    padding: 0;
-    border: 1px solid rgba(0, 0, 0, 0.07);
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.985);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.20);
-    overflow: hidden;
-    opacity: 1;
-    transform: scale(1);
-    transform-origin: center;
-    animation: settings-modal-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    will-change: opacity, transform;
-  }
-
-  .settings-drawer-layer.closing .settings-drawer-panel {
-    animation: settings-modal-exit 150ms ease-in both;
-  }
-
-  .settings-drawer-backdrop {
-    opacity: 1;
-    animation: settings-backdrop-enter 160ms ease-out both;
-    transition: none;
-  }
-
-  .settings-drawer-layer.closing .settings-drawer-backdrop {
-    opacity: 0;
-    animation: settings-backdrop-exit 150ms ease-in both;
-  }
-
-  .settings-drawer-panel > header {
-    height: 58px;
-    min-height: 58px;
-    padding: 0 20px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .settings-drawer-panel > header h2 {
-    font-size: 19px;
-    font-weight: 600;
-  }
-
-  .settings-drawer-panel > header .close-button {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-    border: 0;
-    border-radius: 10px;
-    background: transparent;
-  }
-
-  .settings-drawer-panel > header .close-button:hover {
-    background: rgba(0, 0, 0, 0.05);
-  }
-
-  .settings-drawer-panel > header .close-button svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .settings-drawer-panel > header + .settings-drawer-scroll {
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .settings-drawer-panel .desktop-settings-layout {
-    display: grid;
-    grid-template-columns: 232px minmax(0, 1fr);
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-
-  .settings-drawer-panel .settings-sidebar {
-    height: 100%;
-    min-height: 0;
-    padding: 16px 12px;
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
-    background: rgba(0, 0, 0, 0.018);
-  }
-
-  .settings-drawer-panel .settings-nav-list {
+  .settings-page-scope .settings-nav-list {
     gap: 4px;
   }
 
-  .settings-drawer-panel .settings-nav-item,
-  .settings-drawer-panel .settings-nav-item.is-active {
+  .settings-page-scope .settings-nav-item,
+  .settings-page-scope .settings-nav-item.is-active {
     min-height: 46px;
     height: 46px;
     padding: 0 14px;
@@ -4505,130 +4370,42 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     font-weight: 500;
   }
 
-  .settings-drawer-panel .settings-nav-item[aria-selected="true"] {
+  .settings-page-scope .settings-nav-item[aria-selected="true"] {
     color: #111318;
     background: rgba(0, 0, 0, 0.05);
     font-weight: 600;
   }
 
-  .settings-drawer-panel .desktop-settings-content {
-    height: 100%;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 28px 32px 32px;
-    box-sizing: border-box;
-    background: transparent;
-  }
-
-  .settings-drawer-panel .desktop-settings-content > .settings-section {
-    width: min(100%, 680px);
-    max-width: 680px;
-    gap: 16px;
-  }
-
-  .settings-drawer-panel .settings-section h3 {
+  .settings-page-scope .settings-section h3 {
     font-size: 18px;
     font-weight: 600;
   }
 
-  .settings-drawer-panel .settings-stats {
+  .settings-page-scope .settings-stats {
     gap: 12px;
   }
 
-  .settings-drawer-panel .settings-stats > div {
+  .settings-page-scope .settings-stats > div {
     min-height: 88px;
     padding: 13px 14px;
     border-radius: 12px;
   }
 
-  .settings-drawer-panel .settings-stats span {
+  .settings-page-scope .settings-stats span {
     font-size: 13px;
   }
 
-  .settings-drawer-panel .settings-stats strong {
+  .settings-page-scope .settings-stats strong {
     font-size: 26px;
   }
 
-  .settings-drawer-panel .home-region-setting {
+  .settings-page-scope .home-region-setting {
     width: min(100%, 480px);
   }
 
-  [data-theme="dark"] .settings-drawer-layer {
-    background: rgba(0, 0, 0, 0.14);
-    backdrop-filter: blur(3px) saturate(102%);
-    -webkit-backdrop-filter: blur(3px) saturate(102%);
-  }
-
-  [data-theme="dark"] .settings-drawer-panel {
-    border-color: rgba(255, 255, 255, 0.09);
-    background: rgba(28, 31, 35, 0.97) !important;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.20);
-  }
-
-  [data-theme="dark"] .settings-drawer-panel > header {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-  }
-
-  [data-theme="dark"] .settings-drawer-panel > header .close-button {
-    color: var(--text-secondary);
-    background: transparent;
-  }
-
-  [data-theme="dark"] .settings-drawer-panel > header .close-button:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  [data-theme="dark"] .settings-drawer-panel .settings-sidebar {
-    border-right-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.018);
-  }
-
-  [data-theme="dark"] .settings-drawer-panel .settings-nav-item[aria-selected="true"] {
+  [data-theme="dark"] .settings-page-scope .settings-nav-item[aria-selected="true"] {
     color: var(--text-primary);
     background: rgba(255, 255, 255, 0.07);
-  }
-}
-
-@keyframes settings-modal-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes settings-modal-exit {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.985);
-  }
-}
-
-@keyframes settings-backdrop-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes settings-backdrop-exit {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-@media (min-width: 981px) and (prefers-reduced-motion: reduce) {
-  .settings-drawer-panel,
-  .settings-drawer-layer.closing .settings-drawer-panel,
-  .settings-drawer-backdrop,
-  .settings-drawer-layer.closing .settings-drawer-backdrop {
-    animation: none;
-    opacity: 1;
-    transform: none;
   }
 }
 
@@ -5889,14 +5666,12 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     overscroll-behavior: contain;
   }
 
-  .modal-layer .drawer,
-  .settings-drawer-panel {
+  .modal-layer .drawer {
     border: 1px solid var(--cf-pc-modal-border);
     border-radius: var(--cf-pc-modal-radius);
   }
 
-  .modal-layer .drawer > header,
-  .settings-drawer-panel > header {
+  .modal-layer .drawer > header {
     height: var(--cf-pc-modal-header-height);
     min-height: var(--cf-pc-modal-header-height);
     align-items: center;
@@ -5905,14 +5680,12 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     border-bottom: 1px solid var(--cf-pc-modal-divider);
   }
 
-  .modal-layer .drawer > header h2,
-  .settings-drawer-panel > header h2 {
+  .modal-layer .drawer > header h2 {
     font-size: 19px;
     font-weight: 600;
   }
 
-  .modal-layer .drawer > header .close-button,
-  .settings-drawer-panel > header .close-button {
+  .modal-layer .drawer > header .close-button {
     width: var(--cf-pc-modal-close-size);
     height: var(--cf-pc-modal-close-size);
     min-width: var(--cf-pc-modal-close-size);
@@ -5923,8 +5696,7 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     background: var(--cf-pc-modal-close-bg);
   }
 
-  .modal-layer .drawer > header .close-button svg,
-  .settings-drawer-panel > header .close-button svg {
+  .modal-layer .drawer > header .close-button svg {
     width: 20px;
     height: 20px;
   }
@@ -5935,14 +5707,14 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
   }
 
   .modal-layer .form-grid > label,
-  .settings-drawer-panel .settings-field {
+  .settings-page-scope .settings-field {
     gap: 8px;
   }
 
   .modal-layer input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
   .modal-layer select,
-  .settings-drawer-panel input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-  .settings-drawer-panel select {
+  .settings-page-scope input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .settings-page-scope select {
     width: 100%;
     height: var(--cf-pc-field-height);
     min-height: var(--cf-pc-field-height);
@@ -5954,7 +5726,7 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
   }
 
   .modal-layer textarea,
-  .settings-drawer-panel textarea {
+  .settings-page-scope textarea {
     width: 100%;
     min-height: 112px;
     box-sizing: border-box;
@@ -5973,12 +5745,12 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     border-radius: var(--cf-pc-field-radius);
   }
 
-  .settings-drawer-panel .settings-nav-list {
+  .settings-page-scope .settings-nav-list {
     gap: 4px;
   }
 
-  .settings-drawer-panel .settings-nav-item,
-  .settings-drawer-panel .settings-nav-item.is-active {
+  .settings-page-scope .settings-nav-item,
+  .settings-page-scope .settings-nav-item.is-active {
     display: flex;
     width: 100%;
     height: 48px;
@@ -5991,19 +5763,19 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     font-weight: 500;
   }
 
-  .settings-drawer-panel .settings-nav-item:hover {
+  .settings-page-scope .settings-nav-item:hover {
     color: var(--text-primary);
     background: var(--cf-pc-settings-nav-hover);
   }
 
-  .settings-drawer-panel .settings-nav-item[aria-selected="true"] {
+  .settings-page-scope .settings-nav-item[aria-selected="true"] {
     color: var(--text-primary);
     background: var(--cf-pc-settings-nav-active);
     font-weight: 600;
   }
 
   /* All Settings icons are Lucide stroke icons; never fill their path nodes. */
-  .settings-drawer-panel .settings-nav-item svg {
+  .settings-page-scope .settings-nav-item svg {
     display: block;
     width: 21px;
     height: 21px;
@@ -6014,23 +5786,23 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     stroke-width: 1.9;
   }
 
-  .settings-drawer-panel .settings-nav-item svg * {
+  .settings-page-scope .settings-nav-item svg * {
     fill: none !important;
     stroke: currentColor !important;
   }
 
-  .settings-drawer-panel .settings-nav-label {
+  .settings-page-scope .settings-nav-label {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .settings-drawer-panel .settings-section {
+  .settings-page-scope .settings-section {
     gap: 20px;
   }
 
-  .settings-drawer-panel .settings-stats {
+  .settings-page-scope .settings-stats {
     gap: 12px;
   }
 }
@@ -6576,79 +6348,68 @@ html[data-theme="dark"] #root {
 
 /* Keep PC Settings on the same OLED-black surface hierarchy as the app. */
 @media (min-width: 981px) {
-  [data-theme="dark"] .settings-drawer-panel,
-  [data-theme="dark"] .settings-drawer-panel > header,
-  [data-theme="dark"] .settings-drawer-panel .desktop-settings-content {
+  [data-theme="dark"] .settings-page-scope,
+  [data-theme="dark"] .settings-page-scope .desktop-settings-content {
     color: var(--text-primary);
     background: var(--bg-app) !important;
     border-color: var(--border-default);
   }
 
-  [data-theme="dark"] .settings-drawer-panel .settings-sidebar {
+  [data-theme="dark"] .settings-page-scope .settings-sidebar {
     background: var(--bg-sidebar) !important;
     border-color: var(--border-default);
   }
 
-  [data-theme="dark"] .settings-drawer-panel .settings-nav-item:hover,
-  [data-theme="dark"] .settings-drawer-panel .settings-nav-item:active,
-  [data-theme="dark"] .settings-drawer-panel .settings-nav-item:focus:not(:focus-visible) {
+  [data-theme="dark"] .settings-page-scope .settings-nav-item:hover,
+  [data-theme="dark"] .settings-page-scope .settings-nav-item:active,
+  [data-theme="dark"] .settings-page-scope .settings-nav-item:focus:not(:focus-visible) {
     color: var(--text-primary);
     background: rgba(255, 255, 255, 0.05) !important;
   }
 
-  [data-theme="dark"] .settings-drawer-panel .settings-nav-item[aria-selected="true"] {
+  [data-theme="dark"] .settings-page-scope .settings-nav-item[aria-selected="true"] {
     color: var(--text-primary) !important;
     background: rgba(255, 255, 255, 0.07) !important;
   }
 
-  [data-theme="dark"] .settings-drawer-panel .settings-stats > div,
-  [data-theme="dark"] .settings-drawer-panel .settings-order-list > div,
-  [data-theme="dark"] .settings-drawer-panel .template-editor,
-  [data-theme="dark"] .settings-drawer-panel .template-list-item,
-  [data-theme="dark"] .settings-drawer-panel .backup-panel,
-  [data-theme="dark"] .settings-drawer-panel .document-question,
-  [data-theme="dark"] .settings-drawer-panel .calendar-important {
+  [data-theme="dark"] .settings-page-scope .settings-stats > div,
+  [data-theme="dark"] .settings-page-scope .settings-order-list > div,
+  [data-theme="dark"] .settings-page-scope .template-editor,
+  [data-theme="dark"] .settings-page-scope .template-list-item,
+  [data-theme="dark"] .settings-page-scope .backup-panel,
+  [data-theme="dark"] .settings-page-scope .document-question,
+  [data-theme="dark"] .settings-page-scope .calendar-important {
     color: var(--text-primary);
     background: var(--bg-surface) !important;
     border-color: var(--border-default);
   }
 
-  [data-theme="dark"] .settings-drawer-panel .settings-field select,
-  [data-theme="dark"] .settings-drawer-panel .settings-field input,
-  [data-theme="dark"] .settings-drawer-panel .settings-field textarea,
-  [data-theme="dark"] .settings-drawer-panel .template-editor select,
-  [data-theme="dark"] .settings-drawer-panel .template-editor input,
-  [data-theme="dark"] .settings-drawer-panel .template-editor textarea,
-  [data-theme="dark"] .settings-drawer-panel .template-insert select,
-  [data-theme="dark"] .settings-drawer-panel .settings-order-list button,
-  [data-theme="dark"] .settings-drawer-panel .settings-secondary-button,
-  [data-theme="dark"] .settings-drawer-panel .template-insert button {
+  [data-theme="dark"] .settings-page-scope .settings-field select,
+  [data-theme="dark"] .settings-page-scope .settings-field input,
+  [data-theme="dark"] .settings-page-scope .settings-field textarea,
+  [data-theme="dark"] .settings-page-scope .template-editor select,
+  [data-theme="dark"] .settings-page-scope .template-editor input,
+  [data-theme="dark"] .settings-page-scope .template-editor textarea,
+  [data-theme="dark"] .settings-page-scope .template-insert select,
+  [data-theme="dark"] .settings-page-scope .settings-order-list button,
+  [data-theme="dark"] .settings-page-scope .settings-secondary-button,
+  [data-theme="dark"] .settings-page-scope .template-insert button {
     color: var(--text-primary);
     background: var(--bg-surface) !important;
     border-color: var(--border-default);
   }
 
-  [data-theme="dark"] .settings-drawer-panel .settings-field small,
-  [data-theme="dark"] .settings-drawer-panel .settings-muted,
-  [data-theme="dark"] .settings-drawer-panel .settings-section-heading p,
-  [data-theme="dark"] .settings-drawer-panel .settings-choice-group label,
-  [data-theme="dark"] .settings-drawer-panel .settings-toggle-group label {
+  [data-theme="dark"] .settings-page-scope .settings-field small,
+  [data-theme="dark"] .settings-page-scope .settings-muted,
+  [data-theme="dark"] .settings-page-scope .settings-section-heading p,
+  [data-theme="dark"] .settings-page-scope .settings-choice-group label,
+  [data-theme="dark"] .settings-page-scope .settings-toggle-group label {
     color: var(--text-secondary);
   }
 
-  [data-theme="dark"] .settings-drawer-panel > header .close-button {
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
-  }
-
-  [data-theme="dark"] .settings-drawer-panel > header .close-button:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-  }
-
-  [data-theme="dark"] .settings-drawer-panel input:focus,
-  [data-theme="dark"] .settings-drawer-panel select:focus,
-  [data-theme="dark"] .settings-drawer-panel textarea:focus {
+  [data-theme="dark"] .settings-page-scope input:focus,
+  [data-theme="dark"] .settings-page-scope select:focus,
+  [data-theme="dark"] .settings-page-scope textarea:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-soft);
   }
@@ -9766,8 +9527,8 @@ html[data-theme="dark"] #root {
 .backup-feedback { grid-column: 1 / -1; }
 
 @media (min-width: 981px) {
-  .settings-drawer-panel .desktop-settings-content { padding-bottom: 32px; }
-  .settings-drawer-panel .desktop-settings-content > .settings-data-section { padding-bottom: 24px; }
+  .settings-page-scope .desktop-settings-content { padding-bottom: 32px; }
+  .settings-page-scope .desktop-settings-content > .settings-data-section { padding-bottom: 24px; }
 }
 
 @media (max-width: 767px) {
@@ -9900,4 +9661,133 @@ html[data-theme="dark"] #root {
 
 @media (max-width: 350px) {
   .settings-theme-options { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Desktop settings is a regular page inside the app workspace, not a dialog. */
+@media (min-width: 768px) {
+  .app-shell.app-shell-settings,
+  .app-shell.app-shell-settings > .student-app {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .app-shell.app-shell-settings > .student-app > .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .career-app .workspace.workspace-settings {
+    min-width: 0;
+    height: auto;
+    min-height: 100dvh;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .settings-page-scope.desktop-settings-page {
+    position: relative;
+    z-index: auto;
+    display: grid;
+    grid-template-columns: clamp(204px, 19vw, 280px) minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+    min-height: 100dvh;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    align-self: stretch;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: var(--bg-app) !important;
+    box-shadow: none;
+    transform: none;
+    animation: none;
+    will-change: auto;
+  }
+
+  .settings-page-scope .settings-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
+    padding: 32px 14px;
+    box-sizing: border-box;
+    border-right: 1px solid var(--border-default);
+    background: var(--bg-sidebar);
+  }
+
+  .settings-menu-heading {
+    padding: 0 14px 24px;
+  }
+
+  .settings-menu-heading h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 21px;
+    font-weight: 650;
+    line-height: 1.25;
+  }
+
+  .settings-page-scope .settings-nav-list {
+    gap: 4px;
+  }
+
+  .settings-page-scope .desktop-settings-content {
+    width: 100%;
+    min-width: 0;
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
+    padding: 38px clamp(28px, 4vw, 64px) 56px;
+    box-sizing: border-box;
+    background: var(--bg-app);
+  }
+
+  .settings-page-scope .desktop-settings-content > .settings-section {
+    width: min(100%, 760px);
+    max-width: 760px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .settings-page-scope.desktop-settings-page {
+    grid-template-columns: 176px minmax(0, 1fr);
+  }
+
+  .settings-page-scope .settings-sidebar {
+    padding: 26px 8px;
+  }
+
+  .settings-menu-heading {
+    padding-inline: 10px;
+  }
+
+  .settings-page-scope .settings-nav-item,
+  .settings-page-scope .settings-nav-item.is-active {
+    gap: 8px;
+    padding-inline: 10px;
+    font-size: 12.5px;
+  }
+
+  .settings-page-scope .settings-nav-item svg {
+    flex-basis: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .settings-page-scope .desktop-settings-content {
+    padding: 30px 22px 48px;
+  }
 }
