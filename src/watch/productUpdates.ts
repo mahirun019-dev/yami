@@ -61,6 +61,23 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
       '整理了 Dashboard 与企业列表的视觉表达',
     ],
   },
+}, {
+  id: '2026-09-22-yami-settings-and-template-management',
+  date: '2026-09-22T09:00:00+09:00',
+  title: { ja: 'Yami の設定をアップデートしました', zh: 'Yami 设置已更新' },
+  summary: { ja: '設定とテンプレートを、より使いやすく整理しました。', zh: '我们整理了设置与模板管理，让日常调整更方便。' },
+  changes: {
+    ja: [
+      'テーマ・言語・週の開始曜日を「一般」にまとめました',
+      'ホーム画面の表示項目と並び順を同じ場所で調整できます',
+      '保存済みテンプレートの作成・編集・削除を使いやすくしました',
+    ],
+    zh: [
+      '将主题、语言和每周起始日整合到“常规”设置中',
+      '可在同一处调整主页项目的显示与顺序',
+      '优化了已保存模板的创建、编辑和删除',
+    ],
+  },
 }];
 
 export function loadReadProductUpdateIds() {

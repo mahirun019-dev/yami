@@ -98,8 +98,32 @@ function WatchLogin({ locale }: { locale: Locale }) { const text = watchText[loc
 
 export function WatchConnectionSettings({ locale }: { locale: Locale }) {
   const text = watchText[locale], watch = useWatch();
-  if (!watch.configured) return <section className="watch-connection-settings"><h3>{text.connection}</h3><p>{text.unavailable}</p></section>;
-  return <section className="watch-connection-settings"><h3>{text.connection}</h3>{watch.authenticated ? <><p>{text.connected}</p><button type="button" onClick={watch.disconnect}>{text.disconnect}</button></> : <><p>{text.connectFromSettings}</p><WatchLogin locale={locale} /></>}</section>;
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const enabledCompanies = new Set(watch.targets.filter((target) => target.enabled).map((target) => target.company_id || companyWatchKey(target.company_name)).filter(Boolean));
+  const copy = locale === 'ja'
+    ? { status: '接続状態', connected: '接続済み', purpose: '企業ページの更新を確認するための接続です。', manage: '監視する企業は各企業の設定から管理できます。', monitored: '監視中の企業', unavailable: '監視サービスはまだ設定されていません。', title: '企業ウォッチとの接続を解除しますか？', description: '接続を解除すると、企業ページの監視機能を利用できなくなります。', cancel: 'キャンセル', disconnect: '接続を解除' }
+    : { status: '连接状态', connected: '已连接', purpose: '此连接用于确认企业页面的更新。', manage: '可在各企业的设置中管理监视对象。', monitored: '监视中的企业', unavailable: '监控服务尚未配置。', title: '要断开企业监控连接吗？', description: '断开后将无法使用企业页面监视功能。', cancel: '取消', disconnect: '断开连接' };
+  useEffect(() => {
+    if (!confirmDisconnect) return;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setConfirmDisconnect(false); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [confirmDisconnect]);
+  return <section className="watch-connection-settings">
+    <h3>{text.connection}</h3>
+    <div className="watch-settings-description"><p>{copy.purpose}</p><p>{copy.manage}</p></div>
+    {!watch.configured ? <p className="watch-connection-muted">{copy.unavailable}</p> : watch.authenticated ? <>
+      <div className="watch-connection-status"><h4>{copy.status}</h4><p><span className="watch-connection-dot" aria-hidden="true" />{copy.connected}</p></div>
+      <p className="watch-monitored-count">{copy.monitored}<strong>{enabledCompanies.size}{locale === 'ja' ? '社' : '家'}</strong></p>
+      <button type="button" className="watch-disconnect-button" onClick={() => setConfirmDisconnect(true)}>{text.disconnect}</button>
+    </> : <><p className="watch-connection-muted">{text.connectFromSettings}</p><WatchLogin locale={locale} /></>}
+    {confirmDisconnect && createPortal(<div className="watch-disconnect-layer" onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmDisconnect(false); }}>
+      <section className="watch-disconnect-dialog" role="alertdialog" aria-modal="true" aria-labelledby="watch-disconnect-title" aria-describedby="watch-disconnect-description">
+        <h2 id="watch-disconnect-title">{copy.title}</h2><p id="watch-disconnect-description">{copy.description}</p>
+        <footer><button type="button" onClick={() => setConfirmDisconnect(false)}>{copy.cancel}</button><button type="button" className="danger-button" onClick={() => { watch.disconnect(); setConfirmDisconnect(false); }}>{copy.disconnect}</button></footer>
+      </section>
+    </div>, document.body)}
+  </section>;
 }
 
 type NotificationPageProps = { locale: Locale; openCompany(id: string, name?: string, eventId?: string): void; openSettings(): void };

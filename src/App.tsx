@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
   type ChangeEvent,
   type FormEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEventHandler,
   type Ref,
   type ReactNode,
@@ -50,7 +51,6 @@ import {
   Eye,
   FileJson,
   FileText,
-  Globe,
   Home,
   MoreHorizontal,
   Menu,
@@ -119,6 +119,7 @@ type CreateType = "company" | "schedule" | "es" | "interview" | "preparation";
 type HomeSummaryModule = "active" | "deadlines" | "waiting";
 type HomeSection = "upcoming" | "progress" | "month" | "featured";
 type CompanySort = "updated" | "event" | "interest" | "name";
+type LaunchPage = "home" | "last" | "companies" | "notifications" | "schedule" | "materials";
 type TemplateCategory = "selfPr" | "gakuchika" | "motivation" | "interviewQuestion" | "reverseQuestion" | "preparation";
 type CareerTemplate = {
   id: string;
@@ -128,6 +129,11 @@ type CareerTemplate = {
   updatedAt: number;
 };
 type AppPreferences = {
+  general: {
+    launchPage: LaunchPage;
+    externalLinks: "new-tab" | "same-tab";
+    weekStartsOn: 0 | 1;
+  };
   jobHunt: {
     homeRegion: string;
     defaultCompanyStage: Stage;
@@ -303,6 +309,7 @@ function isDeadlineEvent(event: Event) {
 function defaultPreferences(): AppPreferences {
   const savedRegion = typeof localStorage !== "undefined" ? localStorage.getItem("careerflow-home-region") || "" : "";
   return {
+    general: { launchPage: "home", externalLinks: "new-tab", weekStartsOn: 0 },
     jobHunt: {
       homeRegion: savedRegion,
       defaultCompanyStage: "saved",
@@ -370,7 +377,8 @@ const KEY = "career-flow-data-v5",
   CLEAN = "career-flow-demo-cleaned-v1",
   THEME = "careerflow-theme",
   LOCALE = "careerflow-locale",
-  ICON = "careerflow-custom-icon";
+  ICON = "careerflow-custom-icon",
+  LAST_VIEW = "yami-last-main-view";
 const demoNames = ["Rakuten Group", "三菱UFJ银行", "CyberAgent"];
 const id = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
 const ATTACHMENT_DB = "careerflow-attachments";
@@ -498,6 +506,20 @@ function readRouteState(): { view: View; companyFilter: CompanyRouteFilter | nul
     scheduleFilter: view === "schedule" && filter === "this-week-deadline" ? filter : null,
     selectedCompanyId: view === "companies" ? params.get("company") : null,
   };
+}
+function getStartupView(data: Data, route: ReturnType<typeof readRouteState>): View {
+  if (typeof window === "undefined") return route.view;
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("view");
+  const routePath = window.location.pathname.replace(/\/$/, "");
+  const routedPath = ["/home", "/companies", "/notifications", "/schedule", "/materials", "/es-interview"].some((path) => routePath.endsWith(path));
+  if ((requested && ["dashboard", "companies", "notifications", "schedule", "materials"].includes(requested)) || routedPath) return route.view;
+  const configured = data.preferences.general.launchPage;
+  if (configured === "last") {
+    const last = localStorage.getItem(LAST_VIEW);
+    return last && ["dashboard", "companies", "notifications", "schedule", "materials"].includes(last) ? last as View : "dashboard";
+  }
+  return configured === "home" ? "dashboard" : configured;
 }
 const tr = {
   zh: {
@@ -669,14 +691,15 @@ const tr = {
     undo: "撤销",
     materialsSub: "材料、面试记录与准备事项",
     scheduleSub: "说明会、笔试、面试与截止时间",
-    jobSettings: "求职设置", customize: "自定义", templates: "模板", calendarIntegration: "日历连接",
-    homeRegion: "常驻就活地区", homeRegionHint: "没有填写详细地点的日程将使用此地区作为天气和出行参考。",
+    jobSettings: "求职设置", customize: "画面自定义", templates: "模板", calendarIntegration: "日历导出",
+    homeRegion: "主要活动区域", homeRegionHint: "日程未设置详细地点时，需要地区信息的天气功能会使用此区域。",
+    companyDefaultsTitle: "新企业的初始设置", companyDefaultsHint: "设置新增企业时使用的初始值；登记时仍可单独修改。",
     defaultStage: "新企业默认选考阶段", defaultInterest: "新企业默认志望度", defaultStageHint: "这是新增企业时自动填入的默认值。", defaultInterestHint: "保存前仍可单独修改，不会影响已经登记的企业。", homeSummary: "顶部摘要", homeSummaryOrder: "摘要卡片顺序", homeSections: "主页内容区块", homeSectionsOrder: "内容区块顺序", companyCard: "企业卡片显示信息",
     showIndustry: "行业", showPosition: "职种", showStage: "选考阶段", showInterest: "志望度", showNextEvent: "下一日程", defaultCompanySort: "默认企业排序",
     sortUpdated: "最近更新", sortEvent: "下一日程", sortInterest: "志望度从高到低", sortName: "企业名称", moveUp: "上移", moveDown: "下移",
     templateNew: "新建模板", templateEdit: "编辑模板", templateDelete: "删除模板", templateDuplicate: "复制模板", templateCategory: "类别", templateTitle: "标题", templateContent: "内容", templateSave: "保存模板", templateEmpty: "还没有模板", templateInsert: "从模板插入", chooseTemplate: "选择模板", insertTemplate: "插入", noTemplates: "暂无可用模板",
     templateSelfPr: "自我PR", templateGakuchika: "学生时代经历", templateMotivation: "志望动机", templateInterviewQuestion: "面试问题", templateReverseQuestion: "反问问题", templatePreparation: "准备事项",
-    calendarAdd: "添加到日历", calendarExportFuture: "汇总导出今后的日程", calendarMethod: "添加到日历的方式", calendarMethodHint: "Yami 使用标准 .ics 文件导出，不是实时同步或双向同步。", calendarDescription: "可以将 Yami 中的日程导出为 .ics 文件，再添加到 Apple 日历。", calendarNoSync: "不是实时同步。修改日程后，需要重新导出。", calendarHowTo: "使用方法", calendarIphoneTitle: "iPhone / iPad", calendarIphone: "1. 点击“汇总导出今后的日程”。\n2. 在分享菜单中保存或分享 .ics 文件。\n3. 打开 .ics 文件，按 iOS 提示添加到日历。\n设备或 Safari 版本不同，显示方式可能不同。", calendarMacTitle: "Mac", calendarMac: "1. 点击“汇总导出今后的日程”。\n2. 下载 .ics 文件。\n3. 打开文件，或在 Calendar.app 中选择“文件 → 导入”并选择该文件。", calendarGoogleTitle: "Google Calendar", calendarGoogle: "", calendarWindowsTitle: "Windows / Outlook", calendarWindows: "", calendarImportant: "重要：这不是自动同步。Yami 中的日程发生变化后，请按需要重新导出。", calendarPreferShare: "移动端优先使用分享", calendarExported: "日历文件已生成", calendarNoEvents: "没有可导出的后续日程",
+    calendarAdd: "添加到日历", calendarExportFuture: "汇总导出今后的日程", calendarMethod: "添加到日历的方式", calendarMethodHint: "Yami 使用标准 .ics 文件导出，不是实时同步或双向同步。", calendarDescription: "将 Yami 中的日程导出为 .ics 文件后，可添加到 Google 日历、Apple 日历等服务。", calendarNoSync: "不是实时同步。在 Yami 修改日程后，请按需重新导出。", calendarHowTo: "使用方法", calendarIphoneTitle: "iPhone / iPad", calendarIphone: "1. 点击“汇总导出今后的日程”。\n2. 在分享菜单中保存或分享 .ics 文件。\n3. 打开 .ics 文件，按 iOS 提示添加到日历。", calendarMacTitle: "Mac", calendarMac: "1. 点击“汇总导出今后的日程”。\n2. 下载 .ics 文件。\n3. 打开文件，或在 Calendar.app 中选择“文件 → 导入”并选择该文件。", calendarGoogleTitle: "Google Calendar", calendarGoogle: "1. 从 Yami 导出 .ics 文件。\n2. 打开 Google 日历设置。\n3. 在“导入和导出”中导入 .ics 文件。\n4. 选择要添加到的日历。", calendarWindowsTitle: "Windows / Outlook", calendarWindows: "", calendarImportant: "", calendarPreferShare: "移动端优先使用分享", calendarExported: "日历文件已生成", calendarNoEvents: "没有可导出的后续日程",
   },
   ja: {
     dashboard: "ホーム",
@@ -826,7 +849,7 @@ const tr = {
     cancel: "キャンセル",
     edit: "編集",
     remove: "削除",
-    appearance: "表示",
+    appearance: "外観",
     language: "言語",
     light: "ライト",
     dark: "ダーク",
@@ -847,14 +870,15 @@ const tr = {
     undo: "元に戻す",
     materialsSub: "書類・面接記録・準備事項",
     scheduleSub: "説明会・筆記・面接・締切",
-    jobSettings: "就活設定", customize: "カスタマイズ", templates: "テンプレート", calendarIntegration: "カレンダー連携",
-    homeRegion: "常駐就活地域", homeRegionHint: "詳細な場所がない日程では、この地域を天気や移動の目安に使用します。",
+    jobSettings: "就活設定", customize: "画面カスタマイズ", templates: "テンプレート", calendarIntegration: "カレンダー書き出し",
+    homeRegion: "主な活動エリア", homeRegionHint: "詳細な場所が設定されていない予定で、地域情報が必要な場合に使用します。",
+    companyDefaultsTitle: "新規企業の初期設定", companyDefaultsHint: "新しく企業を追加するときの初期値です。登録時に個別で変更できます。",
     defaultStage: "新規企業のデフォルト選考段階", defaultInterest: "新規企業のデフォルト志望度", defaultStageHint: "新しく企業を追加するときの初期値です。登録時に個別に変更できます。既存の企業には影響しません。", defaultInterestHint: "新しく企業を追加するときの初期値です。登録時に個別に変更できます。既存の企業には影響しません。", homeSummary: "上部サマリー", homeSummaryOrder: "サマリーカードの順序", homeSections: "ホームセクション", homeSectionsOrder: "セクションの順序", companyCard: "企業カードの表示情報",
-    showIndustry: "業界", showPosition: "職種", showStage: "選考段階", showInterest: "志望度", showNextEvent: "次の日程", defaultCompanySort: "既定の企業並び替え",
-    sortUpdated: "最近更新", sortEvent: "次の日程", sortInterest: "志望度の高い順", sortName: "企業名", moveUp: "上へ", moveDown: "下へ",
+    showIndustry: "業界", showPosition: "職種", showStage: "選考段階", showInterest: "志望度", showNextEvent: "次の日程", defaultCompanySort: "企業一覧のデフォルト並び順",
+    sortUpdated: "更新日が新しい順", sortEvent: "次の日程が近い順", sortInterest: "志望度が高い順", sortName: "企業名順", moveUp: "上へ", moveDown: "下へ",
     templateNew: "新規作成", templateEdit: "編集", templateDelete: "削除", templateDuplicate: "複製", templateCategory: "カテゴリ", templateTitle: "タイトル", templateContent: "内容", templateSave: "テンプレートを保存", templateEmpty: "テンプレートはまだありません", templateInsert: "テンプレートから挿入", chooseTemplate: "テンプレートを選択", insertTemplate: "挿入", noTemplates: "使用できるテンプレートがありません",
     templateSelfPr: "自己PR", templateGakuchika: "ガクチカ", templateMotivation: "志望動機", templateInterviewQuestion: "面接質問", templateReverseQuestion: "逆質問", templatePreparation: "準備事項",
-    calendarAdd: "カレンダーに追加", calendarExportFuture: "今後の予定をまとめて書き出す", calendarMethod: "カレンダーへの追加方法", calendarMethodHint: "Yami は標準の .ics ファイルを書き出します。リアルタイム同期や双方向同期ではありません。", calendarDescription: "Yami の予定を .ics ファイルとして Apple カレンダーに追加できます。", calendarNoSync: "リアルタイム同期ではありません。日程を変更した場合は、必要に応じて再度書き出してください。", calendarHowTo: "使い方", calendarIphoneTitle: "iPhone / iPad", calendarIphone: "1. 「今後の予定をまとめて書き出す」をタップします。\n2. 表示された共有メニューから .ics ファイルを保存・共有します。\n3. .ics ファイルを開き、iOS に表示される案内に従ってカレンダーへ追加します。\n端末や Safari のバージョンによって表示方法が異なる場合があります。", calendarMacTitle: "Mac", calendarMac: "1. 「今後の予定をまとめて書き出す」をクリックします。\n2. .ics ファイルをダウンロードします。\n3. ファイルを開く、または Calendar.app の「ファイル → 読み込む」から .ics を選択します。\n4. 追加先のカレンダーを選択します。", calendarGoogleTitle: "Google Calendar", calendarGoogle: "", calendarWindowsTitle: "Windows / Outlook", calendarWindows: "", calendarImportant: "重要：自動同期ではありません。Yami で日程を変更した場合は、必要に応じて再度書き出してください。", calendarPreferShare: "モバイルでは共有を優先", calendarExported: "カレンダーファイルを生成しました", calendarNoEvents: "書き出せる今後の予定はありません",
+    calendarAdd: "カレンダーに追加", calendarExportFuture: "今後の予定をまとめて書き出す", calendarMethod: "カレンダーへの追加方法", calendarMethodHint: "Yami は標準の .ics ファイルを書き出します。リアルタイム同期や双方向同期ではありません。", calendarDescription: "Yami の予定を .ics ファイルとして書き出し、Google カレンダーや Apple カレンダーなどに追加できます。", calendarNoSync: "リアルタイム同期ではありません。Yami で日程を変更した場合は、必要に応じて再度書き出してください。", calendarHowTo: "使い方", calendarIphoneTitle: "iPhone / iPad", calendarIphone: "1. 「今後の予定をまとめて書き出す」をタップします。\n2. 表示された共有メニューから .ics ファイルを保存・共有します。\n3. .ics ファイルを開き、iOS に表示される案内に従ってカレンダーへ追加します。", calendarMacTitle: "Mac", calendarMac: "1. 「今後の予定をまとめて書き出す」をクリックします。\n2. .ics ファイルをダウンロードします。\n3. ファイルを開く、または Calendar.app の「ファイル → 読み込む」から .ics を選択します。\n4. 追加先のカレンダーを選択します。", calendarGoogleTitle: "Google Calendar", calendarGoogle: "1. Yami から .ics ファイルを書き出します。\n2. Google カレンダーの設定を開きます。\n3. 「インポート / エクスポート」から .ics ファイルをインポートします。\n4. 追加先のカレンダーを選択します。", calendarWindowsTitle: "Windows / Outlook", calendarWindows: "", calendarImportant: "", calendarPreferShare: "モバイルでは共有を優先", calendarExported: "カレンダーファイルを生成しました", calendarNoEvents: "書き出せる今後の予定はありません",
   },
   en: {
     dashboard: "Home",
@@ -1238,6 +1262,7 @@ function makeCompanyNextEvent(company: Company, startsAt: string, existing?: Eve
 function normalize(x: any): Data {
   const defaults = defaultPreferences();
   const rawPreferences = (x.preferences || (x.settings && x.settings.preferences) || {}) as Partial<AppPreferences>;
+  const rawGeneral = (rawPreferences.general || {}) as Partial<AppPreferences["general"]>;
   const rawJobHunt = (rawPreferences.jobHunt || {}) as Partial<AppPreferences["jobHunt"]>;
   const rawCustomize = (rawPreferences.customize || {}) as Partial<AppPreferences["customize"]> & { homeModules?: unknown[] };
   const rawCard = (rawCustomize.companyCard || {}) as Partial<AppPreferences["customize"]["companyCard"]>;
@@ -1254,6 +1279,11 @@ function normalize(x: any): Data {
     ? { ...rawSectionVisibility, month: true, featured: true }
     : rawSectionVisibility;
   const preferences: AppPreferences = {
+    general: {
+      launchPage: (["home", "last", "companies", "notifications", "schedule", "materials"] as LaunchPage[]).includes(rawGeneral.launchPage as LaunchPage) ? rawGeneral.launchPage as LaunchPage : defaults.general.launchPage,
+      externalLinks: rawGeneral.externalLinks === "same-tab" ? "same-tab" : "new-tab",
+      weekStartsOn: rawGeneral.weekStartsOn === 1 ? 1 : 0,
+    },
     jobHunt: {
       homeRegion: typeof rawJobHunt.homeRegion === "string" ? rawJobHunt.homeRegion : defaults.jobHunt.homeRegion,
       defaultCompanyStage: stages.includes(rawJobHunt.defaultCompanyStage as Stage) ? rawJobHunt.defaultCompanyStage as Stage : defaults.jobHunt.defaultCompanyStage,
@@ -1405,7 +1435,7 @@ export default function App() {
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [data, setData] = useState<Data>(load);
   const initialRoute = readRouteState();
-  const [view, setViewState] = useState<View>(initialRoute.view),
+  const [view, setViewState] = useState<View>(() => getStartupView(data, initialRoute)),
     [companyFilter, setCompanyFilter] = useState<CompanyRouteFilter | null>(initialRoute.companyFilter),
     [scheduleFilter, setScheduleFilter] = useState<ScheduleRouteFilter | null>(initialRoute.scheduleFilter),
     [theme, setTheme] = useState<Theme>(
@@ -1432,6 +1462,8 @@ export default function App() {
     [companyFilterOpen, setCompanyFilterOpen] = useState(false),
     [companyRecordMenuOpen, setCompanyRecordMenuOpen] = useState(false),
     [toast, setToast] = useState<{ text: string; undo: () => void }>(),
+    [pendingBackupRestore, setPendingBackupRestore] = useState<File | null>(null),
+    [restoringBackup, setRestoringBackup] = useState(false),
     [icon, setIcon] = useState(() => localStorage.getItem(ICON) || "");
   const json = useRef<HTMLInputElement>(null),
     iconRef = useRef<HTMLInputElement>(null),
@@ -1441,6 +1473,17 @@ export default function App() {
     restoreCompanyListScrollRef = useRef(false);
   const firstDataRender = useRef(true);
   const t = tr[locale];
+  const handleExternalLinkClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!(event.target instanceof Element)) return;
+    const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
+    if (!anchor || anchor.hasAttribute("download")) return;
+    const destination = new URL(anchor.href, window.location.href);
+    if (!(destination.protocol === "http:" || destination.protocol === "https:") || destination.origin === window.location.origin) return;
+    event.preventDefault();
+    if (data.preferences.general.externalLinks === "same-tab") window.location.assign(destination.href);
+    else window.open(destination.href, "_blank", "noopener,noreferrer");
+  };
   const navigate = (nextView: View, nextFilter?: CompanyRouteFilter | ScheduleRouteFilter, nextCompanyId?: string) => {
     if (view === "companies" && !selected && nextView === "companies" && nextCompanyId) {
       companyListScrollTopRef.current = Math.max(workspaceRef.current?.scrollTop || 0, window.scrollY);
@@ -1517,7 +1560,7 @@ export default function App() {
     });
     return () => cancelAnimationFrame(frame);
   }, [view, selected]);
-  const hasOpenOverlay = Boolean(form || settings || confirm || deleteEvent || recordPickerOpen || companyFilterOpen || companyRecordMenuOpen);
+  const hasOpenOverlay = Boolean(form || settings || confirm || deleteEvent || recordPickerOpen || companyFilterOpen || companyRecordMenuOpen || pendingBackupRestore);
   useEffect(() => {
     if (hasOpenOverlay) document.body.dataset.overlayOpen = "true";
     else delete document.body.dataset.overlayOpen;
@@ -1640,6 +1683,7 @@ export default function App() {
     };
   }, [isMobile, view, selected, settings]);
   useEffect(() => localStorage.setItem(KEY, JSON.stringify(data)), [data]);
+  useEffect(() => localStorage.setItem(LAST_VIEW, view), [view]);
   useEffect(() => {
     if (firstDataRender.current) {
       firstDataRender.current = false;
@@ -2067,8 +2111,12 @@ export default function App() {
     const input = e.currentTarget;
     const f = e.target.files?.[0];
     if (!f) return;
-    const confirmed = window.confirm(locale === "ja" ? "バックアップを復元すると、このデバイスの現在のデータが上書きされます。続行しますか？" : "恢复备份将覆盖当前设备中的数据，是否继续？");
-    if (!confirmed) { input.value = ""; return; }
+    setPendingBackupRestore(f);
+    input.value = "";
+  };
+  const confirmBackupRestore = () => {
+    if (!pendingBackupRestore || restoringBackup) return;
+    setRestoringBackup(true);
     const r = new FileReader();
     r.onload = async () => {
       try {
@@ -2076,17 +2124,24 @@ export default function App() {
         const parsed = parseBackupPayload(x);
         await createBackup(makeBackupSnapshot(data, theme, locale));
         setData(parsed.data);
+        setPendingBackupRestore(null);
         setSettings(false);
         setMobileSettingsPage(null);
-        setToast({ text: locale === "ja" ? "復元しました" : "恢复成功", undo: () => undefined });
+        setToast({ text: locale === "ja" ? "バックアップを復元しました" : "备份已恢复", undo: () => undefined });
       } catch (error) {
         console.error("[backup] restore validation failed", error);
-        setToast({ text: locale === "ja" ? "バックアップの形式が無効です" : "备份格式无效，原数据未改变", undo: () => undefined });
+        setPendingBackupRestore(null);
+        setToast({ text: locale === "ja" ? "バックアップの形式が無効です。現在のデータは変更されていません。" : "备份格式无效，当前数据未改变", undo: () => undefined });
+      } finally {
+        setRestoringBackup(false);
       }
-      input.value = "";
     };
-    r.onerror = () => { setToast({ text: locale === "ja" ? "バックアップを読み込めませんでした" : "无法读取备份文件", undo: () => undefined }); input.value = ""; };
-    r.readAsText(f);
+    r.onerror = () => {
+      setRestoringBackup(false);
+      setPendingBackupRestore(null);
+      setToast({ text: locale === "ja" ? "バックアップを読み込めませんでした" : "无法读取备份文件", undo: () => undefined });
+    };
+    r.readAsText(pendingBackupRestore);
   };
   const upload = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -2114,7 +2169,7 @@ export default function App() {
   };
   return (
     <WatchProvider><div className="app-shell" data-app-shell="true">
-      <div className="student-app career-app">
+      <div className="student-app career-app" onClickCapture={handleExternalLinkClick}>
         <aside className="sidebar panel">
           <Brand />
           <StableNav view={view} setView={setView} settings={settings} setSettings={setSettings} t={t} />
@@ -2279,6 +2334,7 @@ export default function App() {
           />
         )}{" "}
         <input hidden ref={json} type="file" accept=".json,application/json" onChange={importJson} />
+        {pendingBackupRestore && <BackupRestoreDialog locale={locale} busy={restoringBackup} onCancel={() => setPendingBackupRestore(null)} onConfirm={confirmBackupRestore} />}
         {form === "company" && (
           <CompanyForm
             t={t}
@@ -2874,9 +2930,10 @@ function Dashboard({
   const monthIndex = displayedMonth.month;
   const monthPrefix = `${monthYear}-${String(monthIndex + 1).padStart(2, "0")}`;
   const daysInMonth = new Date(monthYear, monthIndex + 1, 0).getDate();
-  const firstWeekday = new Date(monthYear, monthIndex, 1).getDay();
+  const weekStartsOn = data.preferences.general.weekStartsOn;
+  const firstWeekday = (new Date(monthYear, monthIndex, 1).getDay() - weekStartsOn + 7) % 7;
   const calendarLocale = t.language === "言語" ? "ja-JP" : t.language === "Language" ? "en-US" : "zh-CN";
-  const weekdayLabels = Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(calendarLocale, { weekday: "short" }).format(new Date(2021, 7, 1 + index)));
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(calendarLocale, { weekday: "short" }).format(new Date(2021, 7, 1 + ((index + weekStartsOn) % 7))));
   const monthItems = schedules.filter((item: any) => item.at.slice(0, 7) === monthPrefix);
   const monthEventDays = new Map<number, typeof monthItems>();
   monthItems.forEach((item: any) => {
@@ -4527,26 +4584,41 @@ function Toast({
     </div>
   );
 }
-function BackupControls({ data, theme, locale, setData }: any) {
-  const [error, setError] = useState("");
+function DataSettings({ data, theme, locale, json }: any) {
+  const labels = locale === "ja"
+    ? { title: "データとバックアップ", saved: "保存済みデータ", companies: "企業", events: "日程", materials: "資料", interviews: "面接記録", preparations: "準備タスク" }
+    : { title: "数据与备份", saved: "已保存的数据", companies: "企业", events: "日程", materials: "资料", interviews: "面试记录", preparations: "准备任务" };
+  const records = [
+    [labels.companies, data.companies.length, locale === "ja" ? "社" : "家"],
+    [labels.events, data.events.length, locale === "ja" ? "件" : "条"],
+    [labels.materials, data.materials.length, locale === "ja" ? "件" : "条"],
+    [labels.interviews, data.interviews.length, locale === "ja" ? "件" : "条"],
+    [labels.preparations, data.preparations.length, locale === "ja" ? "件" : "条"],
+  ] as const;
+  return <section className="settings-section settings-data-section settings-form-section">
+    <h3>{labels.title}</h3>
+    <section className="settings-saved-data"><h4>{labels.saved}</h4><dl>{records.map(([name, count, unit]) => <div key={name}><dt>{name}</dt><dd>{count}{unit}</dd></div>)}</dl></section>
+    <BackupControls data={data} theme={theme} locale={locale} json={json} />
+  </section>;
+}
+function BackupControls({ data, theme, locale, json }: any) {
+  const [message, setMessage] = useState("");
   const [lastExport, setLastExport] = useState<number>(() => Number(localStorage.getItem("careerflow-last-export") || 0));
-  const fileRef = useRef<HTMLInputElement>(null);
   const snapshot = (): BackupSnapshot => makeBackupSnapshot(data, theme, locale);
+  const labels = locale === "ja"
+    ? { title: "バックアップ", export: "バックアップを書き出す", exportDescription: "現在の Yami データをバックアップファイルとして保存します。", download: "ブラウザの既定のダウンロード先に保存されます。", restore: "バックアップを復元", restoreDescription: "以前に書き出したバックアップファイルからデータを復元します。", choose: "バックアップファイルを選択", notes: "バックアップについて", contents: "企業、日程、資料、面接記録、準備タスク、アプリ設定が含まれます。", device: "バックアップファイルはこのデバイスに保存されます。", format: "ファイル形式：JSON", last: "前回の書き出し", never: "まだバックアップを書き出していません", generated: "バックアップファイルを生成しました", shared: "ファイルに保存を選択してください", failed: "書き出しに失敗しました" }
+    : { title: "备份", export: "导出备份", exportDescription: "将当前 Yami 数据保存为备份文件。", download: "文件将保存到浏览器的默认下载位置。", restore: "恢复备份", restoreDescription: "从此前导出的备份文件恢复数据。", choose: "选择备份文件", notes: "备份说明", contents: "包含企业、日程、资料、面试记录、准备任务和应用设置。", device: "备份文件保存在此设备中。", format: "文件格式：JSON", last: "上次导出", never: "尚未导出备份", generated: "备份文件已生成", shared: "请在分享菜单中选择保存文件", failed: "导出失败" };
   const exportBackup = async () => {
     const now = new Date();
-    const pad = (x: number) => String(x).padStart(2, "0");
+    const pad = (value: number) => String(value).padStart(2, "0");
     const name = `yami-backup-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.json`;
     const contents = JSON.stringify({ ...snapshot(), exportedAt: Date.now() }, null, 2);
     const backupFile = new File([contents], name, { type: "application/json" });
     const userAgent = navigator.userAgent || "";
-    // macOS Safari may expose navigator.share, but it is still a desktop
-    // browser. Only touch-capable iPadOS using the desktop-style UA qualifies.
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent) ||
-      (/Macintosh/.test(userAgent) && navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     try {
-      if (isIOS && navigator.share && navigator.canShare?.({ files: [backupFile] })) {
-        await navigator.share({ files: [backupFile], title: "Yami Backup" });
-      } else {
+      if (isIOS && navigator.share && navigator.canShare?.({ files: [backupFile] })) await navigator.share({ files: [backupFile], title: "Yami Backup" });
+      else {
         const blobUrl = URL.createObjectURL(new Blob([contents], { type: "application/json" }));
         const link = document.createElement("a");
         link.href = blobUrl;
@@ -4560,14 +4632,19 @@ function BackupControls({ data, theme, locale, setData }: any) {
       const timestamp = Date.now();
       localStorage.setItem("careerflow-last-export", String(timestamp));
       setLastExport(timestamp);
-      setError(locale === "ja" ? (isIOS ? "ファイルに保存を選択してください" : "バックアップファイルを生成しました") : locale === "en" ? "Backup file generated" : "备份文件已生成");
-    } catch (e) {
-      if ((e as DOMException).name !== "AbortError") setError(locale === "ja" ? "書き出しに失敗しました" : locale === "en" ? "Export failed" : "导出失败");
+      setMessage(isIOS ? labels.shared : labels.generated);
+    } catch (error) {
+      if ((error as DOMException).name !== "AbortError") setMessage(labels.failed);
     }
   };
-  const restoreFile = (e: ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { try { const parsed = parseBackupPayload(JSON.parse(String(reader.result))); await createBackup(snapshot()); setData(parsed.data); setError(`${parsed.counts.companies} 企业、${parsed.counts.schedules} 日程、${parsed.counts.materials} 资料已恢复`); } catch (error) { console.error("[backup] restore validation failed", error); setError("JSON 结构无效，原数据未改变"); } }; reader.readAsText(file); e.currentTarget.value = ""; };
-  const labels = locale === "ja" ? { exportBackup:"バックアップを書き出す", restoreFile:"バックアップを復元", exportNote:"バックアップファイルはブラウザの既定のダウンロード先に保存されます。", restoreNote:"以前に書き出したバックアップファイルを選択してください。", notesTitle:"バックアップについて", notesData:"企業、日程、書類、面接記録、アプリ設定が含まれます。", notesDevice:"バックアップファイルはユーザーのデバイスにのみ保存されます。", format:"ファイル形式：JSON", last:"前回の書き出し", never:"まだバックアップを書き出していません" } : { exportBackup:"导出备份", restoreFile:"恢复备份", exportNote:"备份文件将下载到浏览器的默认下载位置。", restoreNote:"请选择此前导出的备份文件。", notesTitle:"备份说明", notesData:"备份包含企业、日程、材料、面试记录及应用设置。", notesDevice:"备份文件仅保存在用户设备中。", format:"文件格式：JSON", last:"上次导出", never:"尚未导出备份" };
-  return <section className="backup-panel"><section><div className="backup-cloud-actions"><button className="primary" onClick={exportBackup}>{labels.exportBackup}</button><button onClick={() => fileRef.current?.click()}>{labels.restoreFile}</button></div><p>{labels.exportNote}</p><p>{labels.restoreNote}</p><div className="backup-notes"><strong>{labels.notesTitle}</strong><span>{labels.notesData}</span><span>{labels.notesDevice}</span><span>{labels.format}</span></div><p>{lastExport ? `${labels.last}: ${new Date(lastExport).toLocaleDateString()}` : labels.never}</p>{error && <p className="backup-error">{error}</p>}<input hidden ref={fileRef} type="file" accept="application/json,.json" onChange={restoreFile} /></section></section>;
+  const formattedLastExport = lastExport ? new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "zh-CN", { year: "numeric", month: "numeric", day: "numeric" }).format(lastExport) : "";
+  return <div className="backup-management">
+    <h4>{labels.title}</h4>
+    <section className="backup-action-block"><div><h5>{labels.export}</h5><p>{labels.exportDescription}</p></div><button type="button" className="primary" onClick={() => void exportBackup()}>{labels.export}</button><small>{labels.download}</small>{formattedLastExport && <small>{labels.last}: {formattedLastExport}</small>}</section>
+    <section className="backup-action-block"><div><h5>{labels.restore}</h5><p>{labels.restoreDescription}</p></div><button type="button" onClick={() => json.current?.click()}>{labels.choose}</button></section>
+    <section className="backup-notes"><strong>{labels.notes}</strong><span>{labels.contents}</span><span>{labels.device}</span><span>{labels.format}</span></section>
+    {!formattedLastExport && <p className="settings-muted">{labels.never}</p>}{message && <p className="backup-feedback" role="status">{message}</p>}
+  </div>;
 }
 const templateCategoryKeys: Array<[TemplateCategory, string]> = [
   ["selfPr", "templateSelfPr"],
@@ -4578,38 +4655,102 @@ const templateCategoryKeys: Array<[TemplateCategory, string]> = [
   ["preparation", "templatePreparation"],
 ];
 function TemplateManager({ t, data, setData }: any) {
+  const [page, setPage] = useState<"list" | "new" | "edit">("list");
   const [editing, setEditing] = useState<CareerTemplate | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CareerTemplate | null>(null);
   const [draft, setDraft] = useState({ category: "selfPr" as TemplateCategory, title: "", content: "" });
-  const beginNew = () => { setEditing(null); setDraft({ category: "selfPr", title: "", content: "" }); setEditorOpen(true); };
-  const beginEdit = (template: CareerTemplate) => { setEditing(template); setDraft({ category: template.category, title: template.title, content: template.content }); setEditorOpen(true); };
-  const closeEditor = () => { setEditing(null); setEditorOpen(false); setDraft({ category: "selfPr", title: "", content: "" }); };
+  const ja = t.language === "言語";
+  const copy = ja
+    ? { saved: "保存済みテンプレート", empty: "保存されたテンプレートはありません。", emptyHint: "よく使う文章を保存して、ES や面接準備で再利用できます。", create: "テンプレートを作成", back: "テンプレート一覧に戻る", newTitle: "新規テンプレート", editTitle: "テンプレートを編集", cancel: "キャンセル", characters: (count: number) => `${count}文字`, deleteTitle: "このテンプレートを削除しますか？", deleteBody: "削除すると元に戻せません。", delete: "削除", previewEmpty: "本文はまだありません" }
+    : { saved: "已保存的模板", empty: "还没有保存的模板。", emptyHint: "保存常用文本，之后可在 ES 和面试准备中重复使用。", create: "创建模板", back: "返回模板列表", newTitle: "新建模板", editTitle: "编辑模板", cancel: "取消", characters: (count: number) => `${count}字`, deleteTitle: "要删除这个模板吗？", deleteBody: "删除后无法恢复。", delete: "删除", previewEmpty: "暂无正文" };
+  const beginNew = () => { setEditing(null); setDraft({ category: "selfPr", title: "", content: "" }); setPage("new"); };
+  const beginEdit = (template: CareerTemplate) => { setEditing(template); setDraft({ category: template.category, title: template.title, content: template.content }); setPage("edit"); };
+  const closeEditor = () => { setEditing(null); setPage("list"); };
   const saveTemplate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft.title.trim() || !draft.content.trim()) return;
     const next: CareerTemplate = { id: editing?.id || id(), category: draft.category, title: draft.title.trim(), content: draft.content, updatedAt: Date.now() };
     setData((current: Data) => ({ ...current, templates: editing ? current.templates.map((item) => item.id === editing.id ? next : item) : [next, ...current.templates] }));
-    closeEditor();
+    setEditing(null);
+    setPage("list");
   };
-  const duplicate = (template: CareerTemplate) => setData((current: Data) => ({ ...current, templates: [{ ...template, id: id(), title: `${template.title} ${t.templateDuplicate}`, updatedAt: Date.now() }, ...current.templates] }));
-  const remove = (template: CareerTemplate) => setData((current: Data) => ({ ...current, templates: current.templates.filter((item) => item.id !== template.id) }));
-  return <div className={`template-manager${editorOpen ? " is-editing" : ""}`}>
-    <div className="settings-section-heading"><div><h4>{editorOpen ? (editing ? t.templateEdit : t.templateNew) : t.templates}</h4><p>{t.templateInsert}</p></div>{!editorOpen && <button type="button" className="settings-secondary-button" onClick={beginNew}><Plus />{t.templateNew}</button>}</div>
-    {editorOpen ? <form className="template-editor" onSubmit={saveTemplate}>
-      <label><span>{t.templateCategory}</span><select value={draft.category} onChange={(event) => setDraft((value) => ({ ...value, category: event.target.value as TemplateCategory }))}>{templateCategoryKeys.map(([value, key]) => <option key={value} value={value}>{t[key]}</option>)}</select></label>
-      <label><span>{t.templateTitle}</span><input value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} placeholder={t.templateTitle} /></label>
-      <label className="wide"><span>{t.templateContent}</span><textarea value={draft.content} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} rows={5} /></label>
-      <div className="template-editor-actions"><button type="submit" className="primary">{t.templateSave}</button><button type="button" onClick={closeEditor}>{t.cancel}</button></div>
-    </form> : <div className="template-list">{data.templates.length ? data.templates.map((template: CareerTemplate) => <article className="template-list-item" key={template.id}><div><span className="template-category">{t[templateCategoryKeys.find(([value]) => value === template.category)?.[1] || "templatePreparation"]}</span><h4>{template.title}</h4><p>{template.content}</p><small>{new Date(template.updatedAt).toLocaleDateString()}</small></div><div className="template-item-actions"><button type="button" onClick={() => beginEdit(template)}>{t.templateEdit}</button><button type="button" onClick={() => duplicate(template)}>{t.templateDuplicate}</button><button type="button" className="danger-button" onClick={() => remove(template)}>{t.templateDelete}</button></div></article>) : <p className="settings-muted">{t.templateEmpty}</p>}</div>}
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setData((current: Data) => ({ ...current, templates: current.templates.filter((item) => item.id !== deleteTarget.id) }));
+    setDeleteTarget(null);
+    setEditing(null);
+    setPage("list");
+  };
+  useEffect(() => {
+    if (!deleteTarget) return;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setDeleteTarget(null); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [deleteTarget]);
+  const categoryName = (category: TemplateCategory) => t[templateCategoryKeys.find(([value]) => value === category)?.[1] || "templatePreparation"];
+  return <div className={`template-manager-page${page !== "list" ? " is-editing" : ""}`}>
+    {page === "list" ? <>
+      <header className="template-manager-heading"><h4>{copy.saved}</h4>{data.templates.length > 0 && <button type="button" className="settings-secondary-button" onClick={beginNew}><Plus aria-hidden="true" />{t.templateNew}</button>}</header>
+      {data.templates.length ? <div className="template-saved-list">{data.templates.map((template: CareerTemplate) => <button type="button" className="template-saved-item" key={template.id} onClick={() => beginEdit(template)}>
+        <span className="template-saved-category">{categoryName(template.category)}</span><strong>{template.title}</strong><span className="template-saved-preview">{template.content.trim() || copy.previewEmpty}</span><small>{Array.from(template.content).length}{ja ? "文字" : "字"}</small>
+      </button>)}</div> : <div className="template-empty-state"><p>{copy.empty}</p><span>{copy.emptyHint}</span><button type="button" className="settings-secondary-button" onClick={beginNew}><Plus aria-hidden="true" />{copy.create}</button></div>}
+    </> : <>
+      <button type="button" className="template-back-button" onClick={closeEditor}><ArrowLeft aria-hidden="true" />{copy.back}</button>
+      <header className="template-manager-heading"><h4>{page === "new" ? copy.newTitle : copy.editTitle}</h4></header>
+      <form className="template-editor-form" onSubmit={saveTemplate}>
+        <label><span>{t.templateCategory}</span><select value={draft.category} onChange={(event) => setDraft((value) => ({ ...value, category: event.target.value as TemplateCategory }))}>{templateCategoryKeys.map(([value, key]) => <option key={value} value={value}>{t[key]}</option>)}</select></label>
+        <label><span>{t.templateTitle}</span><input required value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} /></label>
+        <label className="template-content-field"><span>{t.templateContent}</span><textarea required value={draft.content} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} rows={8} /><output aria-live="polite">{copy.characters(Array.from(draft.content).length)}</output></label>
+        <footer className="template-editor-actions"><div>{page === "edit" && editing && <button type="button" className="template-delete-link" onClick={() => setDeleteTarget(editing)}>{t.templateDelete}</button>}</div><div><button type="button" onClick={closeEditor}>{copy.cancel}</button><button type="submit" className="primary">{t.save}</button></div></footer>
+      </form>
+    </>}
+    {deleteTarget && <div className="template-delete-layer" onMouseDown={(event) => { if (event.target === event.currentTarget) setDeleteTarget(null); }}>
+      <section className="template-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="template-delete-title" aria-describedby="template-delete-description">
+        <h5 id="template-delete-title">{copy.deleteTitle}</h5><p id="template-delete-description">{copy.deleteBody}</p>
+        <footer><button type="button" onClick={() => setDeleteTarget(null)}>{copy.cancel}</button><button type="button" className="danger-button" onClick={confirmDelete}>{copy.delete}</button></footer>
+      </section>
+    </div>}
   </div>;
 }
 function JobHuntSettings({ t, data, updatePreferences }: any) {
   const settings = data.preferences.jobHunt;
   const update = (patch: Partial<AppPreferences["jobHunt"]>) => updatePreferences((current: AppPreferences) => ({ ...current, jobHunt: { ...current.jobHunt, ...patch } }));
+  const interestLabel = t.language === "言語" ? "志望度" : "志望度";
   return <section className="settings-section settings-form-section"><h3>{t.jobSettings}</h3>
     <label className="settings-field"><span>{t.homeRegion}</span><select value={settings.homeRegion} onChange={(event) => { update({ homeRegion: event.target.value }); localStorage.setItem("careerflow-home-region", event.target.value); }}><option value="">{t.notSet}</option>{prefectures.map((region) => <option key={region} value={region}>{region}</option>)}</select><small>{t.homeRegionHint}</small></label>
-    <label className="settings-field"><span>{t.defaultStage}</span><select value={settings.defaultCompanyStage} onChange={(event) => update({ defaultCompanyStage: event.target.value as Stage })}>{stages.map((stage) => <option key={stage} value={stage}>{t[stage]}</option>)}</select><small>{t.defaultStageHint}</small></label>
-    <label className="settings-field"><span>{t.defaultInterest}</span><select value={settings.defaultInterestLevel} onChange={(event) => update({ defaultInterestLevel: Number(event.target.value) })}>{[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value} / 5</option>)}</select><small>{t.defaultInterestHint}</small></label>
+    <fieldset className="settings-default-company-values"><legend>{t.companyDefaultsTitle}</legend><p>{t.companyDefaultsHint}</p>
+      <label className="settings-field"><span>{t.defaultStage}</span><select value={settings.defaultCompanyStage} onChange={(event) => update({ defaultCompanyStage: event.target.value as Stage })}>{stages.map((stage) => <option key={stage} value={stage}>{t[stage]}</option>)}</select></label>
+      <div className="settings-field settings-interest-field"><span id="default-interest-label">{t.defaultInterest}</span><div className="settings-star-rating" role="radiogroup" aria-labelledby="default-interest-label">{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" role="radio" aria-checked={settings.defaultInterestLevel === value} aria-label={`${interestLabel} ${value} / 5`} tabIndex={settings.defaultInterestLevel === value ? 0 : -1} onClick={() => update({ defaultInterestLevel: value })} onKeyDown={(event) => {
+        const direction = event.key === "ArrowRight" || event.key === "ArrowUp" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -1 : 0;
+        if (direction) { event.preventDefault(); const next = Math.min(5, Math.max(1, value + direction)); update({ defaultInterestLevel: next }); event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next - 1]?.focus(); }
+        if (event.key === "Home" || event.key === "End") { event.preventDefault(); const next = event.key === "Home" ? 1 : 5; update({ defaultInterestLevel: next }); event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next - 1]?.focus(); }
+      }}><Star aria-hidden="true" className={value <= settings.defaultInterestLevel ? "is-filled" : ""} /></button>)}</div></div>
+    </fieldset>
+  </section>;
+}
+function GeneralSettings({ t, data, updatePreferences, locale, theme, setTheme, setLocale, mobile = false }: any) {
+  const settings = data.preferences.general;
+  const ja = locale === "ja";
+  const update = (patch: Partial<AppPreferences["general"]>) => updatePreferences((current: AppPreferences) => ({ ...current, general: { ...current.general, ...patch } }));
+  const copy = ja
+    ? { title: "一般", basics: "基本動作", display: "表示", theme: "テーマ", themeHint: "Yami の表示テーマを選択します。", language: "言語", languageLabel: "表示言語", week: "週の開始曜日", weekHint: "カレンダーの表示開始曜日を選択します。", sunday: "日曜日", monday: "月曜日", japanese: "日本語", chinese: "简体中文", launch: "起動時に表示するページ", launchHint: "Yamiを開いたときに最初に表示するページ", external: "外部リンクの開き方", externalHint: "企業サイトや採用ページなどの外部リンク", home: "ホーム", last: "前回開いていたページ", companies: "企業", notifications: "通知", schedule: "日程", materials: "ES・面接" }
+    : { title: "常规", basics: "基本操作", display: "显示", theme: "主题", themeHint: "选择 Yami 的显示主题。", language: "语言", languageLabel: "显示语言", week: "每周起始日", weekHint: "选择日历每周的起始日。", sunday: "星期日", monday: "星期一", japanese: "日本語", chinese: "简体中文", launch: "启动时显示的页面", launchHint: "打开 Yami 时首先显示的页面", external: "外部链接的打开方式", externalHint: "企业官网、招聘页面等外部链接", home: "主页", last: "上次打开的页面", companies: "企业", notifications: "通知", schedule: "日程", materials: "ES・面试" };
+  const destinations: Array<[LaunchPage, string]> = [["home", copy.home], ["last", copy.last], ["companies", copy.companies], ["notifications", copy.notifications], ["schedule", copy.schedule], ["materials", copy.materials]];
+  return <section className={`settings-section settings-form-section settings-general${mobile ? " mobile-settings-subpage" : ""}`}>
+    {mobile ? <h2>{copy.title}</h2> : <h3>{copy.title}</h3>}
+    <section className="settings-general-group"><h4>{copy.display}</h4>
+      <div className="settings-general-control"><div><strong>{copy.theme}</strong><p>{copy.themeHint}</p></div>
+        <div className="settings-segmented settings-theme-options">{(["light", "dark", "system"] as Theme[]).map((value) => { const Icon = value === "light" ? Sun : value === "dark" ? Moon : Monitor; return <button type="button" aria-pressed={theme === value} className={theme === value ? "active" : ""} onClick={() => setTheme(value)} key={value}><Icon aria-hidden="true" />{t[value]}</button>; })}</div>
+      </div>
+      <div className="settings-general-control"><div><strong>{copy.languageLabel}</strong></div>
+        <div className="settings-segmented settings-language-options">{(["ja", "zh"] as Locale[]).map((value) => <button type="button" aria-pressed={locale === value} className={locale === value ? "active" : ""} onClick={() => setLocale(value)} key={value}>{value === "ja" ? copy.japanese : copy.chinese}</button>)}</div>
+      </div>
+    </section>
+    <section className="settings-general-group"><h4>{copy.basics}</h4>
+      <label className="settings-field"><span>{copy.launch}</span><small>{copy.launchHint}</small><select value={settings.launchPage} onChange={(event) => update({ launchPage: event.target.value as LaunchPage })}>{destinations.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label className="settings-field"><span>{copy.external}</span><small>{copy.externalHint}</small><select value={settings.externalLinks} onChange={(event) => update({ externalLinks: event.target.value as AppPreferences["general"]["externalLinks"] })}><option value="new-tab">{ja ? "新しいタブで開く" : "在新标签页打开"}</option><option value="same-tab">{ja ? "現在のタブで開く" : "在当前标签页打开"}</option></select></label>
+      <label className="settings-field"><span>{copy.week}</span><small>{copy.weekHint}</small><select value={settings.weekStartsOn} onChange={(event) => update({ weekStartsOn: Number(event.target.value) as 0 | 1 })}><option value={0}>{copy.sunday}</option><option value={1}>{copy.monday}</option></select></label>
+    </section>
   </section>;
 }
 function CustomizeSettings({ t, data, updatePreferences }: any) {
@@ -4624,19 +4765,45 @@ function CustomizeSettings({ t, data, updatePreferences }: any) {
   const updateCard = (key: keyof AppPreferences["customize"]["companyCard"]) => update({ companyCard: { ...settings.companyCard, [key]: !settings.companyCard[key] } });
   const sortLabels: Record<CompanySort, string> = { updated: t.sortUpdated, event: t.sortEvent, interest: t.sortInterest, name: t.sortName };
   return <section className="settings-section settings-form-section"><h3>{t.customize}</h3>
-    <fieldset className="settings-choice-group"><legend>{t.homeSummary}</legend>{defaultHomeSummary.map((module) => <label key={module}><input type="checkbox" checked={settings.homeSummaryVisibility[module]} onChange={() => toggleSummary(module)} />{summaryLabels[module]}</label>)}</fieldset>
-    <div className="settings-order-list"><strong>{t.homeSummaryOrder}</strong>{settings.homeSummaryOrder.map((module: HomeSummaryModule, index: number) => <div key={module}><span>{index + 1}. {summaryLabels[module]}</span><div><button type="button" onClick={() => moveSummary(index, -1)} disabled={index === 0} aria-label={t.moveUp}><ChevronUp /></button><button type="button" onClick={() => moveSummary(index, 1)} disabled={index === settings.homeSummaryOrder.length - 1} aria-label={t.moveDown}><ChevronDown /></button></div></div>)}</div>
-    <fieldset className="settings-choice-group"><legend>{t.homeSections}</legend>{defaultHomeSections.map((module) => <label key={module}><input type="checkbox" checked={settings.homeSectionVisibility[module] !== false} onChange={() => toggleSection(module)} />{sectionLabels[module]}</label>)}</fieldset>
-    <div className="settings-order-list"><strong>{t.homeSectionsOrder}</strong>{settings.homeSectionOrder.map((module: HomeSection, index: number) => <div key={module}><span>{index + 1}. {sectionLabels[module]}</span><div><button type="button" onClick={() => moveSection(index, -1)} disabled={index === 0} aria-label={t.moveUp}><ChevronUp /></button><button type="button" onClick={() => moveSection(index, 1)} disabled={index === settings.homeSectionOrder.length - 1} aria-label={t.moveDown}><ChevronDown /></button></div></div>)}</div>
+    <fieldset className="settings-choice-group customize-managed-group"><legend>{t.homeSummary}</legend><div className="customize-managed-list">{settings.homeSummaryOrder.map((module: HomeSummaryModule, index: number) => <div className="customize-managed-row" key={module}><label><input type="checkbox" checked={settings.homeSummaryVisibility[module]} onChange={() => toggleSummary(module)} /><span>{summaryLabels[module]}</span></label><div><button type="button" onClick={() => moveSummary(index, -1)} disabled={index === 0} aria-label={t.moveUp}><ChevronUp /></button><button type="button" onClick={() => moveSummary(index, 1)} disabled={index === settings.homeSummaryOrder.length - 1} aria-label={t.moveDown}><ChevronDown /></button></div></div>)}</div></fieldset>
+    <fieldset className="settings-choice-group customize-managed-group"><legend>{t.homeSections}</legend><div className="customize-managed-list">{settings.homeSectionOrder.map((module: HomeSection, index: number) => <div className="customize-managed-row" key={module}><label><input type="checkbox" checked={settings.homeSectionVisibility[module] !== false} onChange={() => toggleSection(module)} /><span>{sectionLabels[module]}</span></label><div><button type="button" onClick={() => moveSection(index, -1)} disabled={index === 0} aria-label={t.moveUp}><ChevronUp /></button><button type="button" onClick={() => moveSection(index, 1)} disabled={index === settings.homeSectionOrder.length - 1} aria-label={t.moveDown}><ChevronDown /></button></div></div>)}</div></fieldset>
     <fieldset className="settings-choice-group"><legend>{t.companyCard}</legend>{(["industry", "position", "stage", "interest", "nextEvent"] as const).map((key) => <label key={key}><input type="checkbox" checked={settings.companyCard[key]} onChange={() => updateCard(key)} />{t[key === "industry" ? "showIndustry" : key === "position" ? "showPosition" : key === "stage" ? "showStage" : key === "interest" ? "showInterest" : "showNextEvent"]}</label>)}</fieldset>
     <label className="settings-field"><span>{t.defaultCompanySort}</span><select value={settings.companySort} onChange={(event) => update({ companySort: event.target.value as CompanySort })}>{(Object.keys(sortLabels) as CompanySort[]).map((key) => <option key={key} value={key}>{sortLabels[key]}</option>)}</select></label>
   </section>;
 }
 function CalendarSettings({ t, exportCalendar }: any) {
-  return <section className="settings-section settings-form-section"><h3>{t.calendarIntegration}</h3><p className="settings-muted calendar-description">{t.calendarDescription}</p><p className="settings-muted">{t.calendarNoSync}</p><button type="button" className="primary settings-wide-action" onClick={() => exportCalendar()}><CalendarDays />{t.calendarExportFuture}</button><div className="calendar-help"><h4>{t.calendarHowTo}</h4>{([[t.calendarIphoneTitle, t.calendarIphone], [t.calendarMacTitle, t.calendarMac]] as Array<[string, string]>).map(([title, steps]) => <section key={title}><strong>{title}</strong><p>{steps}</p></section>)}<p className="calendar-important">{t.calendarNoSync}</p></div></section>;
+  return <section className="settings-section settings-form-section"><h3>{t.calendarIntegration}</h3><p className="settings-muted calendar-description">{t.calendarDescription}</p><button type="button" className="primary settings-wide-action" onClick={() => exportCalendar()}><CalendarDays />{t.calendarExportFuture}</button><div className="calendar-help"><h4>{t.calendarHowTo}</h4>{([[t.calendarIphoneTitle, t.calendarIphone], [t.calendarMacTitle, t.calendarMac], [t.calendarGoogleTitle, t.calendarGoogle]] as Array<[string, string]>).map(([title, steps]) => <section key={title}><strong>{title}</strong><p>{steps}</p></section>)}<p className="calendar-important">{t.calendarNoSync}</p></div></section>;
+}
+function AboutSettings({ locale, mobile = false }: any) {
+  const copy = locale === "ja"
+    ? { title: "Yamiについて", version: "Yami バージョン 1.0", privacy: "プライバシー：データは主にこのデバイスに保存されます。", license: "オープンソースライセンス：MIT License", pwa: "PWA：ホーム画面への追加に対応", icon: "アプリアイコン：Yami ブランドアバター" }
+    : { title: "关于 Yami", version: "Yami 版本 1.0", privacy: "隐私说明：数据主要保存在当前设备。", license: "开源许可：MIT License", pwa: "PWA：支持添加到主屏幕", icon: "应用图标：Yami 品牌头像" };
+  return <section className={`settings-section${mobile ? " mobile-settings-subpage mobile-about" : ""}`}>
+    {mobile ? <h2>{copy.title}</h2> : <h3>{copy.title}</h3>}
+    <YamiAboutBrand />
+    <div className="settings-about-list"><p>{copy.version}</p>{!mobile && <><p>{copy.pwa}</p><p>{copy.icon}</p></>}<p>{copy.privacy}</p><p>{copy.license}</p></div>
+  </section>;
+}
+function BackupRestoreDialog({ locale, busy, onCancel, onConfirm }: { locale: Locale; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const cancelButton = useRef<HTMLButtonElement>(null);
+  const copy = locale === "ja"
+    ? { title: "バックアップを復元しますか？", body: "現在のデータはバックアップの内容に置き換えられます。復元後は元に戻せません。", cancel: "キャンセル", restore: "復元", working: "復元中…" }
+    : { title: "要恢复备份吗？", body: "当前数据将被备份内容替换，恢复后无法撤销。", cancel: "取消", restore: "恢复", working: "正在恢复…" };
+  useEffect(() => {
+    cancelButton.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape" && !busy) onCancel(); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [busy, onCancel]);
+  return createPortal(<div className="backup-restore-layer" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onCancel(); }}>
+    <section className="backup-restore-dialog" role="alertdialog" aria-modal="true" aria-labelledby="backup-restore-title" aria-describedby="backup-restore-description">
+      <h2 id="backup-restore-title">{copy.title}</h2><p id="backup-restore-description">{copy.body}</p>
+      <footer><button ref={cancelButton} type="button" onClick={onCancel} disabled={busy}>{copy.cancel}</button><button type="button" className="danger-button" onClick={onConfirm} disabled={busy}>{busy ? copy.working : copy.restore}</button></footer>
+    </section>
+  </div>, document.body);
 }
 function MobileSettingsDrawer({
-  t, page, setPage, close, open, theme, setTheme, locale, setLocale, data, setData, json, download, updatePreferences, exportCalendar,
+  t, page, setPage, close, open, theme, setTheme, locale, setLocale, data, setData, json, updatePreferences, exportCalendar,
 }: any) {
   const layerRef = useRef<HTMLDivElement>(null);
   const [renderedPage, setRenderedPage] = useState<string | null>(null);
@@ -4644,10 +4811,10 @@ function MobileSettingsDrawer({
   const [contentPhase, setContentPhase] = useState<"idle" | "out" | "in">("idle");
   const label = "Yami";
   const about = locale === "ja"
-    ? { title: "Yamiについて", version: "Yami バージョン 1.0", db: `データベースバージョン：v${data.schemaVersion}`, privacy: "プライバシー：データは主にこのデバイスに保存されます。", license: "オープンソースライセンス：MIT License" }
+    ? { title: "Yamiについて", version: "Yami バージョン 1.0", privacy: "プライバシー：データは主にこのデバイスに保存されます。", license: "オープンソースライセンス：MIT License" }
     : locale === "en"
-      ? { title: "About Yami", version: "Yami version 1.0", db: `Database version: v${data.schemaVersion}`, privacy: "Privacy: Data is mainly stored on this device.", license: "Open-source license: MIT License" }
-      : { title: "关于 Yami", version: "Yami 版本 1.0", db: `数据库版本：v${data.schemaVersion}`, privacy: "隐私说明：数据主要保存在当前设备。", license: "开源许可：MIT License" };
+      ? { title: "About Yami", version: "Yami version 1.0", privacy: "Privacy: Data is mainly stored on this device.", license: "Open-source license: MIT License" }
+      : { title: "关于 Yami", version: "Yami 版本 1.0", privacy: "隐私说明：数据主要保存在当前设备。", license: "开源许可：MIT License" };
   const dismiss = () => close();
   useEffect(() => {
     if (!open) return;
@@ -4802,26 +4969,23 @@ function MobileSettingsDrawer({
   };
   const renderSettingsContent = (pageValue: string | null) => {
     if (!pageValue) return <nav className="mobile-settings-nav">
-      <button type="button" onClick={() => changePage("data")}><Database aria-hidden="true" /><span>{t.data}</span><ChevronRight aria-hidden="true" /></button>
+      <button type="button" onClick={() => changePage("general")}><Settings aria-hidden="true" /><span>{locale === "ja" ? "一般" : "常规"}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("job-settings")}><ClipboardCheck aria-hidden="true" /><span>{t.jobSettings}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("customize")}><PanelsTopLeft aria-hidden="true" /><span>{t.customize}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("templates")}><FileText aria-hidden="true" /><span>{t.templates}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("calendar")}><CalendarSync aria-hidden="true" /><span>{t.calendarIntegration}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("watch")}><Eye aria-hidden="true" /><span>{locale === "ja" ? "企業ウォッチ接続" : "企业监控连接"}</span><ChevronRight aria-hidden="true" /></button>
-      <button type="button" onClick={() => changePage("appearance")}><Palette aria-hidden="true" /><span>{t.appearance}</span><ChevronRight aria-hidden="true" /></button>
-      <button type="button" onClick={() => changePage("language")}><Globe aria-hidden="true" /><span>{t.language}</span><ChevronRight aria-hidden="true" /></button>
+      <button type="button" onClick={() => changePage("data")}><Database aria-hidden="true" /><span>{t.data}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("about")}><Info aria-hidden="true" /><span>{about.title}</span><ChevronRight aria-hidden="true" /></button>
     </nav>;
-    const subpageTitle = pageValue === "data" ? t.data : pageValue === "job-settings" ? t.jobSettings : pageValue === "customize" ? t.customize : pageValue === "templates" ? t.templates : pageValue === "calendar" ? t.calendarIntegration : pageValue === "watch" ? (locale === "ja" ? "企業ウォッチ接続" : "企业监控连接") : pageValue === "appearance" ? t.appearance : pageValue === "language" ? t.language : about.title;
-    if (pageValue === "data") return <section className="mobile-settings-subpage" aria-labelledby="mobile-settings-subpage-title"><h2 id="mobile-settings-subpage-title">{subpageTitle}</h2><div className="mobile-settings-subpage-list mobile-data-actions"><button type="button" onClick={() => download("yami-backup.json", JSON.stringify(makeBackupSnapshot(data, theme, locale), null, 2), "application/json")}><DatabaseArrowUp aria-hidden="true" /><span>{t.backup}</span></button><button type="button" onClick={() => json.current?.click()}><DatabaseArrowDown aria-hidden="true" /><span>{t.restore}</span></button></div></section>;
+    if (pageValue === "general") return <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} mobile />;
+    if (pageValue === "data") return <DataSettings data={data} theme={theme} locale={locale} json={json} />;
     if (pageValue === "job-settings") return <JobHuntSettings t={t} data={data} updatePreferences={updatePreferences} />;
     if (pageValue === "customize") return <CustomizeSettings t={t} data={data} updatePreferences={updatePreferences} />;
     if (pageValue === "templates") return <section className="mobile-settings-subpage"><TemplateManager t={t} data={data} setData={setData} /></section>;
     if (pageValue === "calendar") return <CalendarSettings t={t} data={data} updatePreferences={updatePreferences} exportCalendar={exportCalendar} />;
     if (pageValue === "watch") return <section className="mobile-settings-subpage"><WatchConnectionSettings locale={locale} /></section>;
-    if (pageValue === "appearance") return <section className="mobile-settings-subpage" aria-labelledby="mobile-settings-subpage-title"><h2 id="mobile-settings-subpage-title">{subpageTitle}</h2><div className="mobile-settings-subpage-list">{(["light", "dark", "system"] as Theme[]).map((x) => { const Icon = x === "light" ? Sun : x === "dark" ? Moon : Monitor; return <button type="button" className={theme === x ? "selected" : ""} onClick={() => setTheme(x)} key={x}><Icon aria-hidden="true" /><span>{t[x]}</span>{theme === x && <Check aria-hidden="true" />}</button>; })}</div></section>;
-    if (pageValue === "language") return <section className="mobile-settings-subpage" aria-labelledby="mobile-settings-subpage-title"><h2 id="mobile-settings-subpage-title">{subpageTitle}</h2><div className="mobile-settings-subpage-list">{(["zh", "ja"] as Locale[]).map((x) => <button type="button" className={locale === x ? "selected" : ""} onClick={() => setLocale(x)} key={x}><span>{x === "zh" ? "中文" : "日本語"}</span>{locale === x && <Check aria-hidden="true" />}</button>)}</div></section>;
-    return <section className="mobile-settings-subpage mobile-about" aria-labelledby="mobile-settings-subpage-title"><h2 id="mobile-settings-subpage-title">{subpageTitle}</h2><YamiAboutBrand /><p>{about.version}</p><p>{about.db}</p><p>{about.privacy}</p><p>{about.license}</p></section>;
+    return <AboutSettings locale={locale} mobile />;
   };
   const headerPage = transitionPage !== undefined
     ? (transitionPage === null ? renderedPage : transitionPage)
@@ -4848,24 +5012,22 @@ function SettingsDrawer({ close, children, title }: { close: () => void; childre
   useEffect(() => { const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); }; document.addEventListener("keydown", onKey); document.body.classList.add("settings-drawer-open"); return () => { document.removeEventListener("keydown", onKey); document.body.classList.remove("settings-drawer-open"); }; }, []);
   return <div className={`settings-drawer-layer ${closing ? "closing" : ""}`}><button className="settings-drawer-backdrop" onClick={dismiss} aria-label="Close settings"/><aside className="settings-drawer-panel" role="dialog" aria-modal="true" aria-label={title} onTouchStart={(e) => { startX.current = e.touches[0].clientX; }} onTouchEnd={(e) => { if (startX.current !== null && e.changedTouches[0].clientX - startX.current > 70) dismiss(); startX.current = null; }}><header><h2>{title}</h2><CloseButton onClick={dismiss} label="Close settings" /></header><div className="settings-drawer-scroll">{children}</div></aside></div>;
 }
-function SettingsPanel({ t, theme, setTheme, locale, setLocale, close, data, setData, iconRef, json, upload, importJson, updatePreferences, exportCalendar }: any) {
+function SettingsPanel({ t, theme, setTheme, locale, setLocale, close, data, setData, iconRef, json, upload, updatePreferences, exportCalendar }: any) {
   const [tab, setTab] = useState("general");
   const ja = locale === "ja";
   const ui = locale === "ja"
-    ? { general: "一般", appearance: t.appearance, language: t.language, data: "データとバックアップ", about: "Yamiについて", storage: "このデバイスの保存状況", backup: "バックアップ", aboutTitle: "Yamiについて", version: "Yami バージョン 1.0", db: "データベースバージョン", pwa: "PWA ステータス: standalone 対応", icon: "アイコン: Yami ブランドマーク", privacy: "プライバシー: データは主にこのデバイスに保存されます。", license: "オープンソースライセンス: MIT License" }
-    : { general: "常规", appearance: t.appearance, language: t.language, data: "数据与备份", about: "关于 Yami", storage: "当前设备存储", backup: "备份", aboutTitle: "关于 Yami", version: "Yami 版本 1.0", db: "数据库版本", pwa: "PWA 状态：支持 standalone", icon: "图标：Yami 品牌标记", privacy: "隐私：数据主要保存在当前设备。", license: "开源许可：MIT License" };
-  const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["appearance", ui.appearance, Palette], ["language", ui.language, Globe], ["data", ui.data, Database], ["about", ui.about, Info]] as const;
+    ? { general: "一般", data: "データとバックアップ", about: "Yamiについて" }
+    : { general: "常规", data: "数据与备份", about: "关于 Yami" };
+  const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["about", ui.about, Info]] as const;
   return <SettingsDrawer title={t.settings} close={close}><div className="desktop-settings-layout"><nav className="desktop-settings-nav settings-sidebar"><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
-    {tab === "general" && <section className="settings-section"><h3>{ui.storage}</h3><div className="settings-stats">{[[ja ? "企業数" : "企业数", data.companies.length], [ja ? "日程数" : "日程数", data.events.length], [ja ? "資料数" : "资料数", data.materials.length], [ja ? "面接記録数" : "面试记录数", data.interviews.length], [ja ? "準備事項数" : "准备事项数", data.preparations.length], [ui.db, "v" + data.schemaVersion]].map(([label, value]) => <div key={String(label)}><span>{label}</span><strong>{value}</strong></div>)}</div></section>}
+    {tab === "general" && <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} />}
     {tab === "job-settings" && <JobHuntSettings t={t} data={data} updatePreferences={updatePreferences} />}
     {tab === "customize" && <CustomizeSettings t={t} data={data} updatePreferences={updatePreferences} />}
     {tab === "templates" && <section className="settings-section"><TemplateManager t={t} data={data} setData={setData} /></section>}
     {tab === "calendar" && <CalendarSettings t={t} data={data} updatePreferences={updatePreferences} exportCalendar={exportCalendar} />}
     {tab === "watch" && <WatchConnectionSettings locale={locale} />}
-    {tab === "appearance" && <section className="settings-section"><h3>{ui.appearance}</h3><div className="settings-segmented">{(["light", "dark", "system"] as Theme[]).map((x) => { const Icon = x === "light" ? Sun : x === "dark" ? Moon : Monitor; return <button type="button" aria-pressed={theme === x} className={theme === x ? "active" : ""} onClick={() => setTheme(x)} key={x}><Icon aria-hidden="true" />{t[x]}</button>; })}</div></section>}
-    {tab === "language" && <section className="settings-section"><h3>{ui.language}</h3><div className="settings-segmented">{(["zh", "ja"] as Locale[]).map((x) => <button type="button" aria-pressed={locale === x} className={locale === x ? "active" : ""} onClick={() => setLocale(x)} key={x}>{x === "zh" ? "中文" : "日本語"}</button>)}</div></section>}
-    {tab === "data" && <section className="settings-section settings-data-section"><h3>{ui.backup}</h3><BackupControls data={data} theme={theme} locale={locale} setData={setData} /></section>}
-    {tab === "about" && <section className="settings-section"><h3>{ui.aboutTitle}</h3><YamiAboutBrand /><div className="settings-about-list"><p>{ui.version}</p><p>{ui.db}: v{data.schemaVersion}</p><p>{ui.pwa}</p><p>{ui.icon}</p><p>{ui.privacy}</p><p>{ui.license}</p></div></section>}
+    {tab === "data" && <DataSettings data={data} theme={theme} locale={locale} json={json} />}
+    {tab === "about" && <AboutSettings locale={locale} />}
   </div></div><input hidden ref={iconRef} type="file" accept="image/*" onChange={upload} /></SettingsDrawer>;
 }
 function SettingsNavItem({ label, icon: Icon, active, onClick }: { label: string; icon: React.ComponentType<any>; active: boolean; onClick: () => void }) {
