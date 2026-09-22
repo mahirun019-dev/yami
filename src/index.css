@@ -9791,3 +9791,172 @@ html[data-theme="dark"] #root {
     padding: 30px 22px 48px;
   }
 }
+
+/* Desktop settings hierarchy: quiet surfaces, clear dividers, and a restrained active marker. */
+@media (min-width: 768px) {
+  .app-shell.app-shell-settings {
+    --settings-main-rail: #f7f7f8;
+    --settings-subnav-rail: #fcfcfd;
+    --settings-content-rail: #ffffff;
+    --settings-column-divider: #e7e8ea;
+    --settings-active-row: rgba(200, 168, 91, 0.09);
+    --settings-hover-row: #f4f4f5;
+  }
+
+  [data-theme="dark"] .app-shell.app-shell-settings {
+    --settings-main-rail: #0b0d0f;
+    --settings-subnav-rail: #070809;
+    --settings-content-rail: #000000;
+    --settings-column-divider: #25282c;
+    --settings-active-row: rgba(200, 168, 91, 0.1);
+    --settings-hover-row: #111315;
+  }
+
+  [data-theme="dark"] .app-shell.app-shell-settings .settings-page-scope .settings-sidebar {
+    border-color: var(--settings-column-divider) !important;
+    background: var(--settings-subnav-rail) !important;
+  }
+
+  .app-shell.app-shell-settings > .student-app > .sidebar {
+    border-right: 1px solid var(--settings-column-divider);
+    background: var(--settings-main-rail);
+  }
+
+  .settings-page-scope.desktop-settings-page {
+    background: var(--settings-content-rail) !important;
+  }
+
+  .settings-page-scope .settings-sidebar {
+    padding-top: 36px;
+    border-right-color: var(--settings-column-divider);
+    background: var(--settings-subnav-rail);
+  }
+
+  .settings-menu-heading {
+    margin: 0 -14px 14px;
+    padding: 0 28px 17px;
+    border-bottom: 1px solid var(--settings-column-divider);
+  }
+
+  .settings-menu-heading h2 {
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .settings-page-scope .desktop-settings-content {
+    padding-top: 36px;
+    background: var(--settings-content-rail);
+  }
+
+  .settings-page-scope .desktop-settings-content > .settings-section > h3 {
+    color: var(--text-primary);
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .settings-page-scope .settings-section h4,
+  .settings-page-scope .settings-form-section > h4 {
+    font-weight: 600;
+  }
+
+  .settings-page-scope .settings-nav-item,
+  .settings-page-scope .settings-nav-item.is-active {
+    position: relative;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 450;
+    transition: color 140ms ease, background-color 140ms ease;
+  }
+
+  .settings-page-scope .settings-nav-item:hover {
+    color: var(--text-primary);
+    background: var(--settings-hover-row);
+  }
+
+  .settings-page-scope .settings-nav-item[aria-selected="true"] {
+    color: var(--text-primary);
+    background: var(--settings-active-row);
+    font-weight: 600;
+  }
+
+  [data-theme="dark"] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item[aria-selected="true"] {
+    color: var(--text-primary) !important;
+    background: var(--settings-active-row) !important;
+  }
+
+  [data-theme="dark"] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item:hover:not([aria-selected="true"]) {
+    color: var(--text-primary);
+    background: var(--settings-hover-row) !important;
+  }
+
+  .settings-page-scope .settings-nav-item[aria-selected="true"]::after {
+    position: absolute;
+    top: 11px;
+    right: 7px;
+    bottom: 11px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--brand-gold);
+    content: "";
+  }
+
+  .settings-page-scope .settings-nav-item:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--brand-gold) 68%, transparent);
+    outline-offset: 2px;
+  }
+
+  .settings-page-scope .settings-general-control strong {
+    font-weight: 550;
+  }
+
+  .settings-page-scope .settings-general-control p,
+  .settings-page-scope .settings-field small {
+    color: color-mix(in srgb, var(--text-secondary) 92%, var(--text-primary));
+    font-weight: 400;
+  }
+
+  .settings-page-scope .settings-language-list {
+    width: min(100%, 460px);
+    border-top-color: var(--settings-column-divider);
+  }
+
+  .settings-page-scope .settings-language-list button {
+    min-height: 52px;
+    padding-inline: 14px;
+    border-bottom-color: var(--settings-column-divider);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 450;
+    transition: color 140ms ease, background-color 140ms ease;
+  }
+
+  .settings-page-scope .settings-language-list button:hover {
+    color: var(--text-primary);
+    background: var(--settings-hover-row);
+  }
+
+  .settings-page-scope .settings-language-list button.is-selected {
+    color: var(--text-primary);
+    background: var(--settings-active-row);
+    font-weight: 600;
+  }
+
+  .settings-page-scope .settings-language-list button svg,
+  [data-theme="dark"] .settings-page-scope .settings-language-list button svg {
+    color: var(--brand-gold);
+  }
+
+  .settings-page-scope .settings-language-list button:focus-visible {
+    outline-color: var(--brand-gold);
+    border-radius: 5px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .settings-page-scope .settings-menu-heading {
+    margin-inline: -8px;
+    padding-inline: 18px;
+  }
+}
