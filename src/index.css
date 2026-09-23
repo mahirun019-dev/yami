@@ -10077,6 +10077,10 @@ html[data-theme="dark"] #root {
 }
 
 @media (min-width: 768px) {
+  .settings-page-scope .settings-general > .settings-general-group:first-of-type {
+    border-top: 0;
+  }
+
   .settings-page-scope .settings-column-header {
     display: flex;
     width: 100%;
