@@ -10081,6 +10081,27 @@ html[data-theme="dark"] #root {
 }
 
 @media (min-width: 768px) {
+  .settings-page-scope .desktop-settings-content > .settings-wide-content {
+    width: min(100%, 900px);
+    max-width: 900px;
+  }
+
+  .settings-page-scope .template-empty-state > span {
+    max-width: 640px;
+  }
+
+  .settings-page-scope .watch-connection-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 14px 0;
+  }
+
+  .settings-page-scope .watch-monitored-count {
+    width: 100%;
+  }
+
   .settings-page-scope .settings-general > .settings-general-group:first-of-type {
     border-top: 0;
   }

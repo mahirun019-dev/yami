@@ -5142,7 +5142,7 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
     {tab === "general" && <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} />}
     {tab === "job-settings" && <JobHuntSettings t={t} data={data} updatePreferences={updatePreferences} />}
     {tab === "customize" && <CustomizeSettings t={t} data={data} updatePreferences={updatePreferences} />}
-    {tab === "templates" && <section className="settings-section"><TemplateManager t={t} data={data} setData={setData} /></section>}
+    {tab === "templates" && <section className="settings-section settings-wide-content"><TemplateManager t={t} data={data} setData={setData} /></section>}
     {tab === "calendar" && <CalendarSettings t={t} data={data} updatePreferences={updatePreferences} exportCalendar={exportCalendar} />}
     {tab === "watch" && <WatchConnectionSettings locale={locale} />}
     {tab === "data" && <DataSettings data={data} theme={theme} locale={locale} json={json} />}

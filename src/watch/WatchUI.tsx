@@ -109,7 +109,7 @@ export function WatchConnectionSettings({ locale }: { locale: Locale }) {
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [confirmDisconnect]);
-  return <section className="watch-connection-settings">
+  return <section className="watch-connection-settings settings-wide-content">
     <h3>{text.connection}</h3>
     <div className="watch-settings-description"><p>{copy.purpose}</p><p>{copy.manage}</p></div>
     {!watch.configured ? <p className="watch-connection-muted">{copy.unavailable}</p> : watch.authenticated ? <>
