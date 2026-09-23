@@ -9802,6 +9802,8 @@ html[data-theme="dark"] #root {
     --settings-column-divider: #e7e8ea;
     --settings-active-row: rgba(200, 168, 91, 0.09);
     --settings-hover-row: #f4f4f5;
+    --settings-nav-hover-row: #eef0f1;
+    --settings-nav-active-row: #e5e7e9;
   }
 
   [data-theme="dark"] .app-shell.app-shell-settings {
@@ -9811,6 +9813,8 @@ html[data-theme="dark"] #root {
     --settings-column-divider: #25282c;
     --settings-active-row: rgba(200, 168, 91, 0.1);
     --settings-hover-row: #111315;
+    --settings-nav-hover-row: #15181b;
+    --settings-nav-active-row: #202327;
   }
 
   [data-theme="dark"] .app-shell.app-shell-settings .settings-page-scope .settings-sidebar {
@@ -9873,23 +9877,23 @@ html[data-theme="dark"] #root {
 
   .settings-page-scope .settings-nav-item:hover {
     color: var(--text-primary);
-    background: var(--settings-hover-row);
+    background: var(--settings-nav-hover-row);
   }
 
   .settings-page-scope .settings-nav-item[aria-selected="true"] {
     color: var(--text-primary);
-    background: var(--settings-active-row);
+    background: var(--settings-nav-active-row);
     font-weight: 600;
   }
 
   [data-theme="dark"] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item[aria-selected="true"] {
     color: var(--text-primary) !important;
-    background: var(--settings-active-row) !important;
+    background: var(--settings-nav-active-row) !important;
   }
 
   [data-theme="dark"] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item:hover:not([aria-selected="true"]) {
     color: var(--text-primary);
-    background: var(--settings-hover-row) !important;
+    background: var(--settings-nav-hover-row) !important;
   }
 
   .settings-page-scope .settings-nav-item[aria-selected="true"]::after {
@@ -10046,9 +10050,9 @@ html[data-theme="dark"] #root {
     color: var(--text-muted);
     transition: color 140ms ease;
   }
-  .settings-page-scope .settings-nav-item:hover:not([aria-selected="true"]) { background: var(--settings-hover-row); }
+  .settings-page-scope .settings-nav-item:hover:not([aria-selected="true"]) { background: var(--settings-nav-hover-row); }
   .settings-page-scope .settings-nav-item[aria-selected="true"] {
-    background: var(--settings-active-row);
+    background: var(--settings-nav-active-row);
     color: var(--text-primary);
   }
   .settings-page-scope .settings-nav-item[aria-selected="true"] > svg:first-child,
