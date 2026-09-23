@@ -9797,13 +9797,13 @@ html[data-theme="dark"] #root {
 @media (min-width: 768px) {
   .app-shell.app-shell-settings {
     --settings-main-rail: #f7f7f8;
-    --settings-subnav-rail: #f6f7f8;
+    --settings-subnav-rail: var(--settings-content-rail);
     --settings-content-rail: #ffffff;
     --settings-column-divider: #e7e8ea;
     --settings-active-row: rgba(200, 168, 91, 0.09);
     --settings-hover-row: #f4f4f5;
-    --settings-nav-hover-row: #eef0f1;
-    --settings-nav-active-row: #e5e7e9;
+    --settings-nav-hover-row: #f5f5f5;
+    --settings-nav-active-row: #eeeeee;
   }
 
   [data-theme="dark"] .app-shell.app-shell-settings {
