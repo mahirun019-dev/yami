@@ -9797,7 +9797,7 @@ html[data-theme="dark"] #root {
 @media (min-width: 768px) {
   .app-shell.app-shell-settings {
     --settings-main-rail: #f7f7f8;
-    --settings-subnav-rail: #fcfcfd;
+    --settings-subnav-rail: #f6f7f8;
     --settings-content-rail: #ffffff;
     --settings-column-divider: #e7e8ea;
     --settings-active-row: rgba(200, 168, 91, 0.09);
@@ -9806,7 +9806,7 @@ html[data-theme="dark"] #root {
 
   [data-theme="dark"] .app-shell.app-shell-settings {
     --settings-main-rail: #0b0d0f;
-    --settings-subnav-rail: #070809;
+    --settings-subnav-rail: #0b0d0f;
     --settings-content-rail: #000000;
     --settings-column-divider: #25282c;
     --settings-active-row: rgba(200, 168, 91, 0.1);
