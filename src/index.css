@@ -5105,35 +5105,6 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     clip-path: none !important;
   }
 
-  .mobile-settings-drawer.drawer-shell {
-    transform: translateX(-100%);
-    transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
-    will-change: transform;
-  }
-
-  .mobile-settings-layer[data-open="true"] .mobile-settings-drawer.drawer-shell {
-    transform: translateX(0);
-  }
-
-  .mobile-settings-layer .mobile-settings-nav,
-  .mobile-settings-layer[data-open="true"] .mobile-settings-nav {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-  }
-
-  .mobile-settings-layer .mobile-settings-nav > button,
-  .mobile-settings-layer[data-open="true"] .mobile-settings-nav > button {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-    transition-delay: 0ms !important;
-  }
-
-  .app-shell > .student-app > .mobile-header .mobile-menu-button[data-menu-open] svg {
-    animation: none !important;
-  }
-
   .mobile-settings-layer .mobile-settings-nav {
     opacity: 1 !important;
     transform: none !important;
@@ -5175,6 +5146,18 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     to { opacity: 1; transform: scale(1) rotate(0deg); }
   }
 
+  .mobile-settings-layer .mobile-settings-drawer.drawer-shell {
+    transform: none !important;
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 360ms cubic-bezier(.4, 0, .2, 1);
+    will-change: clip-path;
+  }
+
+  .mobile-settings-layer[data-open="true"] .mobile-settings-drawer.drawer-shell {
+    clip-path: inset(0);
+    transition-duration: 520ms;
+  }
+
   .mobile-settings-layer[data-open="false"] .mobile-settings-nav > button {
     transition-delay: 0ms !important;
     transition-duration: 220ms !important;
@@ -5214,6 +5197,7 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
 
   .mobile-settings-drawer.drawer-shell {
     transition: none !important;
+    clip-path: none !important;
   }
 }
 
