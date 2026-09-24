@@ -5092,21 +5092,18 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
   .mobile-settings-layer::before {
     inset: calc(58px + env(safe-area-inset-top)) 0 0;
     background: var(--careerflow-mobile-menu-background) !important;
-    backdrop-filter: saturate(100%) blur(0) !important;
-    -webkit-backdrop-filter: saturate(100%) blur(0) !important;
-    opacity: 0 !important;
+    backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
+    -webkit-backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
+    opacity: 1 !important;
     clip-path: inset(0 0 100% 0) !important;
     animation: none !important;
-    transition: clip-path 360ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease, backdrop-filter 320ms cubic-bezier(.4, 0, .2, 1) !important;
-    will-change: clip-path, opacity, backdrop-filter;
+    transition: clip-path 360ms cubic-bezier(.4, 0, .2, 1) !important;
+    will-change: clip-path;
   }
 
   .mobile-settings-layer[data-open="true"]::before {
     clip-path: inset(0) !important;
-    opacity: 1 !important;
-    backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
-    -webkit-backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
-    transition: clip-path 520ms cubic-bezier(.4, 0, .2, 1), opacity 240ms ease, backdrop-filter 320ms cubic-bezier(.4, 0, .2, 1) !important;
+    transition-duration: 520ms !important;
   }
 
   .mobile-settings-layer .mobile-settings-nav {
