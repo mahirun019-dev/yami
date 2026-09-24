@@ -1469,6 +1469,7 @@ export default function App() {
     [deleteEvent, setDeleteEvent] = useState<Event>(),
     [filter, setFilter] = useState("all"),
     [companyFilterOpen, setCompanyFilterOpen] = useState(false),
+    [companyFilterClosing, setCompanyFilterClosing] = useState(false),
     [companyRecordMenuOpen, setCompanyRecordMenuOpen] = useState(false),
     [toast, setToast] = useState<{ text: string; undo: () => void }>(),
     [pendingBackupRestore, setPendingBackupRestore] = useState<File | null>(null),
@@ -2292,7 +2293,19 @@ export default function App() {
                 companyFilter,
                 clearCompanyFilter: () => navigate("companies"),
                 filterSheetOpen: companyFilterOpen,
-                setFilterSheetOpen: setCompanyFilterOpen,
+                filterSheetClosing: companyFilterClosing,
+                setFilterSheetOpen: (open: boolean) => {
+                  if (open) {
+                    setCompanyFilterClosing(false);
+                    setCompanyFilterOpen(true);
+                  } else {
+                    setCompanyFilterClosing(true);
+                  }
+                },
+                finishFilterSheetClose: () => {
+                  setCompanyFilterOpen(false);
+                  setCompanyFilterClosing(false);
+                },
                 recordMenuOpen: companyRecordMenuOpen,
                 setRecordMenuOpen: setCompanyRecordMenuOpen,
                 onBack: backToCompanies,
@@ -2463,7 +2476,7 @@ export default function App() {
       {isMobile && !hasOpenOverlay && createPortal(
         <>
           <MobileNav view={view} setView={setView} t={t} />
-          {view === "companies" && !selected && <button
+          {view !== "companies" && <button
             type="button"
             className="mobile-company-fab"
             data-mobile-company-fab="true"
@@ -3338,7 +3351,9 @@ function Companies({
   companyFilter,
   clearCompanyFilter,
   filterSheetOpen,
+  filterSheetClosing,
   setFilterSheetOpen,
+  finishFilterSheetClose,
   recordMenuOpen,
   setRecordMenuOpen,
   onBack,
@@ -3538,8 +3553,18 @@ function Companies({
           {t.addCompany}
         </PrimaryActionButton>
       </div>
-      {filterSheetOpen && <div className="company-filter-sheet-layer">
-        <button type="button" className="company-filter-sheet-backdrop" aria-label={t.cancel} onClick={() => setFilterSheetOpen(false)} />
+      {filterSheetOpen && <div className={`company-filter-sheet-layer${filterSheetClosing ? " is-closing" : ""}`}>
+        <button
+          type="button"
+          className="company-filter-sheet-backdrop"
+          aria-label={t.cancel}
+          onClick={() => { if (!filterSheetClosing) setFilterSheetOpen(false); }}
+          onAnimationEnd={(event) => {
+            if (event.target === event.currentTarget && event.animationName === "company-filter-backdrop-out" && filterSheetClosing) {
+              finishFilterSheetClose();
+            }
+          }}
+        />
         <section className="company-filter-sheet" role="dialog" aria-modal="true" aria-label={t.language === "言語" ? "絞り込みと並び替え" : "筛选与排序"}>
           <header className="company-filter-sheet-header"><h2>{t.language === "言語" ? "絞り込みと並び替え" : "筛选与排序"}</h2><CloseButton className="company-filter-sheet-close" onClick={() => setFilterSheetOpen(false)} label={t.cancel} /></header>
           <div className="company-filter-sheet-content"><fieldset><legend>{t.stage}</legend><div className="company-filter-options">

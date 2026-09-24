@@ -3902,14 +3902,26 @@ option { color: var(--text-primary); background: var(--bg-input); }
     z-index: 130;
     display: flex;
     align-items: flex-end;
+    --company-filter-backdrop-color: rgba(16, 25, 38, .24);
+  }
+  [data-theme="dark"] .company-filter-sheet-layer {
+    --company-filter-backdrop-color: rgba(0, 0, 0, .42);
   }
   .company-filter-sheet-backdrop {
     position: absolute;
     inset: 0;
     border: 0;
-    background: rgba(16, 25, 38, .38);
+    padding: 0;
+    background: var(--company-filter-backdrop-color);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: company-filter-backdrop-in 220ms ease-out both;
     overscroll-behavior: none;
     touch-action: none;
+  }
+  .company-filter-sheet-layer.is-closing { pointer-events: none; }
+  .company-filter-sheet-layer.is-closing .company-filter-sheet-backdrop {
+    animation: company-filter-backdrop-out 220ms ease-in both;
   }
   .company-filter-sheet {
     position: relative;
@@ -3923,6 +3935,10 @@ option { color: var(--text-primary); background: var(--bg-input); }
     background: var(--bg-surface-elevated, #fafbfd);
     color: var(--text-primary, #24262b);
     overflow: hidden;
+    animation: company-filter-sheet-in 240ms cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .company-filter-sheet-layer.is-closing .company-filter-sheet {
+    animation: company-filter-sheet-out 220ms ease-in both;
   }
   .company-filter-sheet-header { display: grid; grid-template-columns: minmax(0, 1fr) 44px; min-height: 56px; align-items: center; gap: 8px; flex: 0 0 auto; }
   .company-filter-sheet h2 { margin: 0; font-size: calc(18px * var(--reading-scale, 1)); }
@@ -3942,6 +3958,31 @@ option { color: var(--text-primary); background: var(--bg-input); }
   .company-filter-sheet-actions .primary { border-color: var(--action-primary-bg, #24262b); background: var(--action-primary-bg, #24262b); color: var(--action-primary-text, #fff); }
   [data-theme="dark"] .company-filter-sheet { background: #1c2634; }
   [data-theme="dark"] .company-filter-options label.selected { border-color: #60a5fa; background: rgba(96,165,250,.18); color: #f5f5f5; }
+
+  @keyframes company-filter-backdrop-in {
+    from { opacity: 0; background: transparent; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
+    to { opacity: 1; background: var(--company-filter-backdrop-color); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  }
+  @keyframes company-filter-backdrop-out {
+    from { opacity: 1; background: var(--company-filter-backdrop-color); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    to { opacity: 0; background: transparent; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
+  }
+  @keyframes company-filter-sheet-in {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes company-filter-sheet-out {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .company-filter-sheet-backdrop,
+    .company-filter-sheet,
+    .company-filter-sheet-layer.is-closing .company-filter-sheet-backdrop,
+    .company-filter-sheet-layer.is-closing .company-filter-sheet {
+      animation-duration: 1ms;
+    }
+  }
   .company-card { min-height: 146px; }
   .company-card-body span:nth-last-child(2) { font-size: calc(12px * var(--reading-scale, 1)); }
   .record-action-menu { right: 0; width: min(220px, calc(100vw - 48px)); }
@@ -10152,10 +10193,6 @@ html[data-theme="dark"] #root {
 .mobile-company-fab { display: none; }
 
 @media (max-width: 767px) {
-  .career-app .company-toolbar-add-action {
-    display: none !important;
-  }
-
   .mobile-company-fab {
     position: fixed;
     right: 20px;
