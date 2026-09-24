@@ -5090,20 +5090,48 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
   }
 
   .mobile-settings-layer::before {
-    inset: calc(58px + env(safe-area-inset-top)) 0 0;
+    inset: 0 !important;
     background: var(--careerflow-mobile-menu-background) !important;
     backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
     -webkit-backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
     opacity: 1 !important;
-    clip-path: inset(0 0 100% 0) !important;
+    clip-path: none !important;
     animation: none !important;
-    transition: clip-path 360ms cubic-bezier(.4, 0, .2, 1) !important;
-    will-change: clip-path;
+    transition: none !important;
+    will-change: auto;
   }
 
   .mobile-settings-layer[data-open="true"]::before {
-    clip-path: inset(0) !important;
-    transition-duration: 520ms !important;
+    clip-path: none !important;
+  }
+
+  .mobile-settings-drawer.drawer-shell {
+    transform: translateX(-100%);
+    transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+    will-change: transform;
+  }
+
+  .mobile-settings-layer[data-open="true"] .mobile-settings-drawer.drawer-shell {
+    transform: translateX(0);
+  }
+
+  .mobile-settings-layer .mobile-settings-nav,
+  .mobile-settings-layer[data-open="true"] .mobile-settings-nav {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .mobile-settings-layer .mobile-settings-nav > button,
+  .mobile-settings-layer[data-open="true"] .mobile-settings-nav > button {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+
+  .app-shell > .student-app > .mobile-header .mobile-menu-button[data-menu-open] svg {
+    animation: none !important;
   }
 
   .mobile-settings-layer .mobile-settings-nav {
@@ -5181,6 +5209,10 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
   .mobile-settings-layer[data-open="true"] .mobile-settings-nav > button {
     opacity: 1 !important;
     transform: none !important;
+    transition: none !important;
+  }
+
+  .mobile-settings-drawer.drawer-shell {
     transition: none !important;
   }
 }
