@@ -5148,12 +5148,17 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
 
   .mobile-settings-layer .mobile-settings-drawer.drawer-shell {
     transform: none !important;
+    background: transparent !important;
+  }
+
+  .mobile-settings-layer .mobile-settings-drawer.drawer-shell > .drawer-main.drawer-scroll {
+    background: var(--bg-surface) !important;
     clip-path: inset(0 0 100% 0);
     transition: clip-path 360ms cubic-bezier(.4, 0, .2, 1);
     will-change: clip-path;
   }
 
-  .mobile-settings-layer[data-open="true"] .mobile-settings-drawer.drawer-shell {
+  .mobile-settings-layer[data-open="true"] .mobile-settings-drawer.drawer-shell > .drawer-main.drawer-scroll {
     clip-path: inset(0);
     transition-duration: 520ms;
   }
@@ -5195,7 +5200,7 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     transition: none !important;
   }
 
-  .mobile-settings-drawer.drawer-shell {
+  .mobile-settings-drawer.drawer-shell > .drawer-main.drawer-scroll {
     transition: none !important;
     clip-path: none !important;
   }
