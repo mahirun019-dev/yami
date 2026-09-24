@@ -5151,7 +5151,7 @@ function MobileSettingsDrawer({
   return <div ref={layerRef} className="mobile-settings-layer" data-mobile-global-nav="true" data-open={open ? "true" : "false"}>
     <button className="mobile-settings-backdrop" onClick={dismiss} aria-label={t.cancel} />
     <aside className="mobile-settings-drawer drawer-shell" role="dialog" aria-modal="true" aria-label={label}>
-      <header className={`mobile-navigation-header mobile-header glass-lite${headerPage ? " mobile-settings-subheader" : ""}`}>
+      <header className={`mobile-navigation-header mobile-header${headerPage ? " mobile-settings-subheader" : ""}`}>
         {headerPage ? <button className="mobile-settings-back-button" type="button" onClick={() => changePage(null)} aria-label={locale === "ja" ? "戻る" : "返回"}><ArrowLeft aria-hidden="true" /></button> : <button className="mobile-menu-button" onClick={dismiss} aria-label={t.cancel}><X aria-hidden="true" /></button>}
         <YamiLogoLockup variant="mobile" className="mobile-header-title" />
         {headerPage ? <button className="mobile-settings-close-button" type="button" onClick={dismiss} aria-label={t.cancel}><X aria-hidden="true" /></button> : <span className="mobile-header-action-slot" aria-hidden="true" />}

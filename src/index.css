@@ -4684,7 +4684,7 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     overflow: hidden;
     border: 0;
     border-radius: 0;
-    background: transparent !important;
+    background: var(--bg-surface) !important;
     box-shadow: none !important;
     color: var(--text-primary);
   }
@@ -4697,12 +4697,12 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
     min-height: calc(58px + env(safe-area-inset-top));
     padding: max(9px, env(safe-area-inset-top)) 15px 8px;
     border-width: 0 0 1px;
-    border-color: var(--careerflow-glass-border) !important;
+    border-color: var(--border-default) !important;
     border-radius: 0;
-    background: var(--careerflow-mobile-header-background) !important;
-    box-shadow: var(--careerflow-glass-shadow) !important;
-    backdrop-filter: var(--careerflow-glass-backdrop) !important;
-    -webkit-backdrop-filter: var(--careerflow-glass-backdrop) !important;
+    background: var(--bg-surface) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .mobile-navigation-header .mobile-menu-button {
@@ -7567,8 +7567,8 @@ html[data-theme="dark"] #root {
   }
 
   html[data-theme="dark"] .mobile-settings-layer .mobile-navigation-header.mobile-header {
-    background: #000000 !important;
-    background-color: #000000 !important;
+    background: var(--bg-surface) !important;
+    background-color: var(--bg-surface) !important;
     background-image: none !important;
   }
 
