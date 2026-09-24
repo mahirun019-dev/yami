@@ -3838,7 +3838,7 @@ option { color: var(--text-primary); background: var(--bg-input); }
 @media (prefers-reduced-motion: reduce) {
   .company-card, .company-card > svg { transition: none; }
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .company-toolbar {
     grid-template-columns: minmax(0, 1fr) 52px;
     gap: 10px;
@@ -3914,11 +3914,11 @@ option { color: var(--text-primary); background: var(--bg-input); }
   .company-filter-sheet {
     position: relative;
     width: 100%;
-    height: min(75dvh, 680px);
-    max-height: 75dvh;
+    height: auto;
+    max-height: min(75dvh, 680px);
     display: flex;
     flex-direction: column;
-    padding: 8px 14px calc(12px + env(safe-area-inset-bottom));
+    padding: 8px 14px 0;
     border-radius: 25px 25px 0 0;
     background: var(--bg-surface-elevated, #fafbfd);
     color: var(--text-primary, #24262b);
@@ -4581,13 +4581,13 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
 /* Mobile navigation is a full-screen glass overlay, not a side drawer. */
 @media (max-width: 767px) {
   :root {
-    --careerflow-mobile-menu-background: rgba(248, 250, 252, .66);
-    --careerflow-mobile-menu-backdrop: saturate(180%) blur(17px);
+    --careerflow-mobile-menu-background: rgba(15, 20, 25, .08);
+    --careerflow-mobile-menu-backdrop: saturate(120%) blur(6px);
   }
 
   [data-theme="dark"] {
-    --careerflow-mobile-menu-background: rgba(24, 27, 31, .66);
-    --careerflow-mobile-menu-backdrop: saturate(160%) blur(17px);
+    --careerflow-mobile-menu-background: rgba(0, 0, 0, .12);
+    --careerflow-mobile-menu-backdrop: saturate(115%) blur(6px);
   }
 
   .mobile-settings-layer {
@@ -5050,19 +5050,22 @@ html[data-theme="dark"] { --app-page-bg: var(--bg-app); }
 
   .mobile-settings-layer::before {
     inset: calc(58px + env(safe-area-inset-top)) 0 0;
-    background: var(--bg-surface) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    opacity: 1 !important;
+    background: var(--careerflow-mobile-menu-background) !important;
+    backdrop-filter: saturate(100%) blur(0) !important;
+    -webkit-backdrop-filter: saturate(100%) blur(0) !important;
+    opacity: 0 !important;
     clip-path: inset(0 0 100% 0) !important;
     animation: none !important;
-    transition: clip-path 360ms cubic-bezier(.4, 0, .2, 1) !important;
-    will-change: clip-path;
+    transition: clip-path 360ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease, backdrop-filter 320ms cubic-bezier(.4, 0, .2, 1) !important;
+    will-change: clip-path, opacity, backdrop-filter;
   }
 
   .mobile-settings-layer[data-open="true"]::before {
     clip-path: inset(0) !important;
-    transition-duration: 520ms !important;
+    opacity: 1 !important;
+    backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
+    -webkit-backdrop-filter: var(--careerflow-mobile-menu-backdrop) !important;
+    transition: clip-path 520ms cubic-bezier(.4, 0, .2, 1), opacity 240ms ease, backdrop-filter 320ms cubic-bezier(.4, 0, .2, 1) !important;
   }
 
   .mobile-settings-layer .mobile-settings-nav {
@@ -7722,11 +7725,14 @@ html[data-theme="dark"] #root {
   line-height: 1.4;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .materials-empty-state {
-    gap: 20px;
-    margin-top: 28px;
-    padding: 8px 0 16px;
+    min-height: clamp(360px, 52dvh, 460px);
+    align-content: center;
+    gap: 16px;
+    margin-top: 12px;
+    padding: 12px 0 20px;
+    box-sizing: border-box;
   }
 
   .materials-empty-copy h2 {
@@ -7740,14 +7746,14 @@ html[data-theme="dark"] #root {
 
   .materials-empty-actions {
     grid-template-columns: minmax(0, 1fr);
-    gap: 9px;
+    gap: 8px;
   }
 
   .materials-empty-tile {
-    min-height: 76px;
+    min-height: 72px;
     align-items: center;
-    gap: 12px;
-    padding: 13px 14px;
+    gap: 11px;
+    padding: 11px 13px;
     border-radius: 13px;
   }
 
@@ -10141,4 +10147,43 @@ html[data-theme="dark"] #root {
 
 @media (max-width: 767px) {
   .settings-font-size-content { width: 100%; }
+}
+
+.mobile-company-fab { display: none; }
+
+@media (max-width: 767px) {
+  .career-app .company-toolbar-add-action {
+    display: none !important;
+  }
+
+  .mobile-company-fab {
+    position: fixed;
+    right: 20px;
+    bottom: calc(var(--mobile-bottom-nav-height, 60px) + 16px);
+    z-index: 999;
+    display: grid;
+    width: 56px;
+    height: 56px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 50%;
+    color: #fff;
+    background: var(--company-fab-light-background, #17191d);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .16);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-company-fab svg {
+    width: 25px;
+    height: 25px;
+    stroke-width: 2.2;
+  }
+
+  html[data-theme="dark"] .mobile-company-fab {
+    border-color: rgba(0, 0, 0, .10);
+    color: #15171a;
+    background: var(--company-fab-dark-background, #f1f1f1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .26);
+  }
 }

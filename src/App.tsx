@@ -2461,11 +2461,17 @@ export default function App() {
         )}
       </div>
       {isMobile && !hasOpenOverlay && createPortal(
-        <MobileNav
-          view={view}
-          setView={setView}
-          t={t}
-        />,
+        <>
+          <MobileNav view={view} setView={setView} t={t} />
+          {view === "companies" && !selected && <button
+            type="button"
+            className="mobile-company-fab"
+            data-mobile-company-fab="true"
+            aria-label={t.addCompany}
+            title={t.addCompany}
+            onClick={() => open("company")}
+          ><Plus aria-hidden="true" /></button>}
+        </>,
         document.body,
       )}
     </div></WatchProvider>
@@ -2578,6 +2584,7 @@ function MobileNav({
   const unread = events.filter((event) => !event.read).length + unreadProductUpdates;
   useLayoutEffect(() => {
     const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav="true"]');
+    const companyFab = document.querySelector<HTMLElement>('[data-mobile-company-fab="true"]');
     if (!nav) return;
 
     const start = 0;
@@ -2618,6 +2625,8 @@ function MobileNav({
         "--bottom-nav-light-background",
         progress === 0 ? "rgb(255, 255, 255)" : `rgba(255, 255, 255, ${lightAlpha.toFixed(3)})`,
       );
+      companyFab?.style.setProperty("--company-fab-light-background", `rgba(23, 25, 29, ${lightAlpha.toFixed(3)})`);
+      companyFab?.style.setProperty("--company-fab-dark-background", `rgba(245, 245, 247, ${darkAlpha.toFixed(3)})`);
     };
 
     const onScroll = () => {
