@@ -1,5 +1,6 @@
-import { classifyChange, detectMeaningfulChange, fetchPage, inspectRecruitmentContent, normalizeUrl, sha256 } from './monitor';
-import type { Env, SourceType, TargetRow } from './types';
+import { classifyChange, compareSnapshots, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, normalizeUrl, redactDiagnosticLine, serializeSnapshot, sha256 } from './monitor';
+import type { RecruitmentAnalysis, SharedChangeCandidate, SnapshotChange } from './monitor';
+import type { Env, EventType, SourceType, TargetRow } from './types';
 
 const json = (body: unknown, status = 200, origin = '*') => new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': origin, 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS', vary: 'Origin' } });
 
@@ -30,7 +31,141 @@ const titles: Record<string, string> = {
 
 const CHECK_LEASE_MS = 120_000;
 
-export async function checkTarget(env: Env, target: TargetRow, claimedLease?: string) {
+type PendingEvent = {
+  id: string;
+  type: EventType;
+  title: string;
+  summary: string;
+  beforeExcerpt: string;
+  afterExcerpt: string;
+  sourceUrl: string;
+  contentHash: string;
+  change: SnapshotChange;
+  sharedCandidate: SharedChangeCandidate;
+};
+
+type PendingCheck = {
+  target: TargetRow;
+  lease: string;
+  checkedAt: string;
+  status: number;
+  fetchedUrl: string;
+  analysis: RecruitmentAnalysis;
+  snapshot: string;
+  hash: string;
+  previousSnapshotHash: string | null;
+  baseline: boolean;
+  event: PendingEvent | null;
+  runId: string;
+};
+
+function safeDiagnosticUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return '[invalid-url]';
+  }
+}
+
+function eventSummary(change: SnapshotChange, type: EventType): string {
+  if (/説明会|セミナー/.test(change.sectionLabel)) return '説明会の内容または日程に変更がありました。';
+  if (/募集要項|採用データ|応募資格|勤務条件|勤務地|待遇|福利厚生|初任給|給与|休日|休暇/.test(change.sectionLabel)) return '募集要項に変更がありました。';
+  if (/選考/.test(change.sectionLabel)) return '選考情報に変更がありました。';
+  const line = change.added[0]?.text || change.removed[0]?.text;
+  return line ? `「${line.slice(0, 100)}」という採用情報の変更を検出しました。` : titles[type];
+}
+
+function buildPendingEvent(target: TargetRow, fetchedUrl: string, hash: string, change: SnapshotChange, runId: string): PendingEvent {
+  const changedLines = change.added.length ? change.added.map((item) => item.text) : change.removed.map((item) => item.text);
+  const type = classifyChange(changedLines, change.sectionLabel);
+  const hostname = new URL(fetchedUrl).hostname;
+  return {
+    id: crypto.randomUUID(),
+    type,
+    title: titles[type],
+    summary: eventSummary(change, type),
+    beforeExcerpt: change.beforeExcerpt.slice(0, 1000),
+    afterExcerpt: change.afterExcerpt.slice(0, 1000),
+    sourceUrl: fetchedUrl,
+    contentHash: hash,
+    change,
+    sharedCandidate: {
+      targetId: target.id,
+      companyId: target.company_id,
+      host: hostname,
+      selector: change.selector,
+      sectionKey: change.sectionKey,
+      scope: change.scope,
+      text: change.sharedChange,
+      runId,
+    },
+  };
+}
+
+function logCheck(check: PendingCheck, decision: string, notificationDiff: unknown = null) {
+  const { target, analysis, event } = check;
+  const change = event?.change;
+  console.info(JSON.stringify({
+    source: 'company-watch-diff',
+    companyId: target.company_id,
+    companyName: target.company_name,
+    monitoredUrl: safeDiagnosticUrl(check.fetchedUrl),
+    hostname: new URL(check.fetchedUrl).hostname,
+    matchedContentSelector: analysis.selector,
+    sectionSelectors: [...new Set(analysis.sections.map((section) => section.selector))],
+    snapshotHash: check.hash,
+    previousSnapshotHash: check.previousSnapshotHash,
+    rawDiff: {
+      added: change?.normalizedAdded.map(redactDiagnosticLine) || [],
+      removed: change?.normalizedRemoved.map(redactDiagnosticLine) || [],
+    },
+    normalizedDiff: {
+      added: change?.added.map((item) => redactDiagnosticLine(item.text)) || [],
+      removed: change?.removed.map((item) => redactDiagnosticLine(item.text)) || [],
+    },
+    ignoredDiff: analysis.ignored,
+    notificationDiff,
+    watchRunId: check.runId,
+    timestamp: check.checkedAt,
+    decision,
+  }));
+}
+
+async function markTargetError(env: Env, target: TargetRow, lease: string, checkedAt: string, status: number | null, message: string) {
+  await env.DB.prepare("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
+    .bind(checkedAt, status, message, checkedAt, target.id, lease).run();
+}
+
+async function finalizeCheck(env: Env, check: PendingCheck, sharedChanges: Set<string>) {
+  const event = check.event;
+  const shared = Boolean(event && sharedChanges.has(check.target.id));
+  let decision = check.baseline ? 'baseline-created-or-rebuilt' : event ? (shared ? 'platform-shared-ignored' : 'notification') : 'no-meaningful-diff';
+  let notificationDiff: unknown = null;
+  if (event && !shared) {
+    try {
+      const inserted = await env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,?)`)
+        .bind(event.id, check.target.company_id, check.target.company_name, check.target.id, event.type, event.title, event.summary, event.beforeExcerpt, event.afterExcerpt, check.checkedAt, event.sourceUrl, check.target.source_type, event.contentHash).run();
+      if (!inserted.meta.changes) decision = 'notification-deduplicated';
+      else notificationDiff = { type: event.type, section: event.change.sectionLabel, added: event.change.added.map((item) => redactDiagnosticLine(item.text)), removed: event.change.removed.map((item) => redactDiagnosticLine(item.text)) };
+    } catch {
+      await markTargetError(env, check.target, check.lease, check.checkedAt, check.status, 'EVENT_WRITE_FAILED');
+      logCheck(check, 'event-write-failed');
+      return;
+    }
+  }
+  try {
+    await env.DB.prepare("UPDATE watch_targets SET status='active',last_checked_at=?,last_success_at=?,last_http_status=?,last_hash=?,last_error=NULL,snapshot=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
+      .bind(check.checkedAt, check.checkedAt, check.status, check.hash, check.snapshot, check.checkedAt, check.target.id, check.lease).run();
+  } catch {
+    await markTargetError(env, check.target, check.lease, check.checkedAt, check.status, 'SNAPSHOT_WRITE_FAILED');
+    logCheck(check, 'snapshot-write-failed', notificationDiff);
+    return;
+  }
+  logCheck(check, decision, notificationDiff);
+}
+
+export async function checkTarget(env: Env, target: TargetRow, claimedLease?: string, batch?: PendingCheck[], runId = crypto.randomUUID()) {
   const now = new Date().toISOString();
   const lease = claimedLease || new Date(Date.now() + CHECK_LEASE_MS).toISOString();
   if (!claimedLease) {
@@ -42,22 +177,21 @@ export async function checkTarget(env: Env, target: TargetRow, claimedLease?: st
   try {
     const fetched = await fetchPage(target.url);
     checkedHttpStatus = fetched.status;
-    const analysis = inspectRecruitmentContent(fetched.html, target.source_type);
+    const analysis = inspectRecruitmentContent(fetched.html, target.source_type, fetched.url);
     if (!analysis.valid) throw new Error('INSUFFICIENT_PUBLIC_CONTENT');
-    const text = analysis.text;
-    const hash = await sha256(text);
-    const change = target.snapshot ? detectMeaningfulChange(target.snapshot, text) : null;
-    if (change && hash !== target.last_hash) {
-      const type = classifyChange(change.added);
-      await env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,?)`)
-        .bind(crypto.randomUUID(), target.company_id, target.company_name, target.id, type, titles[type], `「${change.added[0]}」という情報が追加または変更されました。`, change.beforeExcerpt, change.afterExcerpt, now, fetched.url, target.source_type, hash).run();
-    }
-    await env.DB.prepare("UPDATE watch_targets SET status='active',last_checked_at=?,last_success_at=?,last_http_status=?,last_hash=?,last_error=NULL,snapshot=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
-      .bind(now, now, fetched.status, hash, text, now, target.id, lease).run();
+    const snapshot = serializeSnapshot(analysis);
+    const hash = await sha256(snapshot);
+    const compatible = hasCompatibleSnapshot(target.snapshot, analysis);
+    const change = compatible ? compareSnapshots(target.snapshot, analysis) : null;
+    const previousSnapshotHash = target.last_hash || (target.snapshot ? await sha256(target.snapshot) : null);
+    const event = change && hash !== target.last_hash ? buildPendingEvent(target, fetched.url, hash, change, runId) : null;
+    const check: PendingCheck = { target, lease, checkedAt: now, status: fetched.status, fetchedUrl: fetched.url, analysis, snapshot, hash, previousSnapshotHash, baseline: !compatible, event, runId };
+    if (batch) batch.push(check);
+    else await finalizeCheck(env, check, new Set());
   } catch (error) {
     const message = error instanceof Error ? error.message : 'UNKNOWN_ERROR';
-    await env.DB.prepare("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
-      .bind(now, checkedHttpStatus, message, now, target.id, lease).run();
+    await markTargetError(env, target, lease, now, checkedHttpStatus, message);
+    console.info(JSON.stringify({ source: 'company-watch-diff', companyId: target.company_id, companyName: target.company_name, monitoredUrl: safeDiagnosticUrl(target.url), watchRunId: runId, timestamp: now, decision: 'check-failed', error: message }));
   }
 }
 
@@ -73,9 +207,13 @@ async function queueTargetCheck(env: Env, ctx: ExecutionContext, target: TargetR
   return true;
 }
 
-async function scheduled(env: Env) {
+export async function scheduled(env: Env) {
   const rows = await env.DB.prepare("SELECT * FROM watch_targets WHERE enabled=1 AND status!='paused' ORDER BY COALESCE(last_checked_at,'') ASC LIMIT 12").all<TargetRow>();
-  for (const target of rows.results) await checkTarget(env, target);
+  const runId = crypto.randomUUID();
+  const batch: PendingCheck[] = [];
+  for (const target of rows.results) await checkTarget(env, target, undefined, batch, runId);
+  const sharedChanges = findPlatformSharedChanges(batch.flatMap((check) => check.event ? [check.event.sharedCandidate] : []));
+  for (const check of batch) await finalizeCheck(env, check, sharedChanges);
 }
 
 export default {
@@ -115,11 +253,14 @@ export default {
         const body = await request.json<{ enabled?: boolean; label?: string; url?: string; sourceType?: SourceType }>();
         const current = await env.DB.prepare('SELECT * FROM watch_targets WHERE id=?').bind(id).first<TargetRow>();
         if (!current) return json({ error: 'NOT_FOUND' }, 404, origin);
+        if (body.sourceType && !['mynavi','official','other'].includes(body.sourceType)) return json({ error: 'INVALID_SOURCE_TYPE' }, 400, origin);
         let normalized = current.normalized_url;
         try { if (body.url) normalized = normalizeUrl(body.url); } catch (error) { return json({ error: error instanceof Error ? error.message : 'INVALID_URL' }, 400, origin); }
         const enabled = body.enabled !== false;
-        await env.DB.prepare("UPDATE watch_targets SET enabled=?,status=?,last_error=NULL,last_http_status=NULL,lease_until=NULL,label=?,url=?,normalized_url=?,source_type=?,updated_at=? WHERE id=?")
-          .bind(enabled ? 1 : 0, enabled ? 'checking' : 'paused', body.label ?? current.label, normalized, normalized, body.sourceType ?? current.source_type, new Date().toISOString(), id).run();
+        const sourceType = body.sourceType ?? current.source_type;
+        const resetBaseline = normalized !== current.normalized_url || sourceType !== current.source_type;
+        await env.DB.prepare("UPDATE watch_targets SET enabled=?,status=?,last_error=NULL,last_http_status=NULL,lease_until=NULL,label=?,url=?,normalized_url=?,source_type=?,snapshot=CASE WHEN ?=1 THEN NULL ELSE snapshot END,last_hash=CASE WHEN ?=1 THEN NULL ELSE last_hash END,updated_at=? WHERE id=?")
+          .bind(enabled ? 1 : 0, enabled ? 'checking' : 'paused', body.label ?? current.label, normalized, normalized, sourceType, resetBaseline ? 1 : 0, resetBaseline ? 1 : 0, new Date().toISOString(), id).run();
         const updated = await env.DB.prepare('SELECT * FROM watch_targets WHERE id=?').bind(id).first<TargetRow>();
         if (!updated) return json({ error: 'NOT_FOUND' }, 404, origin);
         const queued = enabled ? await queueTargetCheck(env, ctx, updated) : false;
