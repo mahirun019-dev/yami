@@ -4,10 +4,10 @@ import type { EventType, SourceType } from "./types";
 
 const RECRUITMENT = /(エントリー|プレエントリー|応募|募集|新卒|採用|説明会|セミナー|予約|インターン|オープン[・\s-]?カンパニー|ES|エントリーシート|提出|締切|適性検査|Web\s*テスト|面接|選考|受付開始|受付終了)/i;
 const HIGH_CONFIDENCE_RECRUITMENT = /(募集(?:を)?終了|受付終了|エントリー受付中|応募受付中|説明会受付中|予約受付中|採用予定|募集要項|新卒採用|採用情報|募集職種|採用スケジュール)/i;
-const COMPANY_SECTION = /(会社概要|会社情報|会社データ|企業概要|企業情報|採用データ|採用情報|募集要項|募集コース|募集職種|仕事内容|職務内容|応募資格|応募条件|採用人数|採用実績|選考フロー|選考情報|説明会|セミナー|インターン|オープン[・\s-]?カンパニー|勤務条件|勤務地|待遇|福利厚生|初任給|給与|休日|休暇|企業からのお知らせ|採用のお知らせ)/i;
-const PLATFORM_SECTION = /(おすすめ企業|関連企業|関連会社|ランキング|人気企業|広告|スポンサー|キャンペーン|閲覧履歴|最近見た企業|(?:マイナビ|リクナビ|サイト|運営|プラットフォーム)からのお知らせ|メンテナンス(?:情報|のお知らせ))/i;
+const COMPANY_SECTION = /(会社概要|会社情報|会社データ|企業概要|企業情報|採用データ|採用情報|募集要項|募集コース|募集職種|仕事内容|職務内容|応募資格|応募条件|採用人数|採用実績|選考フロー|選考方法|選考情報|説明会|セミナー|インターン|オープン[・\s-]?カンパニー|勤務条件|勤務地|待遇|福利厚生|初任給|給与|休日|休暇|企業からのお知らせ|会社からのお知らせ|採用のお知らせ|採用後の待遇|採用担当者からの伝言板|問合せ先|問い合わせ先)/i;
+const PLATFORM_SECTION = /(おすすめ企業|オススメ企業|関連企業|関連会社|類似企業|あなたへのおすすめ|注目企業|他社一覧|企業一覧|検討リスト|エントリー予約リスト|ランキング|人気企業|広告|スポンサー|キャンペーン|閲覧履歴|最近見た企業|(?:マイナビ|リクナビ|サイト|運営|プラットフォーム)からのお知らせ|メンテナンス(?:情報|のお知らせ))/i;
 const PERSONALIZED_LINE = /(マイページ|ログイン|ログアウト|会員登録|閲覧履歴|お気に入り登録|保存した企業|応募済み|エントリー予約|予約リスト|(?:エントリー|応募|予約).{0,40}(?:追加|登録|完了|しました|済み|一覧|リスト)|(?:追加|登録|完了|しました|済み|一覧|リスト).{0,40}(?:エントリー|応募|予約))/i;
-const SNAPSHOT_VERSION = 3;
+const SNAPSHOT_VERSION = 4;
 const PRIVATE_HOST = /(^localhost$|\.localhost$|\.local$|\.internal$|^0\.|^10\.|^127\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\.|^192\.168\.|^::1$|^fc|^fd|^fe80)/i;
 const CRAWLER_PRODUCT_TOKEN = 'CareerFlowWatch';
 const CRAWLER_USER_AGENT = `${CRAWLER_PRODUCT_TOKEN}/1.0 (+public recruitment monitor)`;
@@ -29,6 +29,8 @@ export type RecruitmentAnalysis = {
   highConfidenceLines: string[];
   text: string;
   sections: SnapshotSection[];
+  excludedSections: Array<{ heading: string; selector: string; normalizedTextLength: number; reason: string }>;
+  identityMatched: boolean | null;
   rawLines: string[];
   ignored: Record<string, number>;
   valid: boolean;
@@ -74,6 +76,11 @@ const EXCLUDED_DOM = [
   '[class*="recommend" i]', '[id*="recommend" i]', '[class*="related" i]', '[id*="related" i]',
   '[class*="carousel" i]', '[id*="carousel" i]', '[class*="campaign" i]', '[id*="campaign" i]',
   '[class*="advert" i]', '[id*="advert" i]', '[id*="analytics" i]', '[class*="analytics" i]',
+].join(',');
+const MYNAVI_RECOMMENDATION_DOM = [
+  '.aiRecomend', '.recomend', '[id*="aiRcmd" i]',
+  '[class*="aiPickup" i]', '[id*="aiPickup" i]', '[class*="recommend" i]', '[id*="recommend" i]',
+  '[class*="related" i]', '[id*="related" i]',
 ].join(',');
 const HEADING_NODES = 'h1,h2,h3,h4,h5,h6,[role="heading"]';
 
@@ -126,12 +133,15 @@ function rootForPage($: CheerioAPI, sourceType: SourceType, inputUrl?: string) {
   try { hostname = inputUrl ? new URL(inputUrl).hostname.toLowerCase() : ''; } catch { /* URL is optional for fixture callers. */ }
   const isMynavi = sourceType === 'mynavi' || hostname === 'mynavi.jp' || hostname.endsWith('.mynavi.jp');
   const isRikunabi = hostname === 'rikunabi.com' || hostname.endsWith('.rikunabi.com');
-  const adapter = isMynavi ? 'mynavi-v2' : isRikunabi ? 'rikunabi-v2' : sourceType === 'official' ? 'official-main-v2' : 'generic-main-v2';
-  const selectors = isMynavi
-    ? ['main', '[role="main"]', '#mainContents', '#corpContents', '#main', '#contents', '.mainContents']
-    : isRikunabi
-      ? ['main', '[role="main"]', '#contents', '#main', 'article']
-      : ['main', '[role="main"]', 'article', '#mainContents', '#main', '#contents', '.mainContents'];
+  const adapter = isMynavi ? 'mynavi-v3' : isRikunabi ? 'rikunabi-v2' : sourceType === 'official' ? 'official-main-v2' : 'generic-main-v2';
+  if (isMynavi) {
+    const companyInfo = $('.companyInfo, #companyInfo').first();
+    if (companyInfo.length && normalizeLine(companyInfo.text()).length >= 40) return { root: companyInfo, selector: '.companyInfo', adapter, isMynavi };
+    return { root: $([]), selector: 'mynavi-company-whitelist-unavailable', adapter, isMynavi };
+  }
+  const selectors = isRikunabi
+    ? ['main', '[role="main"]', '#contents', '#main', 'article']
+    : ['main', '[role="main"]', 'article', '#mainContents', '#main', '#contents', '.mainContents'];
   for (const selector of selectors) {
     const candidate = $(selector).first();
     if (candidate.length && normalizeLine(candidate.text()).length >= 40) return { root: candidate, selector, adapter, isMynavi };
@@ -141,6 +151,85 @@ function rootForPage($: CheerioAPI, sourceType: SourceType, inputUrl?: string) {
     return { root: contentCandidate, selector: 'main-content-fallback', adapter, isMynavi };
   }
   return { root: $('body'), selector: 'body-recruitment-lines-only', adapter, isMynavi };
+}
+
+function domSelector($: CheerioAPI, node: any): string {
+  const $node = $(node);
+  const tag = String($node.prop('tagName') || 'node').toLowerCase();
+  const id = $node.attr('id');
+  const classes = ($node.attr('class') || '').split(/\s+/).filter(Boolean).slice(0, 3);
+  return `${tag}${id ? `#${id}` : ''}${classes.map((name) => `.${name}`).join('')}`;
+}
+
+function repeatedMynaviCompanyCards($: CheerioAPI, node: any): boolean {
+  const $node = $(node);
+  const text = normalizeLine($node.text());
+  const names = $node.find('[id*="relCorpName" i]').length;
+  const industries = $node.find('[id*="relInd" i]').length;
+  const headquarters = $node.find('[id*="relHq" i]').length;
+  if (names >= 3 && industries >= 3 && headquarters >= 3) return true;
+  const count = (pattern: RegExp) => (text.match(pattern) || []).length;
+  return count(/検討リスト登録/g) >= 3 && count(/業種/g) >= 3 && count(/本社/g) >= 3;
+}
+
+function captureMynaviExcludedSections($: CheerioAPI, companyInfo: any) {
+  const excluded: Array<{ heading: string; selector: string; normalizedTextLength: number; reason: string }> = [];
+  const explicitNodes = $(MYNAVI_RECOMMENDATION_DOM).toArray();
+  const explicitSet = new Set(explicitNodes);
+  const explicitRoots = explicitNodes.filter((node: any) => !$(node).parents().toArray().some((parent: any) => explicitSet.has(parent)));
+  const seen = new Set<any>(explicitRoots);
+  for (const node of explicitRoots) {
+    const $node = $(node);
+    const heading = normalizeLine($node.find(HEADING_NODES).first().text()) ||
+      (normalizeLine($node.find('#corpName').first().text()).slice(0, 100) || 'MyNavi recommendation / related-company module');
+    excluded.push({ heading, selector: domSelector($, node), normalizedTextLength: normalizeLine($node.text()).length, reason: 'platform-recommendation-or-related-list' });
+  }
+  $(HEADING_NODES).each((_index, node) => {
+    const heading = normalizeLine($(node).text());
+    const insideExplicitModule = $(node).parents().toArray().some((parent: any) => explicitSet.has(parent));
+    if (!heading || !PLATFORM_SECTION.test(heading) || seen.has(node) || insideExplicitModule) return;
+    seen.add(node);
+    excluded.push({ heading: heading.slice(0, 100), selector: domSelector($, node), normalizedTextLength: heading.length, reason: 'platform-or-personalized-section-heading' });
+  });
+
+  if (companyInfo?.length) {
+    const candidates = $(companyInfo).find('section,article,aside,[role="region"],div').toArray()
+      .filter((node: any) => repeatedMynaviCompanyCards($, node) && !$(node).parents().toArray().some((parent: any) => explicitSet.has(parent)));
+    const candidateSet = new Set(candidates);
+    const smallest = candidates.filter((node: any) => !$(node).find('section,article,aside,[role="region"],div').toArray().some((child: any) => candidateSet.has(child)));
+    for (const node of smallest) {
+      if (seen.has(node)) continue;
+      seen.add(node);
+      excluded.push({ heading: '繰り返し企業カード一覧', selector: domSelector($, node), normalizedTextLength: normalizeLine($(node).text()).length, reason: 'repeated-company-card-pattern' });
+    }
+  }
+  return excluded;
+}
+
+function removeRepeatedMynaviCompanyCards($: CheerioAPI, companyInfo: any) {
+  if (!companyInfo?.length) return;
+  const explicit = new Set($(MYNAVI_RECOMMENDATION_DOM).toArray());
+  const candidates = $(companyInfo).find('section,article,aside,[role="region"],div').toArray()
+    .filter((node: any) => repeatedMynaviCompanyCards($, node));
+  const candidateSet = new Set(candidates);
+  const smallest = candidates.filter((node: any) => !$(node).find('section,article,aside,[role="region"],div').toArray().some((child: any) => candidateSet.has(child)));
+  for (const node of smallest) {
+    if (explicit.has(node)) continue;
+    $(node).remove();
+  }
+  for (const node of explicit) $(node).remove();
+}
+
+function companyIdentityKey(value: string): string {
+  return normalizeLine(value).normalize('NFKC').toLowerCase()
+    .replace(/株式会社|有限会社|合同会社|合名会社|合資会社|\(株\)|\(有\)|\(同\)|\(名\)|\(資\)/g, '')
+    .replace(/[\s\u00a0・【】〖〗「」『』()（）［］\[\]_-]/g, '');
+}
+
+function matchesCompanyIdentity(expected: string, actual: string): boolean {
+  const expectedKey = companyIdentityKey(expected);
+  const actualKey = companyIdentityKey(actual);
+  return expectedKey.length >= 3 && actualKey.length >= 3 && (expectedKey.includes(actualKey) || actualKey.includes(expectedKey));
 }
 
 function siblingSectionLines($: CheerioAPI, heading: any): string[] {
@@ -228,6 +317,17 @@ function extractCompanySections($: CheerioAPI, root: any, ignored: Record<string
   return sections;
 }
 
+function extractMynaviSections($: CheerioAPI, companyInfo: any, ignored: Record<string, number>): SnapshotSection[] {
+  const sections: SnapshotSection[] = [];
+  const companyHeader = $('#companyHead').first();
+  if (companyHeader.length) {
+    const lines = cleanLines(collectBlockLines($, companyHeader[0]), ignored);
+    if (lines.length) sections.push({ label: '会社概要', selector: '#companyHead', scope: 'company', lines, meaningfulLines: lines });
+  }
+  if (companyInfo?.length) sections.push(...extractCompanySections($, companyInfo[0], ignored));
+  return [...new Map(sections.map((section) => [`${section.label}\n${section.selector}\n${section.lines.join('\n')}`, section])).values()];
+}
+
 function meaningfulFallbackLines(lines: string[]) {
   return lines.filter((line) => RECRUITMENT.test(line));
 }
@@ -306,17 +406,25 @@ export function compareSnapshots(before: string | null | undefined, after: Recru
   };
 }
 
-export function inspectRecruitmentContent(html: string, sourceType: SourceType, inputUrl?: string): RecruitmentAnalysis {
+export function inspectRecruitmentContent(html: string, sourceType: SourceType, inputUrl?: string, targetCompanyName?: string): RecruitmentAnalysis {
   const $ = load(html);
   const rawTextLength = normalizeLine($('body').text()).length;
-  $(EXCLUDED_DOM).remove();
-  const { root, selector, adapter } = rootForPage($, sourceType, inputUrl);
+  const { root, selector, adapter, isMynavi } = rootForPage($, sourceType, inputUrl);
+  const excludedSections = isMynavi ? captureMynaviExcludedSections($, root) : [];
+  if (isMynavi) {
+    $(MYNAVI_RECOMMENDATION_DOM).remove();
+    removeRepeatedMynaviCompanyCards($, root);
+  } else {
+    $(EXCLUDED_DOM).remove();
+  }
   removePlatformModules($, root);
   const ignored: Record<string, number> = {};
-  const rawLines = collectBlockLines($, root[0]);
+  const rawLines = root.length ? collectBlockLines($, root[0]) : [];
   const cleaned = cleanLines(rawLines, ignored);
-  const specificSections = extractCompanySections($, root[0], ignored);
-  const fallbackMeaningful = meaningfulFallbackLines(cleaned);
+  const specificSections = isMynavi
+    ? extractMynaviSections($, root, ignored)
+    : root.length ? extractCompanySections($, root[0], ignored) : [];
+  const fallbackMeaningful = isMynavi ? [] : meaningfulFallbackLines(cleaned);
   const fallback = {
     label: '採用関連ページ',
     selector,
@@ -330,18 +438,23 @@ export function inspectRecruitmentContent(html: string, sourceType: SourceType, 
   const highConfidenceLines = meaningfulLines.filter((line) => HIGH_CONFIDENCE_RECRUITMENT.test(line));
   const recruitmentTextLength = meaningfulLines.filter((line) => RECRUITMENT.test(line)).join('\n').length;
   const text = allLines.join('\n').slice(0, 100_000);
+  const pageCompanyName = isMynavi ? normalizeLine($('#companyHead h1').first().text() || $(root).find('h1').first().text()) : '';
+  const identityMatched = isMynavi && targetCompanyName ? Boolean(pageCompanyName && matchesCompanyIdentity(targetCompanyName, pageCompanyName)) : null;
+  const hasCanonicalMynaviSection = !isMynavi || specificSections.some((section) => section.selector !== '#companyHead');
   return {
     adapter,
-    selector: specificSections.length ? 'company-sections' : selector,
+    selector: specificSections.length ? (isMynavi ? 'mynavi-company-whitelist' : 'company-sections') : selector,
     rawTextLength,
     cleanedTextLength: text.length,
     recruitmentTextLength,
     highConfidenceLines,
     text,
     sections,
+    excludedSections,
+    identityMatched,
     rawLines,
     ignored,
-    valid: meaningfulLines.join('\n').length >= 80 || highConfidenceLines.length > 0,
+    valid: hasCanonicalMynaviSection && identityMatched !== false && (meaningfulLines.join('\n').length >= 80 || highConfidenceLines.length > 0),
   };
 }
 
@@ -404,8 +517,8 @@ export function classifyChange(lines: string[], sectionLabel = ''): EventType {
   const text = lines.join(' ');
   if (/(説明会|セミナー)/.test(sectionLabel)) return 'briefing_open';
   if (/(インターン|オープン[・\s-]?カンパニー)/.test(sectionLabel)) return 'internship_open';
+  if (/(選考フロー|選考方法|選考情報|採用フロー)/.test(sectionLabel)) return 'selection_updated';
   if (/(募集要項|募集コース|採用データ|応募資格|待遇|福利厚生|初任給|勤務地|勤務条件)/.test(sectionLabel)) return 'job_info_updated';
-  if (/(選考フロー|選考情報)/.test(sectionLabel)) return 'selection_updated';
   if (/(募集終了|受付終了|締め切りました|終了しました)/.test(text)) return 'recruitment_closed';
   if (/(締切|提出期限|応募期限).*(変更|延長|追加|まで|日)/.test(text)) return 'deadline_changed';
   if (/(説明会|セミナー).*(受付開始|予約開始|開催)/.test(text)) return 'briefing_open';

@@ -114,6 +114,9 @@ function logCheck(check: PendingCheck, decision: string, notificationDiff: unkno
     hostname: new URL(check.fetchedUrl).hostname,
     matchedContentSelector: analysis.selector,
     sectionSelectors: [...new Set(analysis.sections.map((section) => section.selector))],
+    includedSections: analysis.sections.map((section) => ({ heading: section.label, selector: section.selector, normalizedTextLength: section.lines.join('\n').length })),
+    excludedSections: analysis.excludedSections,
+    companyIdentityMatched: analysis.identityMatched,
     snapshotHash: check.hash,
     previousSnapshotHash: check.previousSnapshotHash,
     rawDiff: {
@@ -177,7 +180,7 @@ export async function checkTarget(env: Env, target: TargetRow, claimedLease?: st
   try {
     const fetched = await fetchPage(target.url);
     checkedHttpStatus = fetched.status;
-    const analysis = inspectRecruitmentContent(fetched.html, target.source_type, fetched.url);
+    const analysis = inspectRecruitmentContent(fetched.html, target.source_type, fetched.url, target.company_name);
     if (!analysis.valid) throw new Error('INSUFFICIENT_PUBLIC_CONTENT');
     const snapshot = serializeSnapshot(analysis);
     const hash = await sha256(snapshot);

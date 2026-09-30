@@ -4,24 +4,65 @@ import { classifyChange, compareSnapshots, detectMeaningfulChange, extractMeanin
 
 const mynaviUrl = 'https://job.mynavi.jp/28/pc/corpinfo/displayPrevEmployment/index/?corpId=292189&recruitingCourseId=27052359';
 
-function mynaviPage(options: { holiday?: string; briefingDate?: string; header?: string; banner?: string; login?: string; recommendation?: string; reservation?: string; updated?: string } = {}) {
-  return `<!doctype html><html><body>
+type MynaviPageOptions = {
+  holiday?: string;
+  location?: string;
+  briefingDate?: string;
+  selectionFlow?: string;
+  header?: string;
+  banner?: string;
+  login?: string;
+  recommendation?: string[];
+  recommendationInsideCompanyInfo?: boolean;
+  recommendationClass?: string;
+  recommendationUseIds?: boolean;
+  reservation?: string;
+  updated?: string;
+  pageCompanyName?: string;
+  expectedCompanyName?: string;
+};
+
+function mynaviPage(options: MynaviPageOptions = {}) {
+  const recommendations = options.recommendation || ['おすすめ企業A', 'おすすめ企業B', 'おすすめ企業C'];
+  const useRecommendationIds = options.recommendationUseIds !== false;
+  const recommendationCards = recommendations.map((name, index) => `
+    <div ${useRecommendationIds ? `id="aiRcmdRelInfoDtoList[${index}]"` : ''}>
+      <div ${useRecommendationIds ? `id="aiRcmdRelInfoDtoList[${index}].relCorpName"` : ''}>${name}</div>
+      <p>インターンシップ＆キャリア</p>
+      <dl><dt>業種</dt><dd>ソフトウエア</dd><dt>本社</dt><dd>東京都</dd></dl>
+      <a>検討リスト登録</a>
+    </div>`).join('');
+  const recommendationModule = `<div class="${options.recommendationClass ?? 'aiRecomend recomend'}">
+    <div class="${useRecommendationIds ? 'aiPickup' : ''}"><div ${useRecommendationIds ? 'id="corpName"' : ''}>${options.pageCompanyName || 'テスト企業'}の画像と似た雰囲気の画像から企業をおすすめしています。</div></div>
+    <div ${useRecommendationIds ? 'id="aiRcmdRelInfoDtoList"' : ''}>${recommendationCards}</div>
+  </div>`;
+  return `<!doctype html><html><body id="companyDetail">
     <header><p>${options.header || 'マイナビ 共通ヘッダー'}</p></header>
     <div class="global-banner"><p>${options.banner || '共通キャンペーンのお知らせ'}</p></div>
-    <main id="mainContents">
-      <h1>テスト企業 前年度採用データ</h1>
-      <p>${options.login || 'ログインしてマイページをご利用ください'}</p>
-      <p>${options.reservation || ''}</p>
-      <section class="recruit-section"><h2>募集要項</h2><dl><dt>年間休日</dt><dd>${options.holiday || '124'}日</dd><dt>募集職種</dt><dd>システムエンジニア</dd></dl></section>
-      <section class="briefing-section"><h2>説明会・セミナー</h2><p>開催日：${options.briefingDate || '10/20'}</p></section>
-      <section class="recommendations"><h2>おすすめ企業</h2><p>${options.recommendation || 'おすすめ企業A'}</p></section>
-      <p>最終更新日：${options.updated || '2026/2/4'}</p>
-    </main>
+    <div class="wrapper">
+      <form id="displayOutlineForm">
+        <div id="companyHead" class="group">
+          <h1>${options.pageCompanyName || 'テスト企業'}</h1>
+          <h2>業種</h2><p>ソフトウエア</p><h2>基本情報</h2><p>本社 東京都</p>
+        </div>
+        <div class="companyInfo">
+          <div class="companySec"><h2>募集要項</h2><dl><dt>年間休日</dt><dd>${options.holiday || '124'}日</dd><dt>募集職種</dt><dd>システムエンジニア</dd></dl></div>
+          <div class="companySec"><h2>勤務地</h2><p>${options.location || '東京都'}</p></div>
+          <div class="companySec"><h2>募集要項・採用フロー</h2><p>${options.selectionFlow || '書類選考、一次面接'}</p></div>
+          <div class="companySec"><h2>説明会・セミナー</h2><p>開催日：${options.briefingDate || '10/20'}</p></div>
+          <div class="companySec"><h2>採用後の待遇</h2><p>初任給 250,000円、福利厚生あり。</p></div>
+          <div class="companySec"><h2>企業からのお知らせ</h2><p>採用情報を公開しています。</p><p>最終更新日：${options.updated || '2026/2/4'}</p></div>
+          <div class="session-ui"><p>${options.login || 'ログインしてマイページをご利用ください'}</p><p>${options.reservation || ''}</p></div>
+          ${options.recommendationInsideCompanyInfo ? recommendationModule : ''}
+        </div>
+        ${options.recommendationInsideCompanyInfo ? '' : `<div class="footerWrap">${recommendationModule}</div>`}
+      </form>
+    </div>
   </body></html>`;
 }
 
-function analyzeMynavi(options: Parameters<typeof mynaviPage>[0] = {}) {
-  return inspectRecruitmentContent(mynaviPage(options), 'mynavi', mynaviUrl);
+function analyzeMynavi(options: MynaviPageOptions = {}) {
+  return inspectRecruitmentContent(mynaviPage(options), 'mynavi', mynaviUrl, options.expectedCompanyName);
 }
 
 test('normalizes public URLs and strips tracking', () => assert.equal(normalizeUrl(' https://EXAMPLE.com/recruit/?utm_source=x#top '), 'https://example.com/recruit/'));
@@ -141,9 +182,34 @@ test('TEST 4: login state changes are excluded from the company-specific diff', 
   assert.equal(compareSnapshots(serializeSnapshot(before), after), null);
 });
 
-test('TEST 5: recommendation module changes are excluded', () => {
-  const before = analyzeMynavi({ recommendation: 'おすすめ企業A' });
-  const after = analyzeMynavi({ recommendation: 'おすすめ企業Bと関連企業C' });
+test('Aiming regression: changing MyNavi AI recommendation cards outside companyInfo does not create a diff', () => {
+  const identity = { pageCompanyName: '(株)Aiming', expectedCompanyName: '株式会社Aiming' };
+  const before = analyzeMynavi({ ...identity, recommendation: ['(株)サクセス', '(株)スパイク・チュンソフト', '(株)ラクジン'] });
+  const after = analyzeMynavi({ ...identity, recommendation: ['(株)オルカ', '(株)f4samurai', '(株)バンダイナムコエンターテインメント', '(株)ゲームフリーク'] });
+  assert.equal(before.identityMatched, true);
+  assert.ok(before.sections.some((section) => section.label === '募集要項'));
+  assert.ok(before.excludedSections.some((section) => section.selector.includes('.aiRecomend') && section.reason === 'platform-recommendation-or-related-list'));
+  assert.equal(compareSnapshots(serializeSnapshot(before), after), null);
+});
+
+test('Keiyo regression: changing other-company cards does not enter the company-specific snapshot', () => {
+  const identity = { pageCompanyName: '京葉ガス情報システム(株)【京葉ガスグループ】', expectedCompanyName: '京葉ガス情報システム(株)' };
+  const before = analyzeMynavi({ ...identity, recommendation: ['ドコモ・データコム(株)', '(株)インフォテクノ朝日', '(株)中央コンピュータシステム'] });
+  const after = analyzeMynavi({ ...identity, recommendation: ['味の素AGF(株)', '成田国際空港(株)', '東京ガス', 'NEXCOシステムソリューションズ'] });
+  assert.equal(before.identityMatched, true);
+  assert.equal(compareSnapshots(serializeSnapshot(before), after), null);
+});
+
+test('a repeated company-card structure inside the whitelisted root is excluded as a whole', () => {
+  const before = analyzeMynavi({ recommendationInsideCompanyInfo: true, recommendationClass: '', recommendationUseIds: false });
+  const after = analyzeMynavi({ recommendationInsideCompanyInfo: true, recommendationClass: '', recommendationUseIds: false, recommendation: ['(株)オルカ', '(株)f4samurai', '(株)バンダイナムコ'] });
+  assert.ok(before.excludedSections.some((section) => section.reason === 'repeated-company-card-pattern'));
+  assert.equal(compareSnapshots(serializeSnapshot(before), after), null);
+});
+
+test('a different検討リスト card order is excluded independently of visible text changes', () => {
+  const before = analyzeMynavi({ recommendation: ['企業A', '企業B', '企業C'] });
+  const after = analyzeMynavi({ recommendation: ['企業C', '企業A', '企業D'] });
   assert.equal(compareSnapshots(serializeSnapshot(before), after), null);
 });
 
@@ -160,6 +226,30 @@ test('TEST 7: recruitment detail changes are detected even when 最終更新日 
   const before = analyzeMynavi({ holiday: '124', updated: '2026/2/4' });
   const after = analyzeMynavi({ holiday: '125', updated: '2026/2/4' });
   assert.ok(compareSnapshots(serializeSnapshot(before), after));
+});
+
+test('company-specific 勤務地 changes are detected', () => {
+  const before = analyzeMynavi({ location: '東京都' });
+  const after = analyzeMynavi({ location: '東京都・千葉県' });
+  const change = compareSnapshots(serializeSnapshot(before), after);
+  assert.ok(change);
+  assert.equal(change.sectionLabel, '勤務地');
+  assert.ok(change.added.some((item) => item.text === '東京都・千葉県'));
+});
+
+test('company-specific 選考フロー additions are detected', () => {
+  const before = analyzeMynavi({ selectionFlow: '書類選考、一次面接' });
+  const after = analyzeMynavi({ selectionFlow: '書類選考、一次面接、二次面接' });
+  const change = compareSnapshots(serializeSnapshot(before), after);
+  assert.ok(change);
+  assert.ok(change.added.some((item) => item.text.includes('二次面接')));
+  assert.equal(classifyChange(change.added.map((item) => item.text), change.sectionLabel), 'selection_updated');
+});
+
+test('a mismatched MyNavi company identity cannot create a usable snapshot', () => {
+  const result = analyzeMynavi({ pageCompanyName: '(株)Aiming', expectedCompanyName: '別の企業' });
+  assert.equal(result.identityMatched, false);
+  assert.equal(result.valid, false);
 });
 
 test('TEST 8: missing, legacy, and extractor-incompatible snapshots silently establish a new baseline', () => {

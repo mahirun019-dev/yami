@@ -163,29 +163,41 @@ test('first official recruitment page add resolves to active without a second re
   }
 });
 
-test('scheduled Mynavi checks baseline silently, ignore shared reservation UI, and notify for one real company update', async () => {
+test('scheduled MyNavi checks ignore Aiming/Keiyo recommendation churn but notify for company-specific changes', async () => {
   const db = new MemoryD1();
   const now = new Date().toISOString();
-  for (const suffix of ['a', 'b', 'c', 'd', 'e']) {
-    const id = `target-${suffix}`;
+  const companies = [
+    { key: 'aiming', companyId: 'company-aiming', companyName: '株式会社Aiming', pageName: '(株)Aiming', recommendations: ['(株)サクセス', '(株)スパイク・チュンソフト', '(株)ラクジン'] },
+    { key: 'keiyo', companyId: 'company-keiyo', companyName: '京葉ガス情報システム(株)', pageName: '京葉ガス情報システム(株)【京葉ガスグループ】', recommendations: ['ドコモ・データコム(株)', '(株)インフォテクノ朝日', '(株)中央コンピュータシステム'] },
+  ];
+  for (const company of companies) {
+    const id = `target-${company.key}`;
     db.targets.set(id, {
-      id, company_id: `company-${suffix}`, company_name: `企業${suffix}`, source_type: 'mynavi', label: '',
-      url: `https://job.mynavi.jp/recruit/${suffix}`, normalized_url: `https://job.mynavi.jp/recruit/${suffix}`,
+      id, company_id: company.companyId, company_name: company.companyName, source_type: 'mynavi', label: '',
+      url: `https://job.mynavi.jp/recruit/${company.key}`, normalized_url: `https://job.mynavi.jp/recruit/${company.key}`,
       enabled: 1, created_at: now, updated_at: now, last_checked_at: null, last_success_at: null,
       status: 'active', last_http_status: null, last_hash: null, last_error: null, snapshot: null, lease_until: null,
     });
   }
   const env = { DB: db } as unknown as import('../src/types').Env;
   const originalFetch = globalThis.fetch;
-  let reservation = '';
+  let rotateRecommendations = false;
+  let personalized = '';
   let changedCompany: string | null = null;
+  let changedField: 'holiday' | 'location' | null = null;
   globalThis.fetch = (async (input) => {
     const url = String(input);
     if (url.startsWith('https://cloudflare-dns.com/')) return new Response(JSON.stringify({ Answer: [{ data: '198.51.100.12' }] }), { headers: { 'content-type': 'application/json' } });
     if (url.endsWith('/robots.txt')) return new Response('User-agent: *\nAllow: /', { headers: { 'content-type': 'text/plain' } });
-    const suffix = new URL(url).pathname.split('/').pop()!;
-    const holiday = changedCompany === suffix ? '年間休日125日' : '年間休日124日';
-    const page = `<main id="mainContents"><h1>企業${suffix} 採用データ</h1><p>${reservation}</p><section><h2>募集要項</h2><p>${holiday}</p><p>募集職種はシステムエンジニアです。</p></section></main>`;
+    const key = new URL(url).pathname.split('/').pop()!;
+    const company = companies.find((item) => item.key === key)!;
+    const holiday = changedCompany === key && changedField === 'holiday' ? '年間休日125日' : '年間休日124日';
+    const location = changedCompany === key && changedField === 'location' ? '東京都・千葉県' : '東京都';
+    const recommendations = rotateRecommendations
+      ? key === 'aiming' ? ['(株)オルカ', '(株)f4samurai', '(株)バンダイナムコエンターテインメント'] : ['味の素AGF(株)', '成田国際空港(株)', 'NEXCOシステムソリューションズ']
+      : company.recommendations;
+    const cards = recommendations.map((name, index) => `<div id="aiRcmdRelInfoDtoList[${index}]"><div id="aiRcmdRelInfoDtoList[${index}].relCorpName">${name}</div><p>インターンシップ＆キャリア</p><dl><dt>業種</dt><dd>情報処理</dd><dt>本社</dt><dd>東京都</dd></dl><a>検討リスト登録</a></div>`).join('');
+    const page = `<html><body id="companyDetail"><div id="companyHead"><h1>${company.pageName}</h1></div><form id="displayOutlineForm"><div class="companyInfo"><div class="companySec"><h2>募集要項</h2><p>${holiday}</p><p>募集職種はシステムエンジニアです。</p></div><div class="companySec"><h2>勤務地</h2><p>${location}</p></div><div class="companySec"><h2>募集要項・採用フロー</h2><p>書類選考、一次面接</p></div><div class="companySec"><h2>説明会・セミナー</h2><p>開催日：10/20</p></div><div class="session-ui"><p>${personalized}</p></div></div><div class="footerWrap"><div class="aiRecomend recomend"><div id="aiRcmdRelInfoDtoList">${cards}</div></div></div></form></body></html>`;
     return new Response(page, { headers: { 'content-type': 'text/html; charset=utf-8' } });
   }) as typeof fetch;
   try {
@@ -193,17 +205,25 @@ test('scheduled Mynavi checks baseline silently, ignore shared reservation UI, a
     assert.equal(db.events.size, 0, 'initial check only establishes the baseline');
     assert.ok([...db.targets.values()].every((target) => target.snapshot?.startsWith('{')));
 
-    reservation = '3/1エントリー予約リストに追加した企業へのエントリーを行いました。';
+    rotateRecommendations = true;
+    personalized = '3/1エントリー予約リストに追加した企業へのエントリーを行いました。';
     await scheduled(env);
-    assert.equal(db.events.size, 0, 'personalized reservation UI does not create company events');
+    assert.equal(db.events.size, 0, 'other-company recommendation and reservation UI changes do not create company events');
 
-    changedCompany = 'a';
+    changedCompany = 'aiming';
+    changedField = 'holiday';
     await scheduled(env);
     assert.equal(db.events.size, 1);
     const event = [...db.events.values()][0];
-    assert.equal(event.company_id, 'company-a');
+    assert.equal(event.company_id, 'company-aiming');
     assert.equal(event.event_type, 'job_info_updated');
     assert.match(String(event.summary), /募集要項/);
+
+    changedCompany = 'keiyo';
+    changedField = 'location';
+    await scheduled(env);
+    assert.equal(db.events.size, 2);
+    assert.ok([...db.events.values()].some((item) => item.company_id === 'company-keiyo' && item.event_type === 'job_info_updated'));
   } finally {
     globalThis.fetch = originalFetch;
   }
