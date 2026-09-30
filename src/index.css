@@ -2656,6 +2656,77 @@ body.modal-open { overflow: hidden; overscroll-behavior: none; }
   }
 }
 
+/* Source health is shown separately from the user's monitoring-enabled state. */
+.watch-connection-settings { width: 100%; max-width: min(900px, 100%); }
+.watch-health-panel { display: grid; gap: 14px; padding-top: 18px; border-top: 1px solid var(--border-color); }
+.watch-health-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.watch-health-panel > header > div { display: grid; gap: 4px; }
+.watch-health-panel h4, .watch-health-panel p { margin: 0; }
+.watch-health-panel h4 { color: var(--text-primary); font-size: calc(14px * var(--reading-scale, 1)); font-weight: 650; }
+.watch-health-panel > header p { color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); }
+.watch-health-check-button { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: 9px; color: var(--text-primary); background: var(--bg-surface); font: inherit; font-size: calc(12px * var(--reading-scale, 1)); font-weight: 600; cursor: pointer; }
+.watch-health-check-button:hover:not(:disabled) { background: var(--bg-muted); }
+.watch-health-check-button:disabled { opacity: .58; cursor: wait; }
+.watch-health-check-button svg { width: 15px; height: 15px; }
+.watch-health-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+.watch-health-summary > span { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 10px 12px; color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); }
+.watch-health-summary > span + span { border-left: 1px solid var(--border-color); }
+.watch-health-summary strong { color: var(--text-primary); font-size: calc(14px * var(--reading-scale, 1)); font-weight: 650; }
+.watch-health-summary [data-tone="healthy"] strong { color: var(--success, #2e7d52); }
+.watch-health-summary [data-tone="review"] strong { color: #a87422; }
+.watch-health-summary [data-tone="failed"] strong { color: var(--danger, #b44743); }
+.watch-health-exception-list { display: grid; border-top: 1px solid var(--border-color); }
+.watch-health-exception { display: grid; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border-color); }
+.watch-health-exception-main { display: grid; min-width: 0; gap: 7px; }
+.watch-health-exception-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.watch-health-exception-heading strong { min-width: 0; color: var(--text-primary); font-size: calc(14px * var(--reading-scale, 1)); font-weight: 650; overflow-wrap: anywhere; }
+.watch-health-exception-heading > span { flex: 0 0 auto; padding: 3px 8px; border: 1px solid var(--border-color); border-radius: 999px; color: var(--text-secondary); font-size: calc(11px * var(--reading-scale, 1)); }
+.watch-health-exception-heading > span[data-health="identity_mismatch"], .watch-health-exception-heading > span[data-health="needs_review"], .watch-health-exception-heading > span[data-health="source_changed"] { color: #a87422; }
+.watch-health-exception-heading > span[data-health="unreachable"], .watch-health-exception-heading > span[data-health="auth_required"], .watch-health-exception-heading > span[data-health="extraction_failed"] { color: var(--danger, #b44743); }
+.watch-health-url { display: inline-flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+.watch-health-url svg { width: 13px; height: 13px; flex: 0 0 auto; }
+.watch-health-exception-main > p, .watch-health-exception-main > small { color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); line-height: 1.5; overflow-wrap: anywhere; }
+.watch-target-copy .watch-health-inline { color: #9a6b20; line-height: 1.45; }
+.company-watch-card-status.has-health-warning { color: #9a6b20; }
+.watch-health-actions { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 2px; }
+.watch-health-actions a, .watch-health-actions button { display: inline-flex; min-height: 32px; align-items: center; gap: 5px; padding: 0; border: 0; color: var(--text-secondary); background: transparent; font: inherit; font-size: calc(12px * var(--reading-scale, 1)); cursor: pointer; text-decoration: none; }
+.watch-health-actions a:hover, .watch-health-actions button:hover:not(:disabled) { color: var(--text-primary); }
+.watch-health-actions button:disabled { opacity: .56; cursor: wait; }
+.watch-health-actions svg { width: 14px; height: 14px; }
+.watch-health-no-issues, .watch-health-error { color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); }
+.watch-health-edit { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); }
+.watch-health-edit label { display: grid; gap: 6px; color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); }
+.watch-health-edit input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); background: var(--bg-page); font: inherit; }
+.watch-health-edit footer { display: flex; justify-content: flex-end; gap: 8px; }
+.watch-health-edit footer button, .watch-health-confirmation button { min-height: 36px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); background: var(--bg-surface); font: inherit; font-size: calc(12px * var(--reading-scale, 1)); font-weight: 600; cursor: pointer; }
+.watch-health-confirmation { display: grid; gap: 8px; padding: 12px; border-left: 2px solid #b58a3b; color: var(--text-primary); background: var(--bg-muted); }
+.watch-health-confirmation > strong { font-size: calc(12px * var(--reading-scale, 1)); }
+.watch-health-confirmation > p { color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); line-height: 1.5; }
+.watch-health-confirmation dl { display: grid; gap: 5px; margin: 0; font-size: calc(12px * var(--reading-scale, 1)); }
+.watch-health-confirmation dl > div { display: grid; grid-template-columns: minmax(90px, .4fr) minmax(0, 1fr); gap: 8px; }
+.watch-health-confirmation dt { color: var(--text-secondary); }
+.watch-health-confirmation dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.watch-source-confirmation { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border-color); border-left: 3px solid #b58a3b; border-radius: 8px; color: var(--text-primary); background: var(--bg-muted); }
+.watch-source-confirmation strong { font-size: calc(13px * var(--reading-scale, 1)); line-height: 1.5; }
+.watch-source-confirmation dl { display: grid; gap: 6px; margin: 0; font-size: calc(12px * var(--reading-scale, 1)); }
+.watch-source-confirmation dl > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px; }
+.watch-source-confirmation dt { color: var(--text-secondary); }
+.watch-source-confirmation dd { margin: 0; overflow-wrap: anywhere; }
+.watch-source-confirmation button { width: fit-content; min-height: 36px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); background: var(--bg-surface); font: inherit; font-size: calc(12px * var(--reading-scale, 1)); font-weight: 600; }
+
+@media (max-width: 767px) {
+  .watch-health-panel > header { align-items: flex-start; flex-direction: column; }
+  .watch-health-check-button { width: 100%; min-height: 42px; }
+  .watch-health-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .watch-health-summary > span:nth-child(odd) { border-left: 0; }
+  .watch-health-summary > span:nth-child(n + 3) { border-top: 1px solid var(--border-color); }
+  .watch-health-exception-heading { align-items: flex-start; }
+  .watch-health-actions { gap: 4px 12px; }
+  .watch-health-edit footer { display: grid; grid-template-columns: 1fr 1fr; }
+  .watch-health-edit footer button { min-height: 40px; }
+  .watch-source-confirmation dl > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
 /* Company detail and searchable company fields. */
 .company-detail-list {
   display: grid;
@@ -7146,7 +7217,7 @@ html[data-theme="dark"] #root {
 .company-watch-connect { display: grid; gap: 8px; padding: 14px 0 2px; color: var(--text-secondary); }
 .company-watch-connect p { margin: 0; }
 .company-watch-connect .text-button { display: inline-flex; width: fit-content; align-items: center; gap: 6px; }
-.watch-connection-settings { display: grid; max-width: 460px; gap: 12px; }
+.watch-connection-settings { display: grid; width: 100%; max-width: min(900px, 100%); gap: 12px; }
 .watch-connection-settings h3, .watch-connection-settings p { margin: 0; }
 .watch-connection-settings p { color: var(--text-secondary); line-height: 1.55; }
 .watch-connection-settings > button { width: fit-content; }

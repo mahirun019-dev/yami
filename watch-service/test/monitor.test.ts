@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyChange, compareSnapshots, detectMeaningfulChange, extractMeaningfulText, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, normalizeUrl, robotsDecision, serializeSnapshot } from '../src/monitor';
+import { classifyChange, classifyFetchFailure, compareSnapshots, detectMeaningfulChange, evaluateIdentity, extractMeaningfulText, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, matchesCompanyIdentity, normalizeUrl, robotsDecision, serializeSnapshot } from '../src/monitor';
 
 const mynaviUrl = 'https://job.mynavi.jp/28/pc/corpinfo/displayPrevEmployment/index/?corpId=292189&recruitingCourseId=27052359';
 
@@ -246,10 +246,38 @@ test('company-specific 選考フロー additions are detected', () => {
   assert.equal(classifyChange(change.added.map((item) => item.text), change.sectionLabel), 'selection_updated');
 });
 
-test('a mismatched MyNavi company identity cannot create a usable snapshot', () => {
+test('MyNavi identity mismatch is separated from extraction validity and blocks health', () => {
   const result = analyzeMynavi({ pageCompanyName: '(株)Aiming', expectedCompanyName: '別の企業' });
   assert.equal(result.identityMatched, false);
-  assert.equal(result.valid, false);
+  assert.equal(result.valid, true);
+  assert.equal(evaluateIdentity(result), 'identity_mismatch');
+});
+
+test('company identity normalization is exact after legal-form and typography normalization', () => {
+  for (const [expected, actual] of [
+    ['株式会社ABC', '(株)ABC'], ['ABC株式会社', 'ABC'], ['ＡＢＣ株式会社', 'ABC'], ['株式会社 ABC', 'ABC'],
+    ['京葉ガス情報システム(株)【京葉ガスグループ】', '京葉ガス情報システム株式会社'],
+  ]) assert.equal(matchesCompanyIdentity(expected, actual), true, `${expected} should match ${actual}`);
+  assert.equal(matchesCompanyIdentity('株式会社Aiming', '(株)エイティング'), false);
+  assert.equal(matchesCompanyIdentity('東京ガスiネット', '東京ガス'), false);
+});
+
+test('health classification distinguishes access, auth, extraction, and uncertainty failures', () => {
+  assert.equal(classifyFetchFailure('HTTP_404'), 'unreachable');
+  assert.equal(classifyFetchFailure('HTTP_503'), 'unreachable');
+  assert.equal(classifyFetchFailure('LOGIN_REQUIRED'), 'auth_required');
+  assert.equal(classifyFetchFailure('ACCESS_RESTRICTED'), 'auth_required');
+  assert.equal(classifyFetchFailure('INSUFFICIENT_PUBLIC_CONTENT'), 'extraction_failed');
+  assert.equal(classifyFetchFailure('ROBOTS_POLICY_UNVERIFIABLE'), 'needs_review');
+});
+
+test('a generic source requires an exact company identity and useful recruitment content', () => {
+  const healthy = inspectRecruitmentContent('<html><head><meta property="og:site_name" content="株式会社ABC"><title>ABC 新卒採用</title></head><body><main><h1>株式会社ABC 新卒採用</h1><section><h2>募集要項</h2><p>新卒採用の応募資格、募集職種、初任給、勤務地について掲載しています。</p></section></main></body></html>', 'official', 'https://abc.example/recruit', 'ABC株式会社');
+  assert.equal(healthy.identityMatched, true);
+  assert.equal(evaluateIdentity(healthy), null);
+  const empty = inspectRecruitmentContent('<html><head><meta property="og:site_name" content="株式会社ABC"></head><body><main><h1>株式会社ABC</h1><p>会社概要</p></main></body></html>', 'official', 'https://abc.example/recruit', 'ABC株式会社');
+  assert.equal(empty.identityMatched, true);
+  assert.equal(evaluateIdentity(empty), 'extraction_failed');
 });
 
 test('TEST 8: missing, legacy, and extractor-incompatible snapshots silently establish a new baseline', () => {
