@@ -257,6 +257,7 @@ test('company identity normalization is exact after legal-form and typography no
   for (const [expected, actual] of [
     ['株式会社ABC', '(株)ABC'], ['ABC株式会社', 'ABC'], ['ＡＢＣ株式会社', 'ABC'], ['株式会社 ABC', 'ABC'],
     ['京葉ガス情報システム(株)【京葉ガスグループ】', '京葉ガス情報システム株式会社'],
+    ['(株)ケイラインビジネスシステムズ【川崎汽船グループ】', '株式会社ケイライン ビジネス システムズ(KBS)'],
   ]) assert.equal(matchesCompanyIdentity(expected, actual), true, `${expected} should match ${actual}`);
   assert.equal(matchesCompanyIdentity('株式会社Aiming', '(株)エイティング'), false);
   assert.equal(matchesCompanyIdentity('東京ガスiネット', '東京ガス'), false);
@@ -278,6 +279,13 @@ test('a generic source requires an exact company identity and useful recruitment
   const empty = inspectRecruitmentContent('<html><head><meta property="og:site_name" content="株式会社ABC"></head><body><main><h1>株式会社ABC</h1><p>会社概要</p></main></body></html>', 'official', 'https://abc.example/recruit', 'ABC株式会社');
   assert.equal(empty.identityMatched, true);
   assert.equal(evaluateIdentity(empty), 'extraction_failed');
+});
+
+test('generic recruitment headings with qualifiers are not treated as company identity', () => {
+  const result = inspectRecruitmentContent('<html><head><title>募集要項(新卒)</title></head><body><main><h1>募集要項(新卒)</h1><section><h2>募集要項</h2><p>新卒採用の応募資格、募集職種、初任給、勤務地、勤務時間、休日休暇、福利厚生について掲載しています。企業の採用情報を確認するための案内です。</p></section></main></body></html>', 'official', 'https://kbs.kline.co.jp/recruit/newgraduate.html', '(株)ケイラインビジネスシステムズ');
+  assert.equal(result.identityMatched, null);
+  assert.equal(result.detectedCompanyName, null);
+  assert.notEqual(evaluateIdentity(result), 'identity_mismatch');
 });
 
 test('TEST 8: missing, legacy, and extractor-incompatible snapshots silently establish a new baseline', () => {

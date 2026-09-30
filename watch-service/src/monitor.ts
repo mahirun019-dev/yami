@@ -224,6 +224,7 @@ function removeRepeatedMynaviCompanyCards($: CheerioAPI, companyInfo: any) {
 export function companyIdentityKey(value: string): string {
   return normalizeLine(value).normalize('NFKC').toLocaleLowerCase('ja-JP')
     .replace(/[【［\[(（][^】］\])）]*(?:グループ|グループ会社)[^】］\])）]*[】］\])）]/g, '')
+    .replace(/[（(][a-z]{2,8}[)）]$/i, '')
     .replace(/株式会社|有限会社|合同会社|合名会社|合資会社|\(株\)|\(有\)|\(同\)|\(名\)|\(資\)/g, '')
     .replace(/[\p{P}\p{S}\s\u00a0]/gu, '');
 }
@@ -244,11 +245,16 @@ function cleanIdentityCandidate(value: string): string {
     .trim();
 }
 
+function isGenericRecruitmentLabel(value: string): boolean {
+  const normalized = normalizeLine(value).replace(/[（(]\s*(?:新卒|中途|キャリア|採用)\s*[)）]$/i, '').trim();
+  return /^(?:新卒採用|新卒募集|採用情報|募集要項|採用サイト|リクルートサイト|recruit(?:ment)?|careers?)$/i.test(normalized);
+}
+
 function findIdentityCandidates($: CheerioAPI, sourceType: SourceType, inputUrl?: string): IdentityCandidate[] {
   const candidates: IdentityCandidate[] = [];
   const add = (value: string, source: string, explicit: boolean) => {
     const cleaned = cleanIdentityCandidate(value);
-    if (cleaned && companyIdentityKey(cleaned)) candidates.push({ value: cleaned, source, explicit });
+    if (cleaned && !isGenericRecruitmentLabel(cleaned) && companyIdentityKey(cleaned)) candidates.push({ value: cleaned, source, explicit });
   };
   const host = (() => { try { return inputUrl ? new URL(inputUrl).hostname.toLowerCase() : ''; } catch { return ''; } })();
   const isMynavi = sourceType === 'mynavi' || host === 'mynavi.jp' || host.endsWith('.mynavi.jp');
@@ -262,7 +268,7 @@ function findIdentityCandidates($: CheerioAPI, sourceType: SourceType, inputUrl?
     });
     $('main h1, [role="main"] h1, article h1, h1').each((_index, node) => {
       const value = $(node).text();
-      if (/^(?:新卒採用|採用情報|募集要項|採用サイト|recruit(?:ment)?|careers?)$/i.test(normalizeLine(value))) return;
+      if (isGenericRecruitmentLabel(value)) return;
       add(value, 'heading', true);
     });
     const title = $('title').first().text();
