@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Bell, ExternalLink, Eye, MoreHorizontal, Pause, Pencil, Play, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { watchText } from './i18n';
 import { companyWatchKey, useWatch } from './WatchProvider';
-import type { SourceHealthStatus, WatchEvent, WatchSource } from './types';
+import type { MynaviEntryStatus, SourceHealthStatus, WatchEvent, WatchSource } from './types';
 import { YamiBrandAvatar, YamiWordmark } from '../brand/YamiLogo';
 import { getUnreadProductUpdateCount, loadReadProductUpdateIds, PRODUCT_UPDATES, saveReadProductUpdateIds, subscribeProductUpdateReadState } from './productUpdates';
 
@@ -37,6 +37,14 @@ function sourceHealthLabel(status: SourceHealthStatus | null | undefined, locale
   if (status === 'source_changed') return ja ? '構造変更・要確認' : '结构变化·需确认';
   if (status === 'needs_review') return ja ? '要確認' : '需确认';
   return ja ? '未確認' : '未检查';
+}
+
+function mynaviEntryLabel(status: MynaviEntryStatus | null | undefined, text: typeof watchText.ja | typeof watchText.zh) {
+  if (status === 'unavailable') return text.entryUnavailable;
+  if (status === 'reservation') return text.entryReservation;
+  if (status === 'open') return text.entryOpen;
+  if (status === 'closed') return text.entryClosed;
+  return text.entryNeedsReview;
 }
 
 function sourceHealthReason(status: SourceHealthStatus | null | undefined, detail: string | null | undefined, locale: Locale) {
@@ -111,7 +119,7 @@ export function CompanyWatchSection({ company, locale, openSettings, highlightEv
     {!watch.configured ? <p className="company-watch-muted">{text.unavailable}</p> : !watch.authenticated ? <div className="company-watch-connect"><p>{text.notConnected}</p><button type="button" className="text-button" onClick={openSettings}>{text.settings}<ExternalLink /></button></div> : targets.length ? <div className="watch-target-list">{targets.map((target) => {
       const status = targetStatus(target, text, locale, watch.checkingTimedOut.includes(target.id));
       return <article className="watch-target-item" key={target.id}>
-      <div className="watch-target-copy"><strong>{target.label || text[target.source_type]}</strong><a href={target.url} target="_blank" rel="noreferrer" title={target.url}>{new URL(target.url).host}{new URL(target.url).pathname}<ExternalLink /></a><small className={`watch-status ${status.tone}`}>{status.label}{status.detail ? ` · ${status.detail}` : ''}</small>{target.health_status && target.health_status !== 'healthy' && <small className="watch-health-inline" data-health={target.health_status}>{sourceHealthLabel(target.health_status, locale)} · {sourceHealthReason(target.health_status, target.health_detail, locale)}{target.detected_company_name ? ` ${text.detectedCompany}: ${target.detected_company_name}` : ''}</small>}{target.last_error && !target.health_status && <small title={target.last_error}>{targetErrorText(target.last_error, text)}</small>}</div>
+      <div className="watch-target-copy"><strong>{target.label || text[target.source_type]}</strong><a href={target.url} target="_blank" rel="noreferrer" title={target.url}>{new URL(target.url).host}{new URL(target.url).pathname}<ExternalLink /></a><small className={`watch-status ${status.tone}`}>{status.label}{status.detail ? ` · ${status.detail}` : ''}</small>{target.source_type === 'mynavi' && target.entry_status && target.health_status === 'healthy' && <small>{text.entryStatus}: {mynaviEntryLabel(target.entry_status, text)}</small>}{target.health_status && target.health_status !== 'healthy' && <small className="watch-health-inline" data-health={target.health_status}>{sourceHealthLabel(target.health_status, locale)} · {sourceHealthReason(target.health_status, target.health_detail, locale)}{target.detected_company_name ? ` ${text.detectedCompany}: ${target.detected_company_name}` : ''}</small>}{target.last_error && !target.health_status && <small title={target.last_error}>{targetErrorText(target.last_error, text)}</small>}</div>
       <div className="watch-target-actions">
         <button className="watch-target-actions-more" title={locale === 'ja' ? '操作' : '操作'} onClick={() => setActionsFor(target.id)}><MoreHorizontal /></button>
         <div className="watch-target-actions-desktop"><button title={text.edit} onClick={() => edit(target)}><Pencil /></button>

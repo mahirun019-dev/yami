@@ -1,6 +1,6 @@
-import { classifyChange, classifyFetchFailure, compareSnapshots, evaluateIdentity, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, normalizeUrl, redactDiagnosticLine, serializeSnapshot, sha256 } from './monitor';
+import { classifyChange, classifyFetchFailure, compareSnapshots, detectMynaviEntryStatus, evaluateIdentity, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, normalizeUrl, redactDiagnosticLine, serializeSnapshot, sha256 } from './monitor';
 import type { RecruitmentAnalysis, SharedChangeCandidate, SnapshotChange } from './monitor';
-import type { Env, EventType, SourceHealthStatus, SourceType, TargetRow } from './types';
+import type { Env, EventType, MynaviEntryStatus, SourceHealthStatus, SourceType, TargetRow } from './types';
 
 const json = (body: unknown, status = 200, origin = '*') => new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': origin, 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS', vary: 'Origin' } });
 
@@ -26,7 +26,7 @@ async function createSession(request: Request, env: Env, origin: string) {
 }
 
 const titles: Record<string, string> = {
-  entry_open: 'エントリー受付が開始された可能性があります', briefing_open: '説明会情報が更新されました', internship_open: 'インターン情報が更新されました', deadline_changed: '締切情報の更新を検出しました', selection_updated: '選考情報の更新を検出しました', job_info_updated: '募集要項の更新を検出しました', recruitment_closed: '募集終了に関する更新を検出しました', other_recruitment_update: '採用情報の更新を検出しました'
+  entry_open: 'エントリー受付が開始された可能性があります', mynavi_entry_open: 'エントリー受付が開始されました', briefing_open: '説明会情報が更新されました', internship_open: 'インターン情報が更新されました', deadline_changed: '締切情報の更新を検出しました', selection_updated: '選考情報の更新を検出しました', job_info_updated: '募集要項の更新を検出しました', recruitment_closed: '募集終了に関する更新を検出しました', other_recruitment_update: '採用情報の更新を検出しました'
 };
 
 const CHECK_LEASE_MS = 120_000;
@@ -73,6 +73,7 @@ type SourceInspection = {
   analysis: RecruitmentAnalysis;
   snapshot: string;
   hash: string;
+  html: string;
 };
 
 function safeDiagnosticUrl(value: string): string {
@@ -99,46 +100,42 @@ async function inspectSource(target: Pick<TargetRow, 'url' | 'source_type' | 'co
           ? 'INSUFFICIENT_PUBLIC_CONTENT'
           : null;
     const snapshot = serializeSnapshot(analysis);
-    return { healthStatus, healthDetail, detectedCompanyName: analysis.detectedCompanyName, fetchedUrl: fetched.url, httpStatus: fetched.status, analysis, snapshot, hash: await sha256(snapshot) };
+    return { healthStatus, healthDetail, detectedCompanyName: analysis.detectedCompanyName, fetchedUrl: fetched.url, httpStatus: fetched.status, analysis, snapshot, hash: await sha256(snapshot), html: fetched.html };
   } catch (error) {
     const healthDetail = error instanceof Error ? error.message : 'UNKNOWN_ERROR';
     return { healthStatus: classifyFetchFailure(healthDetail), healthDetail, detectedCompanyName: null, fetchedUrl: target.url, httpStatus: httpStatus ?? (healthDetail.match(/^HTTP_(\d{3})$/)?.[1] ? Number(healthDetail.slice(5)) : null) };
   }
 }
 
-function healthNotification(target: TargetRow, status: SourceHealthStatus, detail: string | null, detectedName: string | null) {
+function healthNotification(target: TargetRow, status: Exclude<SourceHealthStatus, 'healthy' | 'source_changed'>, detail: string | null, detectedName: string | null) {
   const mismatch = status === 'identity_mismatch';
-  const sourceChanged = status === 'source_changed';
-  const title = status === 'healthy' ? '監視先を確認できました' : '監視先を確認してください';
-  const summary = status === 'healthy'
-    ? '監視先を再確認し、更新チェックを再開しました。'
-    : mismatch
-      ? `登録企業「${target.company_name}」と監視先の企業名${detectedName ? `「${detectedName}」` : ''}が一致しません。`
-      : sourceChanged
-        ? '監視先ページの構造が変わったため、基準情報を再作成しました。'
-        : detail === 'LOGIN_REQUIRED' || detail === 'ACCESS_RESTRICTED'
-          ? '監視先ページへのアクセスにログインまたは追加の権限が必要です。'
-          : detail === 'INSUFFICIENT_PUBLIC_CONTENT'
-            ? '監視先から企業固有の採用情報を確認できませんでした。'
-            : detail === 'ROBOTS_DISALLOWED' || detail === 'ROBOTS_POLICY_UNVERIFIABLE'
-              ? '監視先の取得可否を確認できないため、内容の更新チェックを停止しています。'
-              : status === 'unreachable'
-                ? '監視先ページにアクセスできないため、内容の更新チェックを停止しています。'
-                : '登録企業との一致または採用情報の取得を確認できないため、内容の更新チェックを停止しています。';
+  const title = '監視先を確認してください';
+  const summary = mismatch
+    ? `登録企業「${target.company_name}」と監視先の企業名${detectedName ? `「${detectedName}」` : ''}が一致しません。`
+    : detail === 'LOGIN_REQUIRED' || detail === 'ACCESS_RESTRICTED'
+      ? '監視先ページへのアクセスにログインまたは追加の権限が必要です。'
+      : detail === 'INSUFFICIENT_PUBLIC_CONTENT'
+        ? '監視先から企業固有の採用情報を確認できませんでした。'
+        : detail === 'ROBOTS_DISALLOWED' || detail === 'ROBOTS_POLICY_UNVERIFIABLE'
+          ? '監視先の取得可否を確認できないため、内容の更新チェックを停止しています。'
+          : status === 'unreachable'
+            ? '監視先ページにアクセスできないため、内容の更新チェックを停止しています。'
+            : '登録企業との一致または採用情報の取得を確認できないため、内容の更新チェックを停止しています。';
   return { title, summary };
 }
 
 async function recordHealthTransition(env: Env, target: TargetRow, next: SourceHealthStatus, detail: string | null, detectedName: string | null, checkedAt: string) {
   const previous = target.health_status || null;
-  if (previous === next || (previous === null && next === 'healthy')) return;
-  const lastHealthEvent = await env.DB.prepare("SELECT after_excerpt FROM watch_events WHERE watch_target_id=? AND event_type IN ('source_health_issue','source_health_recovered') ORDER BY detected_at DESC LIMIT 1")
-    .bind(target.id).first<{ after_excerpt: string | null }>();
-  if (lastHealthEvent?.after_excerpt === next) return;
-  const eventType: EventType = next === 'healthy' ? 'source_health_recovered' : 'source_health_issue';
+  if (previous === next || next === 'healthy' || next === 'source_changed') return;
+  if (!previous) {
+    const lastHealthEvent = await env.DB.prepare("SELECT after_excerpt FROM watch_events WHERE watch_target_id=? AND event_type IN ('source_health_issue','source_health_recovered') ORDER BY detected_at DESC LIMIT 1")
+      .bind(target.id).first<{ after_excerpt: string | null }>();
+    if (lastHealthEvent?.after_excerpt === next) return;
+  }
   const copy = healthNotification(target, next, detail, detectedName);
   const contentHash = await sha256(`${target.id}|${previous || 'unverified'}|${next}|${checkedAt}`);
   await env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash) VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,?)`)
-    .bind(crypto.randomUUID(), target.company_id, target.company_name, target.id, eventType, copy.title, copy.summary, previous || 'unverified', next, checkedAt, target.url, target.source_type, contentHash).run();
+    .bind(crypto.randomUUID(), target.company_id, target.company_name, target.id, 'source_health_issue', copy.title, copy.summary, previous || 'unverified', next, checkedAt, target.url, target.source_type, contentHash).run();
 }
 
 function eventSummary(change: SnapshotChange, type: EventType): string {
@@ -246,6 +243,54 @@ async function finalizeCheck(env: Env, check: PendingCheck, sharedChanges: Set<s
   logCheck(check, decision, notificationDiff);
 }
 
+async function finalizeMynaviEntryCheck(
+  env: Env,
+  target: TargetRow,
+  lease: string,
+  checkedAt: string,
+  httpStatus: number,
+  fetchedUrl: string,
+  detectedCompanyName: string | null,
+  entryStatus: MynaviEntryStatus,
+  entryUrl: string | null,
+  entrySignal: string | null,
+  recovering: boolean,
+) {
+  const current = await env.DB.prepare('SELECT entry_status FROM watch_targets WHERE id=? AND lease_until=? AND enabled=1')
+    .bind(target.id, lease).first<{ entry_status: MynaviEntryStatus | null }>();
+  if (!current) return;
+  const previous = current.entry_status || null;
+  const baseline = previous === null;
+  const notify = !baseline && !recovering && entryStatus === 'open' && ['unknown', 'unavailable', 'reservation', 'closed'].includes(previous || '');
+  const eventId = notify ? crypto.randomUUID() : null;
+  const contentHash = notify ? await sha256(`${target.id}|${previous}|open|${checkedAt}`) : null;
+  const update = env.DB.prepare(`UPDATE watch_targets SET status='active',last_checked_at=?,last_success_at=?,last_http_status=?,last_error=NULL,health_status='healthy',health_checked_at=?,health_detail=NULL,detected_company_name=?,entry_status=?,entry_status_changed_at=CASE WHEN entry_status IS NULL OR entry_status<>? THEN ? ELSE entry_status_changed_at END,entry_last_checked_at=?,entry_url=?,entry_signal=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1`)
+    .bind(checkedAt, checkedAt, httpStatus, checkedAt, detectedCompanyName, entryStatus, entryStatus, checkedAt, checkedAt, entryUrl, entrySignal, checkedAt, target.id, lease);
+
+  let decision = baseline ? 'mynavi-entry-baseline' : notify ? 'mynavi-entry-open-transition' : recovering ? 'mynavi-entry-recovery-baseline' : entryStatus === previous ? 'mynavi-entry-unchanged' : 'mynavi-entry-state-updated';
+  try {
+    if (notify && eventId && contentHash) {
+      const insertEvent = env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash)
+        SELECT ?,?,?,?,?,?,?,?,?,?,?,?,0,? FROM watch_targets WHERE id=? AND entry_status=? AND entry_status_changed_at=? AND last_checked_at=? AND status='active'`)
+        .bind(eventId, target.company_id, target.company_name, target.id, 'mynavi_entry_open', titles.mynavi_entry_open, 'マイナビでエントリーできるようになりました。', previous, entrySignal, checkedAt, fetchedUrl, 'mynavi', contentHash, target.id, 'open', checkedAt, checkedAt);
+      const [updated, inserted] = await env.DB.batch([update, insertEvent]);
+      if (!updated.meta.changes) decision = 'mynavi-entry-lease-lost';
+      else if (!inserted.meta.changes) decision = 'mynavi-entry-event-deduplicated';
+    } else {
+      const updated = await update.run();
+      if (!updated.meta.changes) decision = 'mynavi-entry-lease-lost';
+    }
+  } catch (error) {
+    console.error('MYNAVI_ENTRY_STATE_WRITE_FAILED', target.id, error);
+    try {
+      await env.DB.prepare("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error='ENTRY_STATE_WRITE_FAILED',lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
+        .bind(checkedAt, httpStatus, checkedAt, target.id, lease).run();
+    } catch { /* A later scheduled run can retry after the lease expires. */ }
+    return;
+  }
+  console.info(JSON.stringify({ source: 'mynavi-entry-state', companyId: target.company_id, companyName: target.company_name, monitoredUrl: safeDiagnosticUrl(fetchedUrl), previousStatus: previous, entryStatus, entrySignal, baseline, recovering, notified: notify, timestamp: checkedAt, decision }));
+}
+
 export async function checkTarget(env: Env, target: TargetRow, claimedLease?: string, batch?: PendingCheck[], runId = crypto.randomUUID(), healthOnly = false) {
   const now = new Date().toISOString();
   const lease = claimedLease || new Date(Date.now() + CHECK_LEASE_MS).toISOString();
@@ -261,6 +306,15 @@ export async function checkTarget(env: Env, target: TargetRow, claimedLease?: st
     return;
   }
   const { analysis, snapshot, hash, fetchedUrl, httpStatus, detectedCompanyName } = inspection;
+  if (target.source_type === 'mynavi') {
+    let detection;
+    try { detection = detectMynaviEntryStatus(inspection.html, fetchedUrl); }
+    catch (error) {
+      detection = { status: 'needs_review' as const, url: null, signal: error instanceof Error ? error.name : 'DETECTOR_ERROR' };
+    }
+    await finalizeMynaviEntryCheck(env, target, lease, now, httpStatus, fetchedUrl, detectedCompanyName, detection.status, detection.url, detection.signal, Boolean(target.health_status && target.health_status !== 'healthy'));
+    return;
+  }
   const compatible = hasCompatibleSnapshot(target.snapshot, analysis);
   const sourceChanged = Boolean(target.snapshot && ((target.snapshot_url && target.snapshot_url !== target.normalized_url) || (target.snapshot_source_type && target.snapshot_source_type !== target.source_type) || !compatible));
   const recovering = Boolean(target.health_status && target.health_status !== 'healthy');
@@ -442,7 +496,7 @@ export default {
           const now = new Date().toISOString();
           try { await recordHealthTransition(env, current, inspected.healthStatus, inspected.healthDetail, inspected.detectedCompanyName, now); }
           catch (error) { console.error('SOURCE_HEALTH_EVENT_WRITE_FAILED', current.id, error); }
-          await env.DB.prepare("UPDATE watch_targets SET enabled=?,status=?,last_error=?,last_http_status=?,lease_until=NULL,label=?,url=?,normalized_url=?,source_type=?,last_checked_at=?,last_success_at=CASE WHEN ?=1 THEN ? ELSE last_success_at END,last_hash=CASE WHEN ?=1 THEN ? ELSE last_hash END,snapshot=CASE WHEN ?=1 THEN ? ELSE snapshot END,snapshot_url=CASE WHEN ?=1 THEN ? ELSE snapshot_url END,snapshot_source_type=CASE WHEN ?=1 THEN ? ELSE snapshot_source_type END,health_status=?,health_checked_at=?,health_detail=?,detected_company_name=?,updated_at=? WHERE id=?")
+          await env.DB.prepare("UPDATE watch_targets SET enabled=?,status=?,last_error=?,last_http_status=?,lease_until=NULL,label=?,url=?,normalized_url=?,source_type=?,last_checked_at=?,last_success_at=CASE WHEN ?=1 THEN ? ELSE last_success_at END,last_hash=CASE WHEN ?=1 THEN ? ELSE last_hash END,snapshot=CASE WHEN ?=1 THEN ? ELSE snapshot END,snapshot_url=CASE WHEN ?=1 THEN ? ELSE snapshot_url END,snapshot_source_type=CASE WHEN ?=1 THEN ? ELSE snapshot_source_type END,health_status=?,health_checked_at=?,health_detail=?,detected_company_name=?,entry_status=NULL,entry_status_changed_at=NULL,entry_last_checked_at=NULL,entry_url=NULL,entry_signal=NULL,updated_at=? WHERE id=?")
             .bind(enabled ? 1 : 0, !enabled ? 'paused' : healthy ? 'active' : 'error', healthy ? null : inspected.healthDetail, inspected.httpStatus, body.label ?? current.label, normalized, normalized, sourceType, now, healthy ? 1 : 0, now, healthy ? 1 : 0, verified?.hash ?? null, healthy ? 1 : 0, verified?.snapshot ?? null, healthy ? 1 : 0, normalized, healthy ? 1 : 0, sourceType, inspected.healthStatus, now, inspected.healthDetail, inspected.detectedCompanyName, now, id).run();
           const updated = await env.DB.prepare('SELECT * FROM watch_targets WHERE id=?').bind(id).first<TargetRow>();
           return json({ status: updated?.status || (healthy ? 'active' : 'error'), queued: false, lastError: updated?.last_error || null, sourceHealth: sourceHealthPayload(inspected) }, 200, origin);

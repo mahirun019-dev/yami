@@ -10,6 +10,12 @@ class MemoryD1 {
   events = new Map<string, Record<string, unknown>>();
   writes = 0;
 
+  async batch(statements: Array<{ run(): Promise<{ meta: { changes: number } }> }>) {
+    const results = [];
+    for (const statement of statements) results.push(await statement.run());
+    return results;
+  }
+
   prepare(sql: string) {
     const query = sql.replace(/\s+/g, ' ').trim();
     let values: unknown[] = [];
@@ -21,6 +27,10 @@ class MemoryD1 {
         if (query.startsWith('SELECT after_excerpt FROM watch_events')) {
           const latest = [...db.events.values()].filter((event) => event.watch_target_id === values[0] && ['source_health_issue', 'source_health_recovered'].includes(String(event.event_type))).sort((a, b) => String(b.detected_at).localeCompare(String(a.detected_at)))[0];
           return (latest ? { after_excerpt: latest.after_excerpt } : null) as T;
+        }
+        if (query.startsWith('SELECT entry_status FROM watch_targets')) {
+          const row = db.targets.get(String(values[0]));
+          return (row && row.lease_until === values[1] && row.enabled ? { entry_status: row.entry_status ?? null } : null) as T;
         }
         if (query.includes('WHERE company_id=? AND normalized_url=?')) return ([...db.targets.values()].find((row) => row.company_id === values[0] && row.normalized_url === values[1]) || null) as T;
         if (query.includes('WHERE id=?')) return (db.targets.get(String(values[0])) || null) as T;
@@ -36,11 +46,21 @@ class MemoryD1 {
           return { meta: { changes: 1 } };
         }
         if (query.startsWith('INSERT OR IGNORE INTO watch_events')) {
-          const [id, company_id, company_name, watch_target_id, event_type, title, summary, before_excerpt, after_excerpt, detected_at, source_url, source_type, read, content_hash] = values as unknown[];
+          if (query.includes('SELECT ?')) {
+            const [id, company_id, company_name, watch_target_id, event_type, title, summary, before_excerpt, after_excerpt, detected_at, source_url, source_type, content_hash, target_id, entry_status, changed_at, last_checked_at] = values as unknown[];
+            const row = db.targets.get(String(target_id));
+            if (!row || row.entry_status !== entry_status || row.entry_status_changed_at !== changed_at || row.last_checked_at !== last_checked_at || row.status !== 'active') return { meta: { changes: 0 } };
+            const duplicate = [...db.events.values()].some((event) => event.watch_target_id === watch_target_id && event.event_type === event_type && event.content_hash === content_hash);
+            if (duplicate) return { meta: { changes: 0 } };
+            db.writes += 1;
+            db.events.set(String(id), { id, company_id, company_name, watch_target_id, event_type, title, summary, before_excerpt, after_excerpt, detected_at, source_url, source_type, read: 0, content_hash });
+            return { meta: { changes: 1 } };
+          }
+          const [id, company_id, company_name, watch_target_id, event_type, title, summary, before_excerpt, after_excerpt, detected_at, source_url, source_type, content_hash] = values as unknown[];
           const duplicate = [...db.events.values()].some((event) => event.watch_target_id === watch_target_id && event.event_type === event_type && event.content_hash === content_hash);
           if (duplicate) return { meta: { changes: 0 } };
           db.writes += 1;
-          db.events.set(String(id), { id, company_id, company_name, watch_target_id, event_type, title, summary, before_excerpt, after_excerpt, detected_at, source_url, source_type, read, content_hash });
+          db.events.set(String(id), { id, company_id, company_name, watch_target_id, event_type, title, summary, before_excerpt, after_excerpt, detected_at, source_url, source_type, read: 0, content_hash });
           return { meta: { changes: 1 } };
         }
         if (query.startsWith("UPDATE watch_targets SET status='checking'")) {
@@ -53,6 +73,20 @@ class MemoryD1 {
           if (!row || !row.enabled || (row.lease_until && row.lease_until >= now)) return { meta: { changes: 0 } };
           db.writes += 1;
           Object.assign(row, { status: 'checking', last_error: query.includes('last_error=NULL') ? null : row.last_error, last_http_status: query.includes('last_http_status=NULL') ? null : row.last_http_status, lease_until: lease, updated_at: updatedAt });
+          return { meta: { changes: 1 } };
+        }
+        if (query.startsWith("UPDATE watch_targets SET status='active',last_checked_at=?")) {
+          const [last_checked_at, last_success_at, last_http_status, health_checked_at, detected_company_name, entry_status, _entry_status_again, checkedAt, entry_last_checked_at, entry_url, entry_signal, updated_at, id, lease_until] = values as unknown[];
+          const row = db.targets.get(String(id));
+          if (!row || row.lease_until !== lease_until || !row.enabled) return { meta: { changes: 0 } };
+          db.writes += 1;
+          const changed = row.entry_status !== entry_status;
+          Object.assign(row, {
+            status: 'active', last_checked_at, last_success_at, last_http_status, last_error: null,
+            health_status: 'healthy', health_checked_at, health_detail: null, detected_company_name,
+            entry_status, entry_status_changed_at: changed || !row.entry_status_changed_at ? checkedAt : row.entry_status_changed_at,
+            entry_last_checked_at, entry_url, entry_signal, lease_until: null, updated_at,
+          });
           return { meta: { changes: 1 } };
         }
         if (query.startsWith('UPDATE watch_targets SET status=?,last_checked_at=?')) {
@@ -84,7 +118,7 @@ class MemoryD1 {
           const row = db.targets.get(id);
           if (!row) return { meta: { changes: 0 } };
           db.writes += 1;
-          Object.assign(row, { enabled, status, last_error, last_http_status, lease_until: null, label, url, normalized_url, source_type, last_checked_at, last_success_at: setSuccess ? successAt : row.last_success_at, last_hash: setHash ? last_hash : row.last_hash, snapshot: setSnapshot ? snapshot : row.snapshot, snapshot_url: setSnapshotUrl ? snapshot_url : row.snapshot_url, snapshot_source_type: setSnapshotType ? snapshot_source_type : row.snapshot_source_type, health_status, health_checked_at, health_detail, detected_company_name, updated_at });
+          Object.assign(row, { enabled, status, last_error, last_http_status, lease_until: null, label, url, normalized_url, source_type, last_checked_at, last_success_at: setSuccess ? successAt : row.last_success_at, last_hash: setHash ? last_hash : row.last_hash, snapshot: setSnapshot ? snapshot : row.snapshot, snapshot_url: setSnapshotUrl ? snapshot_url : row.snapshot_url, snapshot_source_type: setSnapshotType ? snapshot_source_type : row.snapshot_source_type, health_status, health_checked_at, health_detail, detected_company_name, entry_status: null, entry_status_changed_at: null, entry_last_checked_at: null, entry_url: null, entry_signal: null, updated_at });
           return { meta: { changes: 1 } };
         }
         if (query.startsWith('UPDATE watch_targets SET enabled=?,status=?,last_error=NULL')) {
@@ -118,8 +152,12 @@ async function addTarget(db: MemoryD1, body: Record<string, unknown>) {
   }), envFor(db), context([]));
 }
 
-function mynaviHtml(companyName: string, holiday = '年間休日124日', recommendation = '(株)サクセス') {
-  return `<html><body><div id="companyHead"><h1>${companyName}</h1><p>会社情報</p></div><form><div class="companyInfo"><section><h2>募集要項</h2><p>${holiday}</p><p>募集職種はシステムエンジニアです。</p><p>応募資格、勤務地、初任給を掲載しています。</p></section><section><h2>選考フロー</h2><p>書類選考、一次面接</p></section><div class="aiRecomend"><h2>おすすめ企業</h2><p>${recommendation}</p></div></div></form></body></html>`;
+function mynaviHtml(companyName: string, holiday = '年間休日124日', recommendation = '(株)サクセス', entryMarkup = '') {
+  return `<html><body><div id="companyHead"><h1>${companyName}</h1><p>会社情報</p></div><form><div class="companyInfo"><section><h2>募集要項</h2><p>${holiday}</p><p>募集職種はシステムエンジニアです。</p><p>応募資格、勤務地、初任給を掲載しています。</p></section><section><h2>選考フロー</h2><p>書類選考、一次面接</p></section>${entryMarkup}<div class="aiRecomend"><h2>おすすめ企業</h2><p>${recommendation}</p></div></div></form></body></html>`;
+}
+
+function officialHtml(companyName: string, holiday: string) {
+  return `<html><body><main><h1>${companyName}</h1><section><h2>募集要項</h2><p>年間休日${holiday}</p><p>募集職種はシステムエンジニアです。</p><p>応募資格、勤務地、初任給、福利厚生を掲載しています。</p></section></main></body></html>`;
 }
 
 function setFetchPage(page: (url: string) => Response | Promise<Response>) {
@@ -168,7 +206,7 @@ test('Aiming preflight blocks the Eighting MyNavi URL without writing; explicit 
   } finally { restore(); }
 });
 
-test('scheduled mismatch skips all recruitment diffs, preserves the baseline, deduplicates unchanged health, and silently baselines on recovery', async () => {
+test('scheduled MyNavi checks skip recruitment diffs, preserve legacy snapshots, and silently baseline on recovery', async () => {
   const db = new MemoryD1();
   const row = target();
   db.targets.set(row.id, row);
@@ -187,44 +225,164 @@ test('scheduled mismatch skips all recruitment diffs, preserves the baseline, de
     pageName = '(株)Aiming';
     await scheduled(envFor(db));
     assert.equal(row.health_status, 'healthy');
-    assert.equal(db.events.size, 2);
-    assert.ok([...db.events.values()].some((event) => event.event_type === 'source_health_recovered'));
+    assert.equal(db.events.size, 1, 'ordinary recovery is silent');
+    assert.ok(![...db.events.values()].some((event) => event.event_type === 'source_health_recovered'));
     assert.ok(![...db.events.values()].some((event) => String(event.event_type).includes('updated')));
-    assert.equal(row.snapshot?.includes('年間休日125日'), true, 'recovery writes a fresh baseline without diffing against the stale one');
+    assert.equal(row.snapshot?.includes('年間休日124日'), true, 'MyNavi keeps legacy snapshots untouched and never uses them as a new diff baseline');
 
     holiday = '年間休日126日';
     await scheduled(envFor(db));
-    assert.ok([...db.events.values()].some((event) => event.event_type === 'job_info_updated'));
+    assert.ok(![...db.events.values()].some((event) => ['job_info_updated', 'other_recruitment_update'].includes(String(event.event_type))));
   } finally { restore(); }
 });
 
-test('a changed page structure is marked source_changed and its snapshot is rebuilt without a recruitment event', async () => {
+test('MyNavi no longer rebuilds or compares the legacy recruitment snapshot', async () => {
   const db = new MemoryD1();
-  const row = target({ snapshot_source_type: 'other' });
+  const row = target({ snapshot_source_type: 'other', snapshot: '{"old":"snapshot"}', last_hash: 'old-hash' });
   db.targets.set(row.id, row);
   const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming'), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
   try {
     await scheduled(envFor(db));
-    assert.equal(row.health_status, 'source_changed');
-    assert.equal(row.snapshot_source_type, 'mynavi');
-    assert.deepEqual([...db.events.values()].map((event) => event.event_type), ['source_health_issue']);
+    assert.equal(row.health_status, 'healthy');
+    assert.equal(row.snapshot_source_type, 'other');
+    assert.equal(row.snapshot, '{"old":"snapshot"}');
+    assert.equal(row.last_hash, 'old-hash');
+    assert.deepEqual([...db.events.values()], [], 'the entry baseline is silent and legacy snapshot structure is ignored');
     await scheduled(envFor(db));
     assert.equal(row.health_status, 'healthy');
-    assert.ok([...db.events.values()].some((event) => event.event_type === 'source_health_recovered'));
-    assert.ok(![...db.events.values()].some((event) => String(event.event_type).includes('updated')));
+    assert.deepEqual([...db.events.values()], [], 'unchanged entry state stays silent');
   } finally { restore(); }
 });
 
-test('healthy company-specific changes still generate recruitment notifications after a trusted baseline', async () => {
+test('health failures notify on entry, stay silent while repeated, and can notify again after recovery', async () => {
+  const db = new MemoryD1();
+  const row = target();
+  db.targets.set(row.id, row);
+  let pageName = '(株)エイティング';
+  const restore = setFetchPage(() => new Response(mynaviHtml(pageName), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1);
+    assert.equal([...db.events.values()][0].event_type, 'source_health_issue');
+
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1, 'the same active exception is not repeated');
+
+    pageName = '(株)Aiming';
+    await scheduled(envFor(db));
+    assert.equal(row.health_status, 'healthy');
+    assert.equal(db.events.size, 1, 'recovery does not create a notification');
+
+    pageName = '(株)エイティング';
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 2, 'a new healthy-to-error transition is notified even if it matches an older event');
+  } finally { restore(); }
+});
+
+test('a legacy event prevents a duplicate when the target health state is missing', async () => {
+  const db = new MemoryD1();
+  const row = target({ health_status: null });
+  db.targets.set(row.id, row);
+  db.events.set('legacy-health-event', { id: 'legacy-health-event', watch_target_id: row.id, event_type: 'source_health_issue', after_excerpt: 'identity_mismatch', detected_at: new Date().toISOString() });
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)エイティング'), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1, 'an existing same-state health event remains deduplicated');
+    assert.equal(row.health_status, 'identity_mismatch');
+  } finally { restore(); }
+});
+
+test('MyNavi first open check only establishes a silent Entry baseline', async () => {
   const db = new MemoryD1();
   const row = target({ snapshot: null, last_hash: null, snapshot_url: null, snapshot_source_type: null, health_status: null, detected_company_name: null });
   db.targets.set(row.id, row);
-  let holiday = '年間休日124日';
-  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming', holiday), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming', '年間休日124日', '(株)サクセス', '<a href="/entry">エントリー</a>'), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
   try {
     await scheduled(envFor(db));
-    assert.equal(db.events.size, 0, 'first valid check only establishes a baseline');
+    assert.equal(row.entry_status, 'open');
+    assert.ok(row.entry_last_checked_at);
+    assert.equal(row.entry_url, 'https://job.mynavi.jp/entry');
+    assert.equal(db.events.size, 0, 'a deployment baseline does not notify even when already open');
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 0, 'open to open is silent');
+  } finally { restore(); }
+});
+
+test('MyNavi reservation to open notifies once, but changes to recruitment copy do not', async () => {
+  const db = new MemoryD1();
+  const row = target({ entry_status: 'reservation', entry_status_changed_at: '2026-09-01T00:00:00.000Z', snapshot: null, last_hash: null, health_status: 'healthy' });
+  db.targets.set(row.id, row);
+  let entryMarkup = '<a href="/reserve">エントリー予約</a>';
+  let holiday = '年間休日124日';
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming', holiday, '(株)サクセス', entryMarkup), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 0, 'reservation to reservation does not notify');
+    entryMarkup = '<a href="/entry">エントリーする</a>';
+    await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'open');
+    assert.equal(db.events.size, 1);
+    const event = [...db.events.values()][0];
+    assert.equal(event.event_type, 'mynavi_entry_open');
+    assert.equal(event.title, 'エントリー受付が開始されました');
+    assert.equal(event.summary, 'マイナビでエントリーできるようになりました。');
     holiday = '年間休日125日';
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1, 'open to open and recruitment-copy changes do not notify');
+  } finally { restore(); }
+});
+
+test('MyNavi closed to open can notify again while open to closed stays silent', async () => {
+  const db = new MemoryD1();
+  const row = target({ entry_status: 'closed', entry_status_changed_at: '2026-09-01T00:00:00.000Z', snapshot: null, last_hash: null, health_status: 'healthy' });
+  db.targets.set(row.id, row);
+  let entryMarkup = '<p>エントリー受付終了</p>';
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming', '年間休日124日', '(株)サクセス', entryMarkup), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'closed');
+    assert.equal(db.events.size, 0);
+    entryMarkup = '<a href="/entry">エントリーはこちら</a>';
+    await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'open');
+    assert.equal(db.events.size, 1);
+    entryMarkup = '<p>エントリー受付終了</p>';
+    await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'closed');
+    assert.equal(db.events.size, 1, 'open to closed remains silent');
+    entryMarkup = '<button>エントリー</button>';
+    await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'open');
+    assert.equal(db.events.size, 2, 'closed to open emits one reopening event');
+  } finally { restore(); }
+});
+
+test('Mynavi identity mismatch stops Entry detection and leaves its prior state untouched', async () => {
+  const db = new MemoryD1();
+  const row = target({ entry_status: 'unavailable', entry_status_changed_at: '2026-09-01T00:00:00.000Z' });
+  db.targets.set(row.id, row);
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)エイティング', '年間休日125日', '(株)サクセス', '<a href="/entry">エントリー</a>'), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(row.health_status, 'identity_mismatch');
+    assert.equal(row.entry_status, 'unavailable');
+    assert.equal(db.events.size, 1);
+    assert.equal([...db.events.values()][0].event_type, 'source_health_issue');
+    assert.ok(![...db.events.values()].some((event) => event.event_type === 'mynavi_entry_open'));
+  } finally { restore(); }
+});
+
+test('official sources retain ordinary recruitment-diff notifications', async () => {
+  const db = new MemoryD1();
+  const url = 'https://example.com/recruit';
+  const row = target({ id: 'official-target', source_type: 'official', url, normalized_url: url, snapshot: null, last_hash: null, snapshot_url: null, snapshot_source_type: null, health_status: null, detected_company_name: null });
+  db.targets.set(row.id, row);
+  let holiday = '124';
+  const restore = setFetchPage(() => new Response(officialHtml('株式会社Aiming', holiday), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 0, 'official first check establishes snapshot baseline');
+    holiday = '125';
     await scheduled(envFor(db));
     assert.equal(db.events.size, 1);
     assert.equal([...db.events.values()][0].event_type, 'job_info_updated');

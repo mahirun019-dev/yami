@@ -1,6 +1,6 @@
 import { load, type CheerioAPI } from "cheerio";
 import robotsParser from "robots-parser";
-import type { EventType, SourceHealthStatus, SourceType } from "./types";
+import type { EventType, MynaviEntryStatus, SourceHealthStatus, SourceType } from "./types";
 
 const RECRUITMENT = /(エントリー|プレエントリー|応募|募集|新卒|採用|説明会|セミナー|予約|インターン|オープン[・\s-]?カンパニー|ES|エントリーシート|提出|締切|適性検査|Web\s*テスト|面接|選考|受付開始|受付終了)/i;
 const HIGH_CONFIDENCE_RECRUITMENT = /(募集(?:を)?終了|受付終了|エントリー受付中|応募受付中|説明会受付中|予約受付中|採用予定|募集要項|新卒採用|採用情報|募集職種|採用スケジュール)/i;
@@ -11,6 +11,96 @@ const SNAPSHOT_VERSION = 4;
 const PRIVATE_HOST = /(^localhost$|\.localhost$|\.local$|\.internal$|^0\.|^10\.|^127\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\.|^192\.168\.|^::1$|^fc|^fd|^fe80)/i;
 const CRAWLER_PRODUCT_TOKEN = 'CareerFlowWatch';
 const CRAWLER_USER_AGENT = `${CRAWLER_PRODUCT_TOKEN}/1.0 (+public recruitment monitor)`;
+
+export type MynaviEntryDetection = { status: MynaviEntryStatus; url: string | null; signal: string | null };
+
+const MYNAVI_ENTRY_OPEN_LABEL = /^(?:エントリー|エントリーする|エントリー受付中|エントリーはこちら|応募する)$/;
+const MYNAVI_ENTRY_RESERVATION_LABEL = /^(?:(?:\d{1,2}(?:月|\/)\d{1,2}日?)?エントリー予約|エントリー予約(?:はこちら|受付中|する)?)$/;
+const MYNAVI_ENTRY_CLOSED_LABEL = /^(?:エントリー受付終了|エントリー終了|応募受付終了|受付終了|募集終了|受付を終了しました|エントリー受付を終了しました)$/;
+const MYNAVI_ENTRY_EXCLUDED = 'header,footer,nav,aside,[role="navigation"],[role="banner"],[role="contentinfo"],[role="complementary"],[role="dialog"],[aria-modal="true"],[class*="modal" i],[id*="modal" i],[class*="overlay" i],[id*="overlay" i],.aiRecomend,.recomend,[id*="aiRcmd" i],[class*="aiPickup" i],[id*="aiPickup" i],[class*="recommend" i],[id*="recommend" i],[class*="related" i],[id*="related" i],[class*="carousel" i],[id*="carousel" i],[class*="advert" i],[id*="advert" i],[class*="campaign" i],[id*="campaign" i],[class*="global-banner" i],[id*="global-banner" i],[class*="site-banner" i],[id*="site-banner" i],[class*="top-banner" i],[id*="top-banner" i]';
+
+function mynaviEntryLabel(value: string): string {
+  return normalizeLine(value).replace(/[\s\u00a0]+/g, '');
+}
+
+function entryActionIsDisabled($: CheerioAPI, node: any): boolean {
+  const $node = $(node);
+  return $node.is(':disabled,[hidden],[aria-hidden="true"]') || $node.attr('disabled') !== undefined || $node.attr('aria-disabled') === 'true' || /(?:^|\s)disabled(?:\s|$)/i.test($node.attr('class') || '') || /(?:display\s*:\s*none|visibility\s*:\s*hidden)/i.test($node.attr('style') || '');
+}
+
+function entryActionHref($: CheerioAPI, node: any, inputUrl: string): string | null {
+  const href = $(node).attr('href');
+  if (!href || /^(?:#|javascript:|mailto:|tel:)/i.test(href.trim())) return null;
+  try {
+    const url = new URL(href, inputUrl);
+    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
+  } catch { return null; }
+}
+
+/**
+ * Reads only actionable Entry controls from the verified company's MyNavi content.
+ * Ordinary page copy and shared/recommended-company modules never establish `open`.
+ */
+export function detectMynaviEntryStatus(html: string, inputUrl: string): MynaviEntryDetection {
+  const $ = load(html);
+  const companyInfo = $('.companyInfo, #companyInfo').first();
+  const companyHead = $('#companyHead').first();
+  if (!companyInfo.length || !companyHead.find('h1').length) return { status: 'needs_review', url: null, signal: null };
+
+  $(MYNAVI_RECOMMENDATION_DOM).remove();
+  const headAncestors = [companyHead[0], ...companyHead.parents().toArray()];
+  const infoAncestors = new Set<any>([companyInfo[0], ...companyInfo.parents().toArray()]);
+  const entryScope = headAncestors.find((node: any) => infoAncestors.has(node)) || companyInfo;
+  removeRepeatedMynaviCompanyCards($, entryScope);
+  removePlatformModules($, entryScope);
+  $(entryScope).find(MYNAVI_ENTRY_EXCLUDED).remove();
+  const orderedNodes = $(entryScope).find('*').addBack().toArray();
+  const companyHeadIndex = orderedNodes.indexOf(companyHead[0]);
+  const isBeforeCompany = (node: any) => orderedNodes.indexOf(node) < companyHeadIndex;
+
+  const openActions: Array<{ url: string | null; signal: string }> = [];
+  const reservationActions: Array<{ url: string | null; signal: string }> = [];
+  let disabledSignal: string | null = null;
+  let textOnlyOpenSignal: string | null = null;
+
+  $(entryScope).find('a[href],button,[role="button"]').each((_index, node) => {
+    const $node = $(node);
+    if (isBeforeCompany(node)) return;
+    const label = mynaviEntryLabel($node.attr('aria-label') || $node.attr('title') || $node.text());
+    if (!label || /ログイン|ログアウト|会員登録|マイページ|お気に入り|検討リスト|予約リスト|リストに追加/.test(label)) return;
+    const isOpenLabel = MYNAVI_ENTRY_OPEN_LABEL.test(label);
+    const isReservationLabel = MYNAVI_ENTRY_RESERVATION_LABEL.test(label);
+    if (!isOpenLabel && !isReservationLabel) return;
+    if (entryActionIsDisabled($, node)) {
+      disabledSignal ||= label;
+      return;
+    }
+    const href = entryActionHref($, node, inputUrl);
+    if ($node.is('a[href]') && !href) return;
+    if (href && /(?:\/login|\/signin|\/mypage\/login|member-login)/i.test(new URL(href).pathname)) return;
+    if (isOpenLabel) openActions.push({ url: href, signal: label });
+    else reservationActions.push({ url: href, signal: label });
+  });
+
+  if (openActions.length) return { status: 'open', ...openActions[0] };
+  if (reservationActions.length) return { status: 'reservation', ...reservationActions[0] };
+
+  $(entryScope).find('p,li,dt,dd,span,strong,em,small,[role="status"]').each((_index, node) => {
+    const $node = $(node);
+    if (isBeforeCompany(node)) return;
+    if ($node.closest(MYNAVI_ENTRY_EXCLUDED).length) return;
+    const label = mynaviEntryLabel($node.text());
+    if (!label || label.length > 80) return;
+    if (MYNAVI_ENTRY_CLOSED_LABEL.test(label)) disabledSignal ||= label;
+    else if (MYNAVI_ENTRY_RESERVATION_LABEL.test(label)) reservationActions.push({ url: null, signal: label });
+    else if (MYNAVI_ENTRY_OPEN_LABEL.test(label)) textOnlyOpenSignal ||= label;
+  });
+
+  if (reservationActions.length) return { status: 'reservation', ...reservationActions[0] };
+  if (disabledSignal && MYNAVI_ENTRY_CLOSED_LABEL.test(disabledSignal)) return { status: 'closed', url: null, signal: disabledSignal };
+  if (disabledSignal || textOnlyOpenSignal) return { status: 'needs_review', url: null, signal: disabledSignal || textOnlyOpenSignal };
+  return { status: 'unavailable', url: null, signal: null };
+}
 
 export type SnapshotSection = {
   label: string;

@@ -1,7 +1,8 @@
 export type SourceType = "mynavi" | "official" | "other";
 export type WatchStatus = "active" | "checking" | "error" | "paused";
 export type SourceHealthStatus = "healthy" | "identity_mismatch" | "extraction_failed" | "unreachable" | "auth_required" | "source_changed" | "needs_review";
-export type EventType = "entry_open" | "briefing_open" | "internship_open" | "deadline_changed" | "selection_updated" | "job_info_updated" | "recruitment_closed" | "other_recruitment_update" | "source_health_issue" | "source_health_recovered";
+export type MynaviEntryStatus = "unknown" | "unavailable" | "reservation" | "open" | "closed" | "needs_review";
+export type EventType = "entry_open" | "mynavi_entry_open" | "briefing_open" | "internship_open" | "deadline_changed" | "selection_updated" | "job_info_updated" | "recruitment_closed" | "other_recruitment_update" | "source_health_issue" | "source_health_recovered";
 
 export interface Env {
   DB: D1Database;
@@ -33,5 +34,10 @@ export interface TargetRow {
   health_checked_at?: string | null;
   health_detail?: string | null;
   detected_company_name?: string | null;
+  entry_status?: MynaviEntryStatus | null;
+  entry_status_changed_at?: string | null;
+  entry_last_checked_at?: string | null;
+  entry_url?: string | null;
+  entry_signal?: string | null;
   lease_until: string | null;
 }

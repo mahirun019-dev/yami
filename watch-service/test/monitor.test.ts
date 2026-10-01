@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyChange, classifyFetchFailure, compareSnapshots, detectMeaningfulChange, evaluateIdentity, extractMeaningfulText, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, matchesCompanyIdentity, normalizeUrl, robotsDecision, serializeSnapshot } from '../src/monitor';
+import { classifyChange, classifyFetchFailure, compareSnapshots, detectMeaningfulChange, detectMynaviEntryStatus, evaluateIdentity, extractMeaningfulText, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, matchesCompanyIdentity, normalizeUrl, robotsDecision, serializeSnapshot } from '../src/monitor';
 
 const mynaviUrl = 'https://job.mynavi.jp/28/pc/corpinfo/displayPrevEmployment/index/?corpId=292189&recruitingCourseId=27052359';
 
@@ -20,6 +20,7 @@ type MynaviPageOptions = {
   updated?: string;
   pageCompanyName?: string;
   expectedCompanyName?: string;
+  entryMarkup?: string;
 };
 
 function mynaviPage(options: MynaviPageOptions = {}) {
@@ -52,6 +53,7 @@ function mynaviPage(options: MynaviPageOptions = {}) {
           <div class="companySec"><h2>説明会・セミナー</h2><p>開催日：${options.briefingDate || '10/20'}</p></div>
           <div class="companySec"><h2>採用後の待遇</h2><p>初任給 250,000円、福利厚生あり。</p></div>
           <div class="companySec"><h2>企業からのお知らせ</h2><p>採用情報を公開しています。</p><p>最終更新日：${options.updated || '2026/2/4'}</p></div>
+          ${options.entryMarkup || ''}
           <div class="session-ui"><p>${options.login || 'ログインしてマイページをご利用ください'}</p><p>${options.reservation || ''}</p></div>
           ${options.recommendationInsideCompanyInfo ? recommendationModule : ''}
         </div>
@@ -139,6 +141,33 @@ test('classifies at least five recruitment categories', () => {
   assert.equal(classifyChange(['Webテスト選考フロー']), 'selection_updated');
   assert.equal(classifyChange(['募集要項 初任給']), 'job_info_updated');
   assert.equal(classifyChange(['募集終了']), 'recruitment_closed');
+});
+
+test('MyNavi Entry detector distinguishes reservation from a formal actionable Entry control', () => {
+  assert.equal(detectMynaviEntryStatus(mynaviPage({ entryMarkup: '<a href="/reserve">3/1 エントリー予約</a>' }), mynaviUrl).status, 'reservation');
+  assert.equal(detectMynaviEntryStatus(mynaviPage({ entryMarkup: '<a href="/entry">エントリーする</a>' }), mynaviUrl).status, 'open');
+  const adjacentCompanyAction = mynaviPage().replace('<div class="companyInfo">', '<div class="companyAction"><a href="/entry">エントリー</a></div><div class="companyInfo">');
+  assert.equal(detectMynaviEntryStatus(adjacentCompanyAction, mynaviUrl).status, 'open');
+});
+
+test('MyNavi Entry detector ignores recommendation controls and plain explanatory copy', () => {
+  const recommended = mynaviPage({ entryMarkup: '<div class="recommend"><a href="/entry">エントリー受付中</a></div>' });
+  const explanation = mynaviPage({ entryMarkup: '<p>エントリーについて詳しく説明します。</p><p>エントリーはこちらから、という説明文だけです。</p>' });
+  const sharedPopup = mynaviPage().replace('<div id="companyHead"', '<div class="shared-entry-modal"><button>エントリー</button><h2>エントリー受付開始！</h2></div><div id="companyHead"');
+  assert.equal(detectMynaviEntryStatus(recommended, mynaviUrl).status, 'unavailable');
+  assert.equal(detectMynaviEntryStatus(explanation, mynaviUrl).status, 'unavailable');
+  assert.equal(detectMynaviEntryStatus(sharedPopup, mynaviUrl).status, 'unavailable');
+});
+
+test('MyNavi Entry detector rejects disabled actions and plain-text open claims', () => {
+  assert.equal(detectMynaviEntryStatus(mynaviPage({ entryMarkup: '<button disabled>エントリー</button>' }), mynaviUrl).status, 'needs_review');
+  assert.equal(detectMynaviEntryStatus(mynaviPage({ entryMarkup: '<p>エントリー受付中</p>' }), mynaviUrl).status, 'needs_review');
+  assert.equal(detectMynaviEntryStatus(mynaviPage({ entryMarkup: '<button>ログインしてエントリー</button>' }), mynaviUrl).status, 'unavailable');
+});
+
+test('MyNavi Entry detector recognizes closed state only from explicit target-company status', () => {
+  assert.equal(detectMynaviEntryStatus(mynaviPage({ entryMarkup: '<p>エントリー受付終了</p>' }), mynaviUrl).status, 'closed');
+  assert.equal(detectMynaviEntryStatus('<html><body><p>エントリー</p></body></html>', mynaviUrl).status, 'needs_review');
 });
 test('accepts a concise public recruitment-status page as a valid baseline', () => {
   const result = inspectRecruitmentContent('<main><h1>2027年度 新卒採用</h1><p>現在、募集を終了しております。</p></main>', 'official');
