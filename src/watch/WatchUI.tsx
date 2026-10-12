@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Bell, ExternalLink, Eye, MoreHorizontal, Pause, Pencil, Play, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { watchText } from './i18n';
 import { companyWatchKey, useWatch } from './WatchProvider';
+import { companyWatchState, currentMynaviEntryStatus, matchesWatchCompany, verifiedEntryUrl } from './companyStatus';
 import type { MynaviEntryStatus, SourceHealthStatus, WatchEvent, WatchSource } from './types';
 import { YamiBrandAvatar, YamiWordmark } from '../brand/YamiLogo';
 import { getUnreadProductUpdateCount, loadReadProductUpdateIds, PRODUCT_UPDATES, saveReadProductUpdateIds, subscribeProductUpdateReadState } from './productUpdates';
@@ -119,7 +120,18 @@ export function CompanyWatchSection({ company, locale, openSettings, highlightEv
     {!watch.configured ? <p className="company-watch-muted">{text.unavailable}</p> : !watch.authenticated ? <div className="company-watch-connect"><p>{text.notConnected}</p><button type="button" className="text-button" onClick={openSettings}>{text.settings}<ExternalLink /></button></div> : targets.length ? <div className="watch-target-list">{targets.map((target) => {
       const status = targetStatus(target, text, locale, watch.checkingTimedOut.includes(target.id));
       return <article className="watch-target-item" key={target.id}>
-      <div className="watch-target-copy"><strong>{target.label || text[target.source_type]}</strong><a href={target.url} target="_blank" rel="noreferrer" title={target.url}>{new URL(target.url).host}{new URL(target.url).pathname}<ExternalLink /></a><small className={`watch-status ${status.tone}`}>{status.label}{status.detail ? ` · ${status.detail}` : ''}</small>{target.source_type === 'mynavi' && target.entry_status && target.health_status === 'healthy' && <small>{text.entryStatus}: {mynaviEntryLabel(target.entry_status, text)}</small>}{target.health_status && target.health_status !== 'healthy' && <small className="watch-health-inline" data-health={target.health_status}>{sourceHealthLabel(target.health_status, locale)} · {sourceHealthReason(target.health_status, target.health_detail, locale)}{target.detected_company_name ? ` ${text.detectedCompany}: ${target.detected_company_name}` : ''}</small>}{target.last_error && !target.health_status && <small title={target.last_error}>{targetErrorText(target.last_error, text)}</small>}</div>
+      <div className="watch-target-copy">
+        <strong>{target.label || text[target.source_type]}</strong>
+        <a href={target.url} target="_blank" rel="noreferrer" title={target.url}>{new URL(target.url).host}{new URL(target.url).pathname}<ExternalLink /></a>
+        <small className={`watch-status ${status.tone}`}>{status.label}{status.detail && status.tone !== 'active' ? ` · ${status.detail}` : ''}</small>
+        <small>{text.lastCheck}: {formatDate(target.last_checked_at, locale)}</small>
+        {target.source_type === 'mynavi' && <>
+          <small>{text.entryStatus}: {mynaviEntryLabel(currentMynaviEntryStatus(target, company.name, watch.now), text)}</small>
+          {currentMynaviEntryStatus(target, company.name, watch.now) === 'open' && <a className="watch-entry-link" href={verifiedEntryUrl(target)!} target="_blank" rel="noreferrer">{text.entryLink}<ExternalLink aria-hidden="true" /></a>}
+        </>}
+        {target.health_status && target.health_status !== 'healthy' && <small className="watch-health-inline" data-health={target.health_status}>{sourceHealthLabel(target.health_status, locale)} · {sourceHealthReason(target.health_status, target.health_detail, locale)}{target.detected_company_name ? ` ${text.detectedCompany}: ${target.detected_company_name}` : ''}</small>}
+        {target.last_error && !target.health_status && <small title={target.last_error}>{targetErrorText(target.last_error, text)}</small>}
+      </div>
       <div className="watch-target-actions">
         <button className="watch-target-actions-more" title={locale === 'ja' ? '操作' : '操作'} onClick={() => setActionsFor(target.id)}><MoreHorizontal /></button>
         <div className="watch-target-actions-desktop"><button title={text.edit} onClick={() => edit(target)}><Pencil /></button>
@@ -301,15 +313,15 @@ export function NotificationPage({ locale, openCompany, openSettings }: Notifica
 export function CompanyWatchStatus({ companyId, companyName, locale }: { companyId: string; companyName: string; locale: Locale }) {
   const text = watchText[locale], watch = useWatch();
   if (!watch.authenticated) return null;
-  const key = companyWatchKey(companyName);
-  const matchesCompany = (item: { company_id: string; company_name: string }) => item.company_id === companyId || companyWatchKey(item.company_name) === key;
-  const target = watch.targets.find((item) => matchesCompany(item));
-  const unread = watch.events.filter((event) => matchesCompany(event) && !event.read).length;
-  if (!target && !unread) return null;
-  const status = target ? targetStatus(target, text, locale) : null;
-  const healthNeedsReview = Boolean(target?.health_status && target.health_status !== 'healthy');
-  return <span className={`company-watch-card-status${unread ? ' has-updates' : ''}${healthNeedsReview ? ' has-health-warning' : ''}`}>
-    {!unread && status?.tone === 'active' && target?.health_status === 'healthy' && <span className="company-watch-active-dot" aria-hidden="true" />}
-    {unread ? `● ${unread}${locale === 'ja' ? '件の更新' : ' 条更新'}` : `${target?.enabled ? text.active : status?.label}${healthNeedsReview ? ` · ${sourceHealthLabel(target?.health_status, locale)}` : ''}`}
+  const company = { id: companyId, name: companyName };
+  const state = companyWatchState(company, watch.targets, watch.now);
+  if (!state) return null;
+  const unread = watch.events.filter((event) => matchesWatchCompany(company, event) && !event.read).length;
+  const label = state === 'open' ? text.entryOpen : state === 'review' ? text.monitoringNeedsReview : text.active;
+  const unreadLabel = unread ? `${unread}${locale === 'ja' ? '件の更新' : ' 条更新'}` : '';
+  return <span className={`company-watch-card-status${state === 'open' ? ' is-entry-open' : ''}${state === 'review' ? ' has-health-warning' : ''}`} title={unreadLabel || undefined}>
+    {state !== 'review' && <span className="company-watch-active-dot" aria-hidden="true" />}
+    {label}
+    {unread > 0 && <span className="company-watch-unread-count" aria-label={unreadLabel}>{unread}</span>}
   </span>;
 }

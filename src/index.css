@@ -9060,6 +9060,7 @@ html[data-theme="dark"] #root {
 
 .career-app .company-card-topline {
   display: flex;
+  flex-wrap: wrap;
   min-width: 0;
   align-items: flex-start;
   justify-content: space-between;
@@ -9080,8 +9081,9 @@ html[data-theme="dark"] #root {
 
 .career-app .company-card-badges {
   display: flex;
-  max-width: 48%;
+  max-width: 100%;
   min-width: 0;
+  margin-left: auto;
   flex: 0 1 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -9124,6 +9126,21 @@ html[data-theme="dark"] #root {
 
 [data-theme="dark"] .career-app .company-watch-active-dot {
   background: #75b58e;
+}
+
+.career-app .company-card-badges .company-watch-card-status.is-entry-open,
+.watch-target-copy .watch-entry-link {
+  color: #356f50;
+}
+
+[data-theme="dark"] .career-app .company-card-badges .company-watch-card-status.is-entry-open,
+[data-theme="dark"] .watch-target-copy .watch-entry-link {
+  color: #91c5a3;
+}
+
+.company-watch-unread-count {
+  margin-left: 5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .career-app .company-card-body > p {
@@ -9306,12 +9323,12 @@ html[data-theme="dark"] #root {
   }
 
   .career-app .company-card-topline h3 {
-    flex-basis: 120px;
+    flex-basis: 100%;
     font-size: calc(15px * var(--reading-scale, 1));
   }
 
   .career-app .company-card-badges {
-    max-width: 46%;
+    max-width: 100%;
   }
 
   .career-app .company-card-schedule {
