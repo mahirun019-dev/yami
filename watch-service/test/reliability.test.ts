@@ -41,6 +41,16 @@ test('spent execution budget neither requests nor retries', async () => {
   finally { globalThis.fetch = original; }
 });
 
+test('a deadline-limited request is an incomplete check, not a website timeout or retryable source fault', async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => new Promise(() => {})) as typeof fetch;
+  const trace = traceFor(runBudget(150));
+  try {
+    await assert.rejects(requestText('https://example.com/', {}, trace, 'page', 1_000), (error: unknown) => error instanceof CheckError && error.code === 'CHECK_BUDGET_EXHAUSTED' && !error.transient);
+    assert.equal(trace.requests, 1); assert.equal(trace.retries, 0);
+  } finally { globalThis.fetch = original; }
+});
+
 test('response body reads share the request timeout', async () => {
   const original = globalThis.fetch;
   globalThis.fetch = (async () => new Response(new ReadableStream({ start() {} }))) as typeof fetch;

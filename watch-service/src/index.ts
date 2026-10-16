@@ -220,7 +220,7 @@ function buildPendingEvent(target: TargetRow, fetchedUrl: string, hash: string, 
 }
 
 function logCheck(check: PendingCheck, decision: string, _notificationDiff: unknown = null) {
-  check.trace.log('source_complete', { decision, healthStatus: check.healthStatus, completed: !decision.endsWith('failed') });
+  check.trace.log('source_complete', { decision, healthStatus: check.healthStatus, completed: !decision.endsWith('failed'), errorCode: decision.endsWith('failed') ? decision.replace(/-/g, '_').toUpperCase() : null });
 }
 
 async function markTargetUnhealthy(env: Env, target: TargetRow, lease: string, checkedAt: string, httpStatus: number | null, healthStatus: SourceHealthStatus, detail: string, detectedName: string | null = null, trace?: SourceTrace, transient = false) {

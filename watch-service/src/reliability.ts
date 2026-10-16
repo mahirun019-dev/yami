@@ -85,7 +85,11 @@ export async function requestText(url: string | URL, init: RequestInit, trace: S
           }
           return { response, text };
         })(),
-        new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new CheckError('FETCH_TIMEOUT', responseStatus, true)); }, Math.min(timeoutMs, remaining)); }),
+        new Promise<never>((_, reject) => { timer = setTimeout(() => {
+          const budgetLimited = remaining < timeoutMs;
+          reject(new CheckError(budgetLimited ? 'CHECK_BUDGET_EXHAUSTED' : 'FETCH_TIMEOUT', responseStatus, !budgetLimited));
+          controller.abort();
+        }, Math.min(timeoutMs, remaining)); }),
       ]);
       trace.log('source_request', { requestKind: kind, attempt: attempt + 1, httpStatus: result.response.status, elapsedMs: Date.now() - started });
       return result;
