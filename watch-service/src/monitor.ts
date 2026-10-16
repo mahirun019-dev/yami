@@ -1,6 +1,7 @@
 import { load, type CheerioAPI } from "cheerio";
 import robotsParser from "robots-parser";
 import type { EventType, MynaviEntryStatus, SourceHealthStatus, SourceType } from "./types";
+import { CheckError, SourceTrace, requestText } from './reliability';
 
 const RECRUITMENT = /(エントリー|プレエントリー|応募|募集|新卒|採用|説明会|セミナー|予約|インターン|オープン[・\s-]?カンパニー|ES|エントリーシート|提出|締切|適性検査|Web\s*テスト|面接|選考|受付開始|受付終了)/i;
 const HIGH_CONFIDENCE_RECRUITMENT = /(募集(?:を)?終了|受付終了|エントリー受付中|応募受付中|説明会受付中|予約受付中|採用予定|募集要項|新卒採用|採用情報|募集職種|採用スケジュール)/i;
@@ -11,6 +12,8 @@ const SNAPSHOT_VERSION = 4;
 const PRIVATE_HOST = /(^localhost$|\.localhost$|\.local$|\.internal$|^0\.|^10\.|^127\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\.|^192\.168\.|^::1$|^fc|^fd|^fe80)/i;
 const CRAWLER_PRODUCT_TOKEN = 'CareerFlowWatch';
 const CRAWLER_USER_AGENT = `${CRAWLER_PRODUCT_TOKEN}/1.0 (+public recruitment monitor)`;
+const MIXI_RECRUIT_HOST = 'mixigroup-recruit.mixi.co.jp';
+const HRMOS_HOST = 'hrmos.co';
 
 export type MynaviEntryDetection = { status: MynaviEntryStatus; url: string | null; signal: string | null };
 
@@ -374,8 +377,173 @@ export function evaluateIdentity(analysis: Pick<RecruitmentAnalysis, 'identityMa
   return null;
 }
 
+export type MixiRecruitmentPost = { id: number; title: string; url: string };
+
+export function isMixiRecruitmentListingUrl(input: string): boolean {
+  try {
+    const url = new URL(input);
+    return url.protocol === 'https:' && url.hostname.toLowerCase() === MIXI_RECRUIT_HOST && url.pathname.replace(/\/$/, '') === '/jobs';
+  } catch { return false; }
+}
+
+/** Uses the category ID published by MIXI's own recruitment page, not a guessed taxonomy ID. */
+export function parseMixiNewGraduatePosts(listingHtml: string, payload: unknown): MixiRecruitmentPost[] {
+  if (!Array.isArray(payload)) throw new Error('MIXI_API_INVALID_RESPONSE');
+  const $ = load(listingHtml);
+  const categoryScript = $('script').toArray().map((node) => $(node).text())
+    .map((script) => script.match(/mixiObj\.catSlugToIdConversionTable\s*=\s*JSON\.parse\('([^']+)'\)/)?.[1])
+    .find(Boolean);
+  if (!categoryScript) throw new Error('MIXI_CATEGORY_MAP_UNAVAILABLE');
+  let categoryId: number;
+  try {
+    const categories = JSON.parse(categoryScript) as Record<string, number | string>;
+    categoryId = Number(categories['new-graduate']);
+  } catch { throw new Error('MIXI_CATEGORY_MAP_INVALID'); }
+  if (!Number.isInteger(categoryId) || categoryId <= 0) throw new Error('MIXI_CATEGORY_MAP_INVALID');
+
+  const posts: MixiRecruitmentPost[] = [];
+  for (const value of payload) {
+    if (!value || typeof value !== 'object') continue;
+    const post = value as { id?: unknown; status?: unknown; title?: { rendered?: unknown }; link?: unknown; categories?: unknown };
+    const title = typeof post.title?.rendered === 'string' ? normalizeLine(post.title.rendered) : '';
+    const categories = Array.isArray(post.categories) ? post.categories.map(Number) : [];
+    if (post.status !== 'publish' || !categories.includes(categoryId) || !/2028年/.test(title) || !/MIXI新卒採用/.test(title)) continue;
+    let url: URL;
+    try { url = new URL(String(post.link)); } catch { throw new Error('MIXI_JOB_LINK_INVALID'); }
+    if (url.protocol !== 'https:' || url.hostname.toLowerCase() !== MIXI_RECRUIT_HOST || !/^\/recruitment-category\/new-graduate\/\d+\/?$/.test(url.pathname)) {
+      throw new Error('MIXI_JOB_LINK_INVALID');
+    }
+    const id = Number(post.id);
+    if (!Number.isInteger(id) || id <= 0) throw new Error('MIXI_JOB_ID_INVALID');
+    posts.push({ id, title, url: url.toString() });
+  }
+  return posts.sort((left, right) => left.id - right.id);
+}
+
+function inspectMixiRecruitmentDetail(html: string, inputUrl: string, targetCompanyName?: string): RecruitmentAnalysis {
+  const $ = load(html);
+  const hostname = (() => { try { return new URL(inputUrl).hostname.toLowerCase(); } catch { return ''; } })();
+  const url = (() => { try { return new URL(inputUrl); } catch { return null; } })();
+  const title = normalizeLine($('#content h1, .content h1, h1').first().text() || $('title').first().text().split(/\s+-\s+/)[0]);
+  const isMixiJob = hostname === MIXI_RECRUIT_HOST && Boolean(url && /^\/recruitment-category\/new-graduate\/\d+\/?$/.test(url.pathname));
+  const titleMatches = /2028年/.test(title) && /MIXI新卒採用/.test(title);
+  const declaredCompany = isMixiJob && titleMatches
+    ? '株式会社MIXI'
+    : findIdentityCandidates($, 'official', inputUrl).find((candidate) => candidate.explicit)?.value || null;
+  const detectedCompanyName = declaredCompany;
+  const identityMatched = targetCompanyName && detectedCompanyName
+    ? matchesCompanyIdentity(targetCompanyName, detectedCompanyName)
+    : null;
+
+  $(EXCLUDED_DOM).remove();
+  removePlatformModules($, $('body'));
+  const ignored: Record<string, number> = {};
+  const sections: SnapshotSection[] = [];
+  if (isMixiJob && titleMatches) {
+    const titleLines = cleanLines([`募集職種: ${title}`], ignored);
+    const detailUrl = url?.toString() || inputUrl;
+    titleLines.push(`詳細ページ: ${detailUrl}`);
+    sections.push({ label: '募集職種', selector: 'mixi-job-title', scope: 'company', lines: titleLines, meaningfulLines: titleLines });
+    const allowedHeading = /^(?:概要|募集内容|応募条件)$/;
+    $('h2').each((_index, heading) => {
+      const label = normalizeLine($(heading).text());
+      if (!allowedHeading.test(label)) return;
+      const lines = cleanLines(siblingSectionLines($, heading).filter((line) => line !== label), ignored);
+      if (lines.length) sections.push({ label, selector: `heading:h2:${label}`, scope: 'company', lines, meaningfulLines: lines });
+    });
+    const entryLink = $('a[href]').toArray().map((node) => {
+      const label = normalizeLine($(node).attr('aria-label') || $(node).text());
+      const href = $(node).attr('href');
+      if (label !== 'エントリーする' || !href) return null;
+      try {
+        const entry = new URL(href, inputUrl);
+        return entry.protocol === 'https:' && entry.hostname.toLowerCase() === 'mixi-recruit.snar.jp' && entry.pathname === '/entry.aspx' && entry.searchParams.has('entryid') ? entry.toString() : null;
+      } catch { return null; }
+    }).find(Boolean);
+    if (entryLink) sections.push({ label: '応募リンク', selector: 'mixi-official-entry-link', scope: 'company', lines: [`応募リンク: ${entryLink}`], meaningfulLines: [`応募リンク: ${entryLink}`] });
+  }
+  const lines = [...new Set(sections.flatMap((section) => section.lines))];
+  const text = lines.join('\n');
+  const bodyDetails = sections.filter((section) => ['概要', '募集内容', '応募条件'].includes(section.label)).flatMap((section) => section.lines).join('\n');
+  const rawLines = $('body').length ? collectBlockLines($, $('body')[0]) : [];
+  const valid = isMixiJob && titleMatches && sections.some((section) => section.label === '募集内容') && bodyDetails.length >= 100;
+  return {
+    adapter: 'mixi-wp-detail-v1', selector: 'mixi-official-new-graduate-detail',
+    rawTextLength: normalizeLine($('body').text()).length, cleanedTextLength: text.length,
+    recruitmentTextLength: bodyDetails.length, highConfidenceLines: lines.filter((line) => HIGH_CONFIDENCE_RECRUITMENT.test(line)),
+    text, sections, excludedSections: [], identityMatched, detectedCompanyName, rawLines, ignored, valid,
+  };
+}
+
+function inspectHrmosJobPage(html: string, inputUrl: string, targetCompanyName?: string): RecruitmentAnalysis {
+  const $ = load(html);
+  let url: URL | null = null;
+  try { url = new URL(inputUrl); } catch { /* invalid URL is handled as an invalid page below */ }
+  const jobPath = url?.hostname.toLowerCase() === HRMOS_HOST && /^\/pages\/[^/]+\/jobs\/[^/]+\/?$/.test(url.pathname);
+  const title = normalizeLine($('main h1, article h1, h1').first().text());
+  let companyName: string | null = null;
+  $('table').each((_index, table) => {
+    const caption = normalizeLine($(table).find('caption').first().text());
+    if (!/会社情報/.test(caption)) return;
+    $(table).find('tr').each((_rowIndex, row) => {
+      const label = normalizeLine($(row).find('th').first().text());
+      if (label === '会社名') companyName = normalizeLine($(row).find('td').first().text()) || null;
+    });
+  });
+  const identityCandidates = findIdentityCandidates($, 'official', inputUrl);
+  const fallbackCompany = identityCandidates.find((candidate) => candidate.explicit)?.value || null;
+  const detectedCompanyName = companyName || fallbackCompany;
+  const identityMatched = targetCompanyName
+    ? detectedCompanyName ? matchesCompanyIdentity(targetCompanyName, detectedCompanyName) : null
+    : null;
+
+  const ignored: Record<string, number> = {};
+  const lines: string[] = [];
+  if (title) lines.push(`職種: ${title}`);
+  const canonical = $('link[rel="canonical"]').attr('href');
+  const detailUrl = (() => {
+    try {
+      const candidate = new URL(canonical || inputUrl, inputUrl);
+      return url && candidate.protocol === 'https:' && candidate.hostname === url.hostname && candidate.pathname === url.pathname ? candidate.toString() : null;
+    } catch { return null; }
+  })();
+  if (detailUrl) lines.push(`詳細ページ: ${detailUrl}`);
+
+  const markdown = $('article.pg-body .pg-markdown, .pg-body .pg-markdown').first();
+  const markdownLines = markdown.length ? cleanLines(collectBlockLines($, markdown[0]), ignored) : [];
+  lines.push(...markdownLines);
+  const jobTable = $('article.pg-body section.pg-descriptions table, .pg-body section.pg-descriptions table').toArray()
+    .find((table) => !/会社情報/.test(normalizeLine($(table).find('caption').first().text())));
+  const jobFieldLines = jobTable ? cleanLines(collectBlockLines($, jobTable), ignored) : [];
+  lines.push(...jobFieldLines);
+
+  const applyPath = url ? `${url.pathname.replace(/\/$/, '')}/apply` : '';
+  const applyUrl = $('a.jsc-apply-trigger[href]:not(.sg-hide)').toArray().map((node) => {
+    const href = $(node).attr('href');
+    if (!href) return null;
+    try {
+      const candidate = new URL(href, inputUrl);
+      return url && candidate.protocol === 'https:' && candidate.hostname === url.hostname && candidate.pathname === applyPath ? candidate.toString() : null;
+    } catch { return null; }
+  }).find(Boolean);
+  if (applyUrl) lines.push(`応募ページ: ${applyUrl}`);
+  const uniqueLines = [...new Set(lines)].slice(0, 1000);
+  const content = [...markdownLines, ...jobFieldLines].join('\n');
+  const valid = Boolean(jobPath && title && detailUrl && markdownLines.length && jobFieldLines.length && content.length >= 100);
+  const section: SnapshotSection[] = uniqueLines.length ? [{ label: '募集要項', selector: 'hrmos-job-body-and-fields', scope: 'company', lines: uniqueLines, meaningfulLines: uniqueLines }] : [];
+  const text = uniqueLines.join('\n');
+  return {
+    adapter: 'hrmos-job-v1', selector: 'hrmos-public-job-detail',
+    rawTextLength: normalizeLine($('body').text()).length, cleanedTextLength: text.length,
+    recruitmentTextLength: content.length, highConfidenceLines: uniqueLines.filter((line) => HIGH_CONFIDENCE_RECRUITMENT.test(line)),
+    text, sections: section, excludedSections: [], identityMatched, detectedCompanyName,
+    rawLines: $('body').length ? collectBlockLines($, $('body')[0]) : [], ignored, valid,
+  };
+}
+
 export function classifyFetchFailure(message: string): SourceHealthStatus {
   if (message === 'LOGIN_REQUIRED' || message === 'ACCESS_RESTRICTED') return 'auth_required';
+  if (message.startsWith('MIXI_')) return 'extraction_failed';
   if (message === 'INSUFFICIENT_PUBLIC_CONTENT' || message === 'UNSUPPORTED_CONTENT_TYPE') return 'extraction_failed';
   if (message === 'ROBOTS_DISALLOWED' || message === 'ROBOTS_POLICY_UNVERIFIABLE' || message === 'RATE_LIMITED') return 'needs_review';
   if (/^(?:HTTP_(?:4\d\d|5\d\d)|DNS_CHECK_FAILED|URL_|REDIRECT_|TOO_MANY_REDIRECTS|FETCH_|UND_ERR_|ECONN|ETIMEDOUT|TIMEOUT|UNKNOWN_ERROR)/.test(message)) return 'unreachable';
@@ -504,7 +672,7 @@ function parseSnapshot(value: string | null | undefined): StoredSnapshot | null 
 
 export function hasCompatibleSnapshot(value: string | null | undefined, analysis: RecruitmentAnalysis): boolean {
   const previous = parseSnapshot(value);
-  return Boolean(previous && previous.adapter === analysis.adapter && previous.selector === analysis.selector);
+  return Boolean(previous && previous.adapter === analysis.adapter && previous.selector === analysis.selector && previous.sections.some((section) => section.meaningfulLines.some((line) => typeof line === 'string' && RECRUITMENT.test(line) && !ignoredReason(line))) && !previous.sections.every((section) => section.lines.every((line) => /募集が見つかりませんでした|取得に失敗|^\s*$/.test(line))));
 }
 
 export function snapshotLines(value: string | null | undefined): string[] {
@@ -557,6 +725,11 @@ export function compareSnapshots(before: string | null | undefined, after: Recru
 }
 
 export function inspectRecruitmentContent(html: string, sourceType: SourceType, inputUrl?: string, targetCompanyName?: string): RecruitmentAnalysis {
+  let hostname = '';
+  let pathname = '';
+  try { const parsed = inputUrl ? new URL(inputUrl) : null; hostname = parsed?.hostname.toLowerCase() || ''; pathname = parsed?.pathname || ''; } catch { /* The generic inspector handles invalid optional URLs. */ }
+  if (hostname === HRMOS_HOST && /^\/pages\/[^/]+\/jobs\/[^/]+\/?$/.test(pathname)) return inspectHrmosJobPage(html, inputUrl || '', targetCompanyName);
+  if (hostname === MIXI_RECRUIT_HOST && /^\/recruitment-category\/new-graduate\/\d+\/?$/.test(pathname)) return inspectMixiRecruitmentDetail(html, inputUrl || '', targetCompanyName);
   const $ = load(html);
   const rawTextLength = normalizeLine($('body').text()).length;
   const { root, selector, adapter, isMynavi } = rootForPage($, sourceType, inputUrl);
@@ -695,44 +868,83 @@ export function robotsDecision(robotsUrl: string, contents: string, targetUrl: s
   return robotsParser(robotsUrl, contents).isAllowed(targetUrl, CRAWLER_PRODUCT_TOKEN);
 }
 
-async function assertPublicDns(hostname: string) {
-  const response = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`, { headers: { accept: 'application/dns-json' } });
-  if (!response.ok) throw new Error('DNS_CHECK_FAILED');
-  const body = await response.json() as { Answer?: Array<{ data: string }> };
-  if (!body.Answer?.length || body.Answer.some((x) => PRIVATE_HOST.test(x.data))) throw new Error('URL_PRIVATE_HOST');
+async function assertPublicDns(hostname: string, trace: SourceTrace) {
+  let pending = trace.budget.dns.get(hostname);
+  if (!pending) {
+    pending = (async () => {
+      const { response, text } = await requestText(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`, { headers: { accept: 'application/dns-json' } }, trace, 'dns', 5_000);
+      if (!response.ok) throw new CheckError('DNS_CHECK_FAILED', response.status, true);
+      const body = JSON.parse(text) as { Answer?: Array<{ data: string }> };
+      if (!body.Answer?.length || body.Answer.some((x) => PRIVATE_HOST.test(x.data))) throw new CheckError('URL_PRIVATE_HOST', response.status);
+    })();
+    trace.budget.dns.set(hostname, pending);
+    pending.catch(() => trace.budget.dns.delete(hostname));
+  }
+  await pending;
 }
 
-export async function fetchPage(input: string): Promise<{ url: string; html: string; status: number }> {
+async function assertCrawlerAllowed(url: string, trace: SourceTrace) {
+  const parsed = new URL(url);
+  const robotsUrl = `${parsed.protocol}//${parsed.host}/robots.txt`;
+  let pending = trace.budget.robots.get(robotsUrl);
+  if (!pending) {
+    pending = (async () => {
+      const { response, text } = await requestText(robotsUrl, { redirect: 'manual', headers: { 'user-agent': CRAWLER_USER_AGENT, accept: 'text/plain' } }, trace, 'robots', 8_000);
+      if (response.status === 404 || response.status === 410) return null;
+      if (!response.ok) throw new CheckError('ROBOTS_POLICY_UNVERIFIABLE', response.status, true);
+      return text;
+    })();
+    trace.budget.robots.set(robotsUrl, pending);
+    pending.catch(() => trace.budget.robots.delete(robotsUrl));
+  }
+  const contents = await pending;
+  if (contents === null) return;
+  const decision = robotsDecision(robotsUrl, contents, url);
+  if (decision === false) throw new Error('ROBOTS_DISALLOWED');
+  if (decision === undefined) throw new Error('ROBOTS_POLICY_UNVERIFIABLE');
+}
+
+export async function fetchMixiRecruitmentPosts(inputUrl: string, trace = new SourceTrace({ id: 'inspection', company_id: 'inspection', source_type: 'official' }, crypto.randomUUID())): Promise<unknown> {
+  const origin = new URL(inputUrl);
+  if (origin.protocol !== 'https:' || origin.hostname.toLowerCase() !== MIXI_RECRUIT_HOST) throw new Error('MIXI_API_ORIGIN_INVALID');
+  const apiUrl = new URL('/wp-json/wp_query/args/', origin.origin);
+  apiUrl.searchParams.set('posts_per_page', '-1');
+  apiUrl.searchParams.set('post_type', 'post');
+  apiUrl.searchParams.append('category__not_in[]', '1');
+  apiUrl.searchParams.set('meta_value', '');
+  apiUrl.searchParams.set('meta_compare', 'LIKE');
+  await assertPublicDns(apiUrl.hostname, trace);
+  await assertCrawlerAllowed(apiUrl.toString(), trace);
+  const { response, text: body } = await requestText(apiUrl, {
+    redirect: 'manual',
+    headers: { 'user-agent': CRAWLER_USER_AGENT, accept: 'application/json' },
+  }, trace, 'mixi_api');
+  if (response.status >= 300 && response.status < 400) throw new Error('MIXI_API_REDIRECT_UNEXPECTED');
+  if (!response.ok) throw new CheckError(`HTTP_${response.status}`, response.status);
+  if (!(response.headers.get('content-type') || '').toLowerCase().includes('application/json')) throw new Error('UNSUPPORTED_CONTENT_TYPE');
+  if (body.length > 1_500_000) throw new Error('MIXI_API_RESPONSE_TOO_LARGE');
+  let payload: unknown;
+  try { payload = JSON.parse(body); } catch { throw new Error('MIXI_API_INVALID_RESPONSE'); }
+  if (!Array.isArray(payload)) throw new Error('MIXI_API_INVALID_RESPONSE');
+  return payload;
+}
+
+export async function fetchPage(input: string, trace = new SourceTrace({ id: 'inspection', company_id: 'inspection', source_type: 'other' }, crypto.randomUUID())): Promise<{ url: string; html: string; status: number }> {
   let url = normalizeUrl(input);
   for (let redirects = 0; redirects < 4; redirects += 1) {
     const parsed = new URL(url);
-    await assertPublicDns(parsed.hostname);
-    const robotsUrl = `${parsed.protocol}//${parsed.host}/robots.txt`;
-    let robotsResponse: Response;
-    try {
-      robotsResponse = await fetch(robotsUrl, { signal: AbortSignal.timeout(8_000), headers: { 'user-agent': CRAWLER_USER_AGENT, accept: 'text/plain' } });
-    } catch {
-      throw new Error('ROBOTS_POLICY_UNVERIFIABLE');
-    }
-    if (robotsResponse.status === 404 || robotsResponse.status === 410) {
-      // An absent robots.txt has no disallow rules; transient and restricted responses fail closed below.
-    } else if (robotsResponse.ok) {
-      const decision = robotsDecision(robotsUrl, await robotsResponse.text(), url);
-      if (decision === false) throw new Error('ROBOTS_DISALLOWED');
-      if (decision === undefined) throw new Error('ROBOTS_POLICY_UNVERIFIABLE');
-    } else throw new Error('ROBOTS_POLICY_UNVERIFIABLE');
-    const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(15_000), headers: { 'user-agent': CRAWLER_USER_AGENT, accept: 'text/html,application/xhtml+xml' } });
+    await assertPublicDns(parsed.hostname, trace);
+    await assertCrawlerAllowed(url, trace);
+    const { response, text: html } = await requestText(url, { redirect: 'manual', headers: { 'user-agent': CRAWLER_USER_AGENT, accept: 'text/html,application/xhtml+xml' } }, trace, 'page');
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get('location');
       if (!location) throw new Error('REDIRECT_WITHOUT_LOCATION');
       url = normalizeUrl(new URL(location, url).toString());
       continue;
     }
-    if (response.status === 401 || response.status === 403) throw new Error('ACCESS_RESTRICTED');
-    if (response.status === 429) throw new Error('RATE_LIMITED');
-    if (!response.ok) throw new Error(`HTTP_${response.status}`);
+    if (response.status === 401 || response.status === 403) throw new CheckError('ACCESS_RESTRICTED', response.status);
+    if (!response.ok) throw new CheckError(`HTTP_${response.status}`, response.status);
     if (!(response.headers.get('content-type') || '').includes('text/html')) throw new Error('UNSUPPORTED_CONTENT_TYPE');
-    const html = (await response.text()).slice(0, 1_500_000);
     if (/<form[^>]*(?:login|signin)[^>]*>[\s\S]{0,8000}<input[^>]+type=["']password/i.test(html)) throw new Error('LOGIN_REQUIRED');
     return { url, html, status: response.status };
   }

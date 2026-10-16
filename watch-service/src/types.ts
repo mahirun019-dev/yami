@@ -33,6 +33,9 @@ export interface TargetRow {
   health_status?: SourceHealthStatus | null;
   health_checked_at?: string | null;
   health_detail?: string | null;
+  transient_failure_count?: number;
+  health_failure_run_id?: string | null;
+  health_alerted_at?: string | null;
   detected_company_name?: string | null;
   entry_status?: MynaviEntryStatus | null;
   entry_status_changed_at?: string | null;

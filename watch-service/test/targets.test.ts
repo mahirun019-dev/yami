@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { scheduled } from '../src/index';
+import worker, { checkTarget, scheduled } from '../src/index';
+import { SourceTrace, runBudget } from '../src/reliability';
 import type { TargetRow } from '../src/types';
 
 type StoredTarget = TargetRow & { lease_until: string | null };
@@ -49,7 +50,9 @@ class MemoryD1 {
           if (query.includes('SELECT ?')) {
             const [id, company_id, company_name, watch_target_id, event_type, title, summary, before_excerpt, after_excerpt, detected_at, source_url, source_type, content_hash, target_id, entry_status, changed_at, last_checked_at] = values as unknown[];
             const row = db.targets.get(String(target_id));
-            if (!row || row.entry_status !== entry_status || row.entry_status_changed_at !== changed_at || row.last_checked_at !== last_checked_at || row.status !== 'active') return { meta: { changes: 0 } };
+            if (query.includes('lease_until=?')) {
+              if (!row || !row.enabled || row.lease_until !== entry_status) return { meta: { changes: 0 } };
+            } else if (!row || row.entry_status !== entry_status || row.entry_status_changed_at !== changed_at || row.last_checked_at !== last_checked_at || row.status !== 'active') return { meta: { changes: 0 } };
             const duplicate = [...db.events.values()].some((event) => event.watch_target_id === watch_target_id && event.event_type === event_type && event.content_hash === content_hash);
             if (duplicate) return { meta: { changes: 0 } };
             db.writes += 1;
@@ -84,6 +87,7 @@ class MemoryD1 {
           Object.assign(row, {
             status: 'active', last_checked_at, last_success_at, last_http_status, last_error: null,
             health_status: 'healthy', health_checked_at, health_detail: null, detected_company_name,
+            transient_failure_count: 0, health_failure_run_id: null, health_alerted_at: null,
             entry_status, entry_status_changed_at: changed || !row.entry_status_changed_at ? checkedAt : row.entry_status_changed_at,
             entry_last_checked_at, entry_url, entry_signal, lease_until: null, updated_at,
           });
@@ -94,15 +98,15 @@ class MemoryD1 {
           const row = db.targets.get(id);
           if (!row || row.lease_until !== lease_until || !row.enabled) return { meta: { changes: 0 } };
           db.writes += 1;
-          Object.assign(row, { status, last_checked_at, last_success_at, last_http_status, last_hash, last_error, snapshot, snapshot_url, snapshot_source_type, health_status, health_checked_at, health_detail, detected_company_name, updated_at, lease_until: null });
+          Object.assign(row, { status, last_checked_at, last_success_at, last_http_status, last_hash, last_error, snapshot, snapshot_url, snapshot_source_type, health_status, health_checked_at, health_detail, detected_company_name, updated_at, lease_until: null, transient_failure_count: 0, health_failure_run_id: null, health_alerted_at: null });
           return { meta: { changes: 1 } };
         }
-        if (query.startsWith("UPDATE watch_targets SET status='error',last_checked_at=?")) {
-          const [last_checked_at, last_http_status, last_error, health_status, health_checked_at, health_detail, detected_company_name, updated_at, id, lease_until] = values as [string, number | null, string, StoredTarget['health_status'], string, string, string | null, string, string, string];
+        if (query.startsWith("UPDATE watch_targets SET status='error',last_checked_at=?") && query.includes('health_status=?')) {
+          const [last_checked_at, last_http_status, last_error, health_status, health_checked_at, health_detail, detected_company_name, transient_failure_count, health_failure_run_id, health_alerted_at, updated_at, id, lease_until] = values as [string, number | null, string, StoredTarget['health_status'], string, string, string | null, number, string | null, string | null, string, string, string];
           const row = db.targets.get(id);
           if (!row || row.lease_until !== lease_until || !row.enabled) return { meta: { changes: 0 } };
           db.writes += 1;
-          Object.assign(row, { status: 'error', last_checked_at, last_http_status, last_error, health_status, health_checked_at, health_detail, detected_company_name, updated_at, lease_until: null });
+          Object.assign(row, { status: 'error', last_checked_at, last_http_status, last_error, health_status, health_checked_at, health_detail, detected_company_name, transient_failure_count, health_failure_run_id, health_alerted_at, updated_at, lease_until: null });
           return { meta: { changes: 1 } };
         }
         if (query.startsWith("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error='EVENT_WRITE_FAILED'")) {
@@ -127,6 +131,20 @@ class MemoryD1 {
           if (!row) return { meta: { changes: 0 } };
           db.writes += 1;
           Object.assign(row, { enabled, status, label, updated_at, lease_until: null, last_error: null, last_http_status: null });
+          return { meta: { changes: 1 } };
+        }
+        if (query.startsWith('UPDATE watch_targets SET status=?,lease_until=NULL')) {
+          const [status, id, lease] = values;
+          const row = db.targets.get(String(id));
+          if (!row || !row.enabled || row.lease_until !== lease) return { meta: { changes: 0 } };
+          Object.assign(row, { status, lease_until: null });
+          return { meta: { changes: 1 } };
+        }
+        if (query.startsWith("UPDATE watch_targets SET status='active',health_status='healthy'")) {
+          const [health_checked_at, id, lease] = values;
+          const row = db.targets.get(String(id));
+          if (!row || !row.enabled || row.lease_until !== lease) return { meta: { changes: 0 } };
+          Object.assign(row, { status: 'active', health_status: 'healthy', health_checked_at, health_detail: null, last_error: null, transient_failure_count: 0, health_failure_run_id: null, health_alerted_at: null, lease_until: null });
           return { meta: { changes: 1 } };
         }
         throw new Error(`Unsupported UPDATE/INSERT: ${query}`);
@@ -160,6 +178,26 @@ function officialHtml(companyName: string, holiday: string) {
   return `<html><body><main><h1>${companyName}</h1><section><h2>募集要項</h2><p>年間休日${holiday}</p><p>募集職種はシステムエンジニアです。</p><p>応募資格、勤務地、初任給、福利厚生を掲載しています。</p></section></main></body></html>`;
 }
 
+const mixiListUrl = 'https://mixigroup-recruit.mixi.co.jp/jobs/?cats=new-graduate&tags=';
+const mixiJobUrl = 'https://mixigroup-recruit.mixi.co.jp/recruitment-category/new-graduate/14426/';
+const aimingHrmosUrl = 'https://hrmos.co/pages/aiming/jobs/2210232845074915332';
+
+function mixiListingHtml() {
+  return `<html><head><link rel="https://api.w.org/" href="https://mixigroup-recruit.mixi.co.jp/wp-json/"></head><body><script>mixiObj.catSlugToIdConversionTable = JSON.parse('{"new-graduate":113}');</script><main><p class="no-result" style="display:none">募集が見つかりませんでした。</p></main></body></html>`;
+}
+
+function mixiApiPosts(title = '【2028年】【エンジニア職】MIXI新卒採用') {
+  return [{ id: 14426, status: 'publish', title: { rendered: title }, link: mixiJobUrl, categories: [113, 118] }];
+}
+
+function mixiJobHtml(extraDetail = '') {
+  return `<html><head><title>【2028年】【エンジニア職】MIXI新卒採用 - MIXI GROUP RECRUIT</title></head><body><header>共通ナビ</header><div id="content"><h1>【2028年】【エンジニア職】MIXI新卒採用</h1><div class="wrapper ml"><h2>概要</h2><dl><dt>採用メッセージ</dt><dd>2027年10月または2028年4月入社予定のエンジニア採用です。</dd></dl><h2>募集内容</h2><dl><dt>職務内容</dt><dd>MIXIのゲームやWebサービスを開発し、インフラ・SRE・データ基盤の業務にも携わります。${extraDetail}</dd></dl><h2>応募条件</h2><dl><dt>必須要件</dt><dd>ソフトウェア開発経験があり、2028年に入社可能な方。</dd></dl></div><a href="https://mixi-recruit.snar.jp/entry.aspx?entryid=public-entry">エントリーする</a></div></body></html>`;
+}
+
+function aimingHrmosHtml(companyName = '株式会社Aiming', extraDetail = '') {
+  return `<html><head><title>[28卒]インフラエンジニア | ${companyName}</title><link rel="canonical" href="${aimingHrmosUrl}"></head><body><main><h1>[28卒]インフラエンジニア</h1><article class="pg-body"><section class="pg-markdown"><blockquote><p>具体的な仕事内容</p></blockquote><p>ゲームサーバのクラウド選定、システム設計、構築、運用管理、セキュリティ対応を担当します。社内インフラ整備と開発環境の運用も行います。${extraDetail}</p></section><section class="pg-descriptions"><table><tr><th>職種 / 募集ポジション</th><td>[28卒]インフラエンジニア</td></tr><tr><th>応募資格</th><td>2028年3月卒業者</td></tr></table></section><section class="pg-apply-box"><a class="jsc-apply-trigger" href="${aimingHrmosUrl}/apply">応募する</a></section></article><section class="pg-descriptions"><table><caption>会社情報</caption><tr><th>会社名</th><td>${companyName}</td></tr></table></section></main></body></html>`;
+}
+
 function setFetchPage(page: (url: string) => Response | Promise<Response>) {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input) => {
@@ -182,6 +220,138 @@ function target(overrides: Partial<StoredTarget> = {}): StoredTarget {
     ...overrides,
   };
 }
+
+test('a transient 503 retries successfully without a health notification', async () => {
+  const db = new MemoryD1(); const row = target(); db.targets.set(row.id, row);
+  let attempts = 0;
+  const restore = setFetchPage(() => ++attempts === 1 ? new Response('', { status: 503 }) : new Response(mynaviHtml('(株)Aiming'), { headers: { 'content-type': 'text/html' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(attempts, 2); assert.equal(row.health_status, 'healthy'); assert.equal(db.events.size, 0);
+  } finally { restore(); }
+});
+
+test('two natural failures alert once; ongoing failure is silent; recovery permits a new incident', async () => {
+  const db = new MemoryD1(); const row = target(); db.targets.set(row.id, row);
+  let fail = true;
+  const restore = setFetchPage(() => fail ? new Response('', { status: 503, headers: { 'retry-after': '60' } }) : new Response(mynaviHtml('(株)Aiming'), { headers: { 'content-type': 'text/html' } }));
+  try {
+    await scheduled(envFor(db)); assert.equal(db.events.size, 0); assert.equal(row.transient_failure_count, 1); assert.equal(row.last_http_status, 503);
+    await scheduled(envFor(db)); assert.equal(db.events.size, 1); assert.equal(row.transient_failure_count, 2);
+    await scheduled(envFor(db)); assert.equal(db.events.size, 1);
+    fail = false; await scheduled(envFor(db)); assert.equal(row.transient_failure_count, 0); assert.equal(row.health_alerted_at, null);
+    fail = true; await scheduled(envFor(db)); assert.equal(db.events.size, 1);
+    await scheduled(envFor(db)); assert.equal(db.events.size, 2);
+  } finally { restore(); }
+});
+
+test('retries and manual checks cannot count as additional natural rounds', async () => {
+  const db = new MemoryD1(); const row = target(); db.targets.set(row.id, row);
+  const restore = setFetchPage(() => new Response('', { status: 503, headers: { 'retry-after': '60' } }));
+  try {
+    await checkTarget(envFor(db), { ...row }); assert.equal(row.transient_failure_count, 0); assert.equal(db.events.size, 0);
+    const budget = runBudget();
+    await checkTarget(envFor(db), { ...row }, undefined, undefined, 'same-run', false, new SourceTrace(row, 'same-run', budget, true));
+    await checkTarget(envFor(db), { ...row }, undefined, undefined, 'same-run', false, new SourceTrace(row, 'same-run', budget, true));
+    assert.equal(row.transient_failure_count, 1); assert.equal(db.events.size, 0);
+    await scheduled(envFor(db)); assert.equal(db.events.size, 1);
+  } finally { restore(); }
+});
+
+for (const changed of [false, true]) test(`valid official baseline survives failure and recovery (${changed ? 'changed, one update' : 'unchanged, silent'})`, async () => {
+  const db = new MemoryD1(); const url = 'https://example.com/recruit/';
+  const row = target({ id: 'official', source_type: 'official', url, normalized_url: url, snapshot: null, snapshot_url: null, snapshot_source_type: null, last_hash: null }); db.targets.set(row.id, row);
+  let fail = false; let holiday = '124日';
+  const restore = setFetchPage(() => fail ? new Response('', { status: 503, headers: { 'retry-after': '60' } }) : new Response(officialHtml('株式会社Aiming', holiday), { headers: { 'content-type': 'text/html' } }));
+  try {
+    await scheduled(envFor(db)); const baseline = row.snapshot; const hash = row.last_hash; const lastSuccess = row.last_success_at;
+    assert.ok(baseline); assert.equal(db.events.size, 0);
+    fail = true; await scheduled(envFor(db));
+    assert.equal(row.snapshot, baseline); assert.equal(row.last_hash, hash); assert.equal(row.last_success_at, lastSuccess);
+    fail = false; if (changed) holiday = '130日';
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, changed ? 1 : 0); assert.equal(row.health_status, 'healthy');
+    await scheduled(envFor(db)); assert.equal(db.events.size, changed ? 1 : 0);
+  } finally { restore(); }
+});
+
+test('a parseable but empty compatible snapshot is silently replaced, not diffed', async () => {
+  const db = new MemoryD1(); const url = 'https://example.com/recruit/';
+  const row = target({ source_type: 'official', url, normalized_url: url, snapshot: null, snapshot_url: url, snapshot_source_type: 'official' }); db.targets.set(row.id, row);
+  const restore = setFetchPage(() => new Response(officialHtml('株式会社Aiming', '124日'), { headers: { 'content-type': 'text/html' } }));
+  try {
+    await scheduled(envFor(db));
+    const invalid = JSON.parse(row.snapshot!); invalid.sections = [{ label: '募集要項', selector: 'main', scope: 'company', lines: ['募集が見つかりませんでした'], meaningfulLines: [] }];
+    row.snapshot = JSON.stringify(invalid); row.health_status = 'extraction_failed';
+    await scheduled(envFor(db)); assert.equal(db.events.size, 0); assert.match(row.snapshot!, /年間休日124日/);
+  } finally { restore(); }
+});
+
+test('MyNavi sustained open and failure-to-open recovery never emit a reopened event', async () => {
+  const db = new MemoryD1(); const row = target({ entry_status: 'open', entry_url: 'https://job.mynavi.jp/entry' }); db.targets.set(row.id, row);
+  let fail = false;
+  const restore = setFetchPage(() => fail ? new Response('', { status: 503, headers: { 'retry-after': '60' } }) : new Response(mynaviHtml('(株)Aiming', '年間休日124日', '(株)サクセス', '<a href="/entry">エントリー</a>'), { headers: { 'content-type': 'text/html' } }));
+  try {
+    await scheduled(envFor(db)); fail = true; await scheduled(envFor(db)); assert.equal(row.entry_status, 'open');
+    fail = false; await scheduled(envFor(db)); await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'open'); assert.equal(db.events.size, 0);
+  } finally { restore(); }
+});
+
+test('a source persistence exception does not interrupt other sources', async () => {
+  const db = new MemoryD1(); const bad = target({ id: 'broken' }); const good = target({ id: 'good', company_id: 'good' });
+  db.targets.set(bad.id, bad); db.targets.set(good.id, good);
+  const prepare = db.prepare.bind(db);
+  db.prepare = (sql: string) => {
+    const statement = prepare(sql);
+    if (sql.startsWith("UPDATE watch_targets SET status='checking'")) {
+      const bind = statement.bind.bind(statement);
+      statement.bind = (...args: unknown[]) => { bind(...args); if (args[2] === 'broken') statement.run = async () => { throw new Error('SECRET_DATABASE_EXCEPTION'); }; return statement; };
+    }
+    return statement;
+  };
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming'), { headers: { 'content-type': 'text/html' } }));
+  try {
+    await assert.rejects(scheduled(envFor(db)), /WATCH_RUN_INCOMPLETE/);
+    assert.equal(good.health_status, 'healthy'); assert.equal(good.status, 'active'); assert.equal(good.entry_status, 'unavailable');
+  } finally { restore(); }
+});
+
+test('MIXI downstream API failure records its actual 503, not the listing HTTP 200', async () => {
+  const db = new MemoryD1(); const row = target({ company_name: '株式会社MIXI', source_type: 'official', url: mixiListUrl, normalized_url: mixiListUrl }); db.targets.set(row.id, row);
+  const restore = setFetchPage((url) => url.includes('/wp-json/') ? new Response('', { status: 503, headers: { 'retry-after': '60' } }) : new Response(mixiListingHtml(), { headers: { 'content-type': 'text/html' } }));
+  try { await scheduled(envFor(db)); assert.equal(row.last_http_status, 503); assert.equal(row.health_detail, 'HTTP_503'); assert.equal(db.events.size, 0); }
+  finally { restore(); }
+});
+
+test('execution budget exhaustion is deferred without changing source health, snapshot or checked time', async () => {
+  const db = new MemoryD1(); const row = target(); db.targets.set(row.id, row);
+  const before = { ...row };
+  await checkTarget(envFor(db), { ...row }, undefined, undefined, 'budget-run', false, new SourceTrace(row, 'budget-run', runBudget(-1), true));
+  assert.equal(row.health_status, before.health_status); assert.equal(row.last_checked_at, before.last_checked_at);
+  assert.equal(row.snapshot, before.snapshot); assert.equal(row.last_hash, before.last_hash); assert.equal(row.lease_until, null); assert.equal(db.events.size, 0);
+});
+
+test('a manual health-only recovery preserves the baseline for the next natural comparison', async () => {
+  const db = new MemoryD1(); const url = 'https://example.com/recruit/';
+  const row = target({ source_type: 'official', url, normalized_url: url, snapshot: null, snapshot_url: null, snapshot_source_type: null }); db.targets.set(row.id, row);
+  let holiday = '124日';
+  const restore = setFetchPage(() => new Response(officialHtml('株式会社Aiming', holiday), { headers: { 'content-type': 'text/html' } }));
+  try {
+    await scheduled(envFor(db)); const before = row.snapshot;
+    row.health_status = 'unreachable'; row.health_detail = 'HTTP_503'; row.transient_failure_count = 1; holiday = '130日';
+    await checkTarget(envFor(db), { ...row }, undefined, undefined, 'manual', true);
+    assert.equal(row.snapshot, before); assert.equal(row.health_status, 'healthy'); assert.equal(db.events.size, 0);
+    await scheduled(envFor(db)); assert.equal(db.events.size, 1);
+  } finally { restore(); }
+});
+
+test('a confirmed HTTP 404 after a temporary 503 alerts immediately despite the same unreachable health class', async () => {
+  const db = new MemoryD1(); const row = target({ health_status: 'unreachable', health_detail: 'HTTP_503', transient_failure_count: 1 }); db.targets.set(row.id, row);
+  const restore = setFetchPage(() => new Response('', { status: 404 }));
+  try { await scheduled(envFor(db)); assert.equal(row.health_detail, 'HTTP_404'); assert.equal(db.events.size, 1); }
+  finally { restore(); }
+});
 
 test('Aiming preflight blocks the Eighting MyNavi URL without writing; explicit confirmation records a separate health issue', async () => {
   const db = new MemoryD1();
@@ -386,6 +556,128 @@ test('official sources retain ordinary recruitment-diff notifications', async ()
     await scheduled(envFor(db));
     assert.equal(db.events.size, 1);
     assert.equal([...db.events.values()][0].event_type, 'job_info_updated');
+  } finally { restore(); }
+});
+
+test('Aiming HRMOS recovery silently rebuilds its baseline, then reports only a real job-body change once', async () => {
+  const db = new MemoryD1();
+  const oldSnapshot = '旧形式の有効な求人内容。募集要項と応募資格を含む。';
+  const row = target({
+    id: 'aiming-hrmos', company_name: '株式会社Aiming', source_type: 'official', url: aimingHrmosUrl, normalized_url: aimingHrmosUrl,
+    health_status: 'extraction_failed', health_detail: 'INSUFFICIENT_PUBLIC_CONTENT', detected_company_name: '株式会社Aiming',
+    snapshot: oldSnapshot, snapshot_url: aimingHrmosUrl, snapshot_source_type: 'official', last_hash: 'previous-valid-hash',
+  });
+  db.targets.set(row.id, row);
+  let extraDetail = '';
+  const restore = setFetchPage((url) => new Response(aimingHrmosHtml('株式会社Aiming', extraDetail), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(row.health_status, 'healthy');
+    assert.equal(row.detected_company_name, '株式会社Aiming');
+    assert.equal(JSON.parse(row.snapshot!).adapter, 'hrmos-job-v1');
+    assert.match(row.snapshot!, /応募ページ/);
+    assert.deepEqual([...db.events.values()], [], 'first valid extraction after failure is a silent baseline, not a recruitment update');
+
+    await scheduled(envFor(db));
+    assert.deepEqual([...db.events.values()], [], 'an unchanged job body does not notify');
+    extraDetail = '新たにクラウド基盤の改善業務を担当します。';
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1);
+    assert.equal([...db.events.values()][0].event_type, 'job_info_updated');
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1, 'the same content change cannot generate a duplicate');
+  } finally { restore(); }
+});
+
+test('MIXI official API recovery silently baselines the 2028 job and later details changes notify once', async () => {
+  const db = new MemoryD1();
+  const oldSnapshot = '募集が見つかりませんでした。条件を変更して再度お試しください。';
+  const row = target({
+    id: 'mixi-official', company_name: '株式会社MIXI', source_type: 'official', url: mixiListUrl, normalized_url: mixiListUrl,
+    health_status: 'extraction_failed', health_detail: 'INSUFFICIENT_PUBLIC_CONTENT', detected_company_name: 'MIXI GROUP',
+    snapshot: oldSnapshot, snapshot_url: mixiListUrl, snapshot_source_type: 'official', last_hash: 'empty-page-hash',
+  });
+  db.targets.set(row.id, row);
+  let extraDetail = '';
+  const restore = setFetchPage((url) => {
+    if (url.includes('/wp-json/wp_query/args/')) return new Response(JSON.stringify(mixiApiPosts()), { headers: { 'content-type': 'application/json; charset=UTF-8' } });
+    if (url === mixiJobUrl) return new Response(mixiJobHtml(extraDetail), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    if (url === mixiListUrl) return new Response(mixiListingHtml(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    throw new Error(`Unexpected test request: ${url}`);
+  });
+  try {
+    await scheduled(envFor(db));
+    assert.equal(row.health_status, 'healthy');
+    assert.equal(row.detected_company_name, '株式会社MIXI');
+    assert.equal(JSON.parse(row.snapshot!).adapter, 'mixi-wp-json-v1');
+    assert.match(row.snapshot!, /2028年/);
+    assert.match(row.snapshot!, /mixi-recruit\.snar\.jp\/entry\.aspx/);
+    assert.deepEqual([...db.events.values()], [], 'an extraction recovery does not claim a historical opening date or notify');
+
+    await scheduled(envFor(db));
+    assert.deepEqual([...db.events.values()], [], 'the same official job post stays silent');
+    extraDetail = '追加募集内容: 大規模サービスの信頼性改善も担当します。';
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1);
+    assert.equal([...db.events.values()][0].event_type, 'job_info_updated');
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1, 'unchanged API and detail content do not repeat the update event');
+  } finally { restore(); }
+});
+
+test('invalid MIXI list data and Aiming identity mismatch never replace a previously stored snapshot', async () => {
+  const db = new MemoryD1();
+  const mixiOldSnapshot = 'MIXI以前に確認できた有効な募集内容';
+  const mixiRow = target({
+    id: 'mixi-invalid', company_name: '株式会社MIXI', source_type: 'official', url: mixiListUrl, normalized_url: mixiListUrl,
+    health_status: 'extraction_failed', health_detail: 'INSUFFICIENT_PUBLIC_CONTENT', snapshot: mixiOldSnapshot,
+    snapshot_url: mixiListUrl, snapshot_source_type: 'official', last_hash: 'mixi-old-hash',
+  });
+  const aimingOldSnapshot = 'Aiming以前に確認できた有効な募集内容';
+  const aimingRow = target({
+    id: 'aiming-mismatch', company_name: '株式会社Aiming', source_type: 'official', url: aimingHrmosUrl, normalized_url: aimingHrmosUrl,
+    health_status: 'extraction_failed', health_detail: 'INSUFFICIENT_PUBLIC_CONTENT', snapshot: aimingOldSnapshot,
+    snapshot_url: aimingHrmosUrl, snapshot_source_type: 'official', last_hash: 'aiming-old-hash',
+  });
+  db.targets.set(mixiRow.id, mixiRow);
+  db.targets.set(aimingRow.id, aimingRow);
+  const restore = setFetchPage((url) => {
+    if (url.includes('/wp-json/wp_query/args/')) return new Response(JSON.stringify([]), { headers: { 'content-type': 'application/json; charset=UTF-8' } });
+    if (url === mixiListUrl) return new Response(mixiListingHtml(), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    if (url === aimingHrmosUrl) return new Response(aimingHrmosHtml('(株)エイティング'), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    throw new Error(`Unexpected test request: ${url}`);
+  });
+  try {
+    await scheduled(envFor(db));
+    assert.equal(mixiRow.health_status, 'extraction_failed');
+    assert.equal(mixiRow.snapshot, mixiOldSnapshot);
+    assert.equal(mixiRow.last_hash, 'mixi-old-hash');
+    assert.equal(aimingRow.health_status, 'identity_mismatch');
+    assert.equal(aimingRow.detected_company_name, '(株)エイティング');
+    assert.equal(aimingRow.snapshot, aimingOldSnapshot);
+    assert.equal(aimingRow.last_hash, 'aiming-old-hash');
+    assert.ok(![...db.events.values()].some((event) => ['job_info_updated', 'other_recruitment_update'].includes(String(event.event_type))));
+  } finally { restore(); }
+});
+
+test('an HTTP failure for an official recruitment page preserves its previous snapshot and success time', async () => {
+  const db = new MemoryD1();
+  const oldSnapshot = '以前の有効なAiming求人スナップショット';
+  const oldSuccessAt = '2026-09-28T00:18:11.739Z';
+  const row = target({
+    id: 'aiming-unreachable', company_name: '株式会社Aiming', source_type: 'official', url: aimingHrmosUrl, normalized_url: aimingHrmosUrl,
+    health_status: 'extraction_failed', health_detail: 'INSUFFICIENT_PUBLIC_CONTENT', snapshot: oldSnapshot,
+    snapshot_url: aimingHrmosUrl, snapshot_source_type: 'official', last_hash: 'old-hash', last_success_at: oldSuccessAt,
+  });
+  db.targets.set(row.id, row);
+  const restore = setFetchPage(() => new Response('temporarily unavailable', { status: 503, headers: { 'content-type': 'text/plain' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(row.health_status, 'unreachable');
+    assert.equal(row.snapshot, oldSnapshot);
+    assert.equal(row.last_hash, 'old-hash');
+    assert.equal(row.last_success_at, oldSuccessAt);
+    assert.ok(![...db.events.values()].some((event) => ['job_info_updated', 'other_recruitment_update'].includes(String(event.event_type))));
   } finally { restore(); }
 });
 

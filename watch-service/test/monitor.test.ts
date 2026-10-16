@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyChange, classifyFetchFailure, compareSnapshots, detectMeaningfulChange, detectMynaviEntryStatus, evaluateIdentity, extractMeaningfulText, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, matchesCompanyIdentity, normalizeUrl, robotsDecision, serializeSnapshot } from '../src/monitor';
+import { classifyChange, classifyFetchFailure, compareSnapshots, detectMeaningfulChange, detectMynaviEntryStatus, evaluateIdentity, extractMeaningfulText, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, matchesCompanyIdentity, normalizeUrl, parseMixiNewGraduatePosts, robotsDecision, serializeSnapshot } from '../src/monitor';
 
 const mynaviUrl = 'https://job.mynavi.jp/28/pc/corpinfo/displayPrevEmployment/index/?corpId=292189&recruitingCourseId=27052359';
 
@@ -121,8 +121,8 @@ test('does not turn a transient robots response failure into permission to crawl
   const url = 'https://job.mynavi.jp/28/pc/corpinfo/displayPrevEmployment/index/?corpId=292189&recruitingCourseId=27052359';
   try {
     await assert.rejects(fetchPage(url), /ROBOTS_DISALLOWED/);
-    await assert.rejects(fetchPage(url), /ROBOTS_POLICY_UNVERIFIABLE/);
-    assert.equal(robotsAttempt, 2);
+    await assert.rejects(fetchPage(url), /HTTP_503/);
+    assert.equal(robotsAttempt, 3, 'a failed robots request is retried once, without permission to crawl');
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -315,6 +315,57 @@ test('generic recruitment headings with qualifiers are not treated as company id
   assert.equal(result.identityMatched, null);
   assert.equal(result.detectedCompanyName, null);
   assert.notEqual(evaluateIdentity(result), 'identity_mismatch');
+});
+
+test('MIXI adapter selects only the published 2028 new-graduate post returned by its official category map', () => {
+  const listing = `<script>mixiObj.catSlugToIdConversionTable = JSON.parse('{"new-graduate":113,"career":112}');</script>`;
+  const selected = parseMixiNewGraduatePosts(listing, [
+    { id: 14426, status: 'publish', title: { rendered: '【2028年】【エンジニア職】MIXI新卒採用' }, link: 'https://mixigroup-recruit.mixi.co.jp/recruitment-category/new-graduate/14426/', categories: [113, 118] },
+    { id: 14300, status: 'publish', title: { rendered: '【2028年】別会社の新卒採用' }, link: 'https://mixigroup-recruit.mixi.co.jp/recruitment-category/new-graduate/14300/', categories: [113] },
+    { id: 14200, status: 'publish', title: { rendered: '【2027年】MIXI新卒採用' }, link: 'https://mixigroup-recruit.mixi.co.jp/recruitment-category/new-graduate/14200/', categories: [113] },
+    { id: 14100, status: 'publish', title: { rendered: '【2028年】MIXI新卒採用' }, link: 'https://mixigroup-recruit.mixi.co.jp/recruitment-category/career/14100/', categories: [112] },
+  ]);
+  assert.deepEqual(selected, [{ id: 14426, title: '【2028年】【エンジニア職】MIXI新卒採用', url: 'https://mixigroup-recruit.mixi.co.jp/recruitment-category/new-graduate/14426/' }]);
+  assert.throws(() => parseMixiNewGraduatePosts(listing, { message: 'navigation shell' }), /MIXI_API_INVALID_RESPONSE/);
+  assert.throws(() => parseMixiNewGraduatePosts(listing, [{ id: 1, status: 'publish', title: { rendered: '【2028年】MIXI新卒採用' }, link: 'https://other.example/job', categories: [113] }]), /MIXI_JOB_LINK_INVALID/);
+});
+
+test('MIXI detail adapter extracts the 2028 job, application link, and only its own detail sections', () => {
+  const url = 'https://mixigroup-recruit.mixi.co.jp/recruitment-category/new-graduate/14426/';
+  const html = `<html><head><title>【2028年】【エンジニア職】MIXI新卒採用 - MIXI GROUP RECRUIT</title></head><body><header><a>キャリア採用</a></header><div id="content"><h1>【2028年】【エンジニア職】MIXI新卒採用</h1><div class="wrapper ml"><h2>概要</h2><dl><dt>採用メッセージ</dt><dd>2028年4月入社予定のエンジニア職採用選考です。</dd></dl><h2>募集内容</h2><dl><dt>職務内容</dt><dd>MIXIのサービス開発およびインフラ業務を担当します。応募資格と勤務地を公開しています。</dd></dl><h2>応募条件</h2><dl><dt>必須要件</dt><dd>2028年4月に入社可能な方。</dd></dl></div><a href="https://mixi-recruit.snar.jp/entry.aspx?entryid=public-id">エントリーする</a><aside><h2>おすすめ企業</h2><p>他社募集情報</p></aside></div></body></html>`;
+  const result = inspectRecruitmentContent(html, 'official', url, '株式会社MIXI');
+  assert.equal(result.valid, true);
+  assert.equal(result.identityMatched, true);
+  assert.equal(result.detectedCompanyName, '株式会社MIXI');
+  assert.match(result.text, /2028年/);
+  assert.match(result.text, /職務内容/);
+  assert.match(result.text, /mixi-recruit\.snar\.jp\/entry\.aspx/);
+  assert.doesNotMatch(result.text, /おすすめ企業|他社募集情報|キャリア採用/);
+
+  const empty = inspectRecruitmentContent('<html><body><nav>募集職種一覧 新卒採用</nav><p>募集が見つかりませんでした。</p></body></html>', 'official', url, '株式会社MIXI');
+  assert.equal(empty.valid, false);
+  assert.equal(evaluateIdentity(empty), 'extraction_failed');
+});
+
+test('HRMOS adapter reads server-rendered job body, company identity, canonical and same-job apply route', () => {
+  const url = 'https://hrmos.co/pages/aiming/jobs/2210232845074915332';
+  const html = `<html><head><title>[28卒]インフラエンジニア | 株式会社Aiming</title><link rel="canonical" href="${url}"></head><body><main><h1>[28卒]インフラエンジニア</h1><article class="pg-body"><section class="pg-markdown"><blockquote><p>具体的な仕事内容</p></blockquote><p>ゲームサーバのクラウド選定、システム設計、構築、運用管理、セキュリティ対応を担当します。社内インフラ整備や開発環境の運用も行います。</p></section><section class="pg-descriptions"><table><tr><th>職種 / 募集ポジション</th><td>[28卒]インフラエンジニア</td></tr><tr><th>応募資格</th><td>2028年3月卒業者</td></tr></table></section><section class="pg-apply-box"><a class="jsc-apply-trigger" href="${url}/apply">応募する</a></section></article><section class="pg-descriptions"><table><caption>会社情報</caption><tr><th>会社名</th><td>株式会社Aiming</td></tr></table></section><section class="pg-related-jobs"><h2>株式会社Aiming の求人</h2><p>関連求人の別情報</p></section></main></body></html>`;
+  const result = inspectRecruitmentContent(html, 'official', url, '株式会社Aiming');
+  assert.equal(result.valid, true);
+  assert.equal(result.identityMatched, true);
+  assert.equal(result.detectedCompanyName, '株式会社Aiming');
+  assert.match(result.text, /28卒\]インフラエンジニア/);
+  assert.match(result.text, /クラウド選定/);
+  assert.match(result.text, /2028年3月卒業者/);
+  assert.match(result.text, /\/jobs\/2210232845074915332\/apply/);
+  assert.doesNotMatch(result.text, /関連求人の別情報/);
+
+  const empty = inspectRecruitmentContent('<html><body><nav>求人一覧 ログイン</nav></body></html>', 'official', url, '株式会社Aiming');
+  assert.equal(empty.valid, false);
+  assert.equal(evaluateIdentity(empty), 'extraction_failed');
+  const mismatch = inspectRecruitmentContent(html.replace('<td>株式会社Aiming</td>', '<td>株式会社エイティング</td>'), 'official', url, '株式会社Aiming');
+  assert.equal(mismatch.identityMatched, false);
+  assert.equal(evaluateIdentity(mismatch), 'identity_mismatch');
 });
 
 test('TEST 8: missing, legacy, and extractor-incompatible snapshots silently establish a new baseline', () => {

@@ -1,6 +1,7 @@
-import { classifyChange, classifyFetchFailure, compareSnapshots, detectMynaviEntryStatus, evaluateIdentity, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, normalizeUrl, redactDiagnosticLine, serializeSnapshot, sha256 } from './monitor';
-import type { RecruitmentAnalysis, SharedChangeCandidate, SnapshotChange } from './monitor';
+import { classifyChange, classifyFetchFailure, compareSnapshots, detectMynaviEntryStatus, evaluateIdentity, fetchMixiRecruitmentPosts, fetchPage, findPlatformSharedChanges, hasCompatibleSnapshot, inspectRecruitmentContent, isMixiRecruitmentListingUrl, normalizeUrl, parseMixiNewGraduatePosts, serializeSnapshot, sha256 } from './monitor';
+import type { MixiRecruitmentPost, RecruitmentAnalysis, SharedChangeCandidate, SnapshotChange } from './monitor';
 import type { Env, EventType, MynaviEntryStatus, SourceHealthStatus, SourceType, TargetRow } from './types';
+import { CheckError, SourceTrace, checkError, runBudget } from './reliability';
 
 const json = (body: unknown, status = 200, origin = '*') => new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': origin, 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS', vary: 'Origin' } });
 
@@ -45,6 +46,7 @@ type PendingEvent = {
 };
 
 type PendingCheck = {
+  trace: SourceTrace;
   target: TargetRow;
   lease: string;
   checkedAt: string;
@@ -76,21 +78,43 @@ type SourceInspection = {
   html: string;
 };
 
-function safeDiagnosticUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    return `${url.origin}${url.pathname}`;
-  } catch {
-    return '[invalid-url]';
-  }
-}
-
-async function inspectSource(target: Pick<TargetRow, 'url' | 'source_type' | 'company_name'>): Promise<SourceInspection | { healthStatus: SourceHealthStatus; healthDetail: string; detectedCompanyName: null; fetchedUrl: string; httpStatus: number | null }> {
+async function inspectSource(target: Pick<TargetRow, 'url' | 'source_type' | 'company_name'>, trace = new SourceTrace({ id: 'inspection', company_id: 'inspection', source_type: target.source_type }, crypto.randomUUID())): Promise<SourceInspection | { healthStatus: SourceHealthStatus; healthDetail: string; detectedCompanyName: null; fetchedUrl: string; httpStatus: number | null; transient?: boolean; internal?: boolean }> {
   let httpStatus: number | null = null;
+  const analyze = (html: string, url: string) => {
+    trace.stage = 'extraction';
+    const started = Date.now();
+    try { return inspectRecruitmentContent(html, target.source_type, url, target.company_name); }
+    finally { trace.extractionMs += Date.now() - started; trace.log('source_stage'); }
+  };
   try {
-    const fetched = await fetchPage(target.url);
+    const fetched = await fetchPage(target.url, trace);
     httpStatus = fetched.status;
-    const analysis = inspectRecruitmentContent(fetched.html, target.source_type, fetched.url, target.company_name);
+    let analysis: RecruitmentAnalysis;
+    if (target.source_type === 'official' && isMixiRecruitmentListingUrl(fetched.url)) {
+      const payload = await fetchMixiRecruitmentPosts(fetched.url, trace);
+      trace.stage = 'extraction';
+      const extractionStarted = Date.now();
+      const posts = parseMixiNewGraduatePosts(fetched.html, payload);
+      trace.extractionMs += Date.now() - extractionStarted;
+      if (!posts.length) throw new Error('INSUFFICIENT_PUBLIC_CONTENT');
+      if (posts.length > 12) throw new Error('MIXI_JOB_COUNT_LIMIT');
+      const details = [];
+      for (const post of posts) {
+        trace.stage = 'fetch';
+        const page = await fetchPage(post.url, trace);
+        details.push({ post, page, analysis: analyze(page.html, page.url) });
+      }
+      const failed = details.find(({ analysis: detailAnalysis }) => evaluateIdentity(detailAnalysis) || !detailAnalysis.valid);
+      if (failed) {
+        analysis = failed.analysis;
+        httpStatus = failed.page.status;
+      } else {
+        analysis = combineMixiJobAnalyses(details);
+      }
+    } else {
+      analysis = analyze(fetched.html, fetched.url);
+    }
+    trace.stage = 'identity_validation';
     const healthStatus = evaluateIdentity(analysis) || 'healthy';
     const healthDetail = healthStatus === 'identity_mismatch'
       ? 'IDENTITY_MISMATCH'
@@ -100,11 +124,33 @@ async function inspectSource(target: Pick<TargetRow, 'url' | 'source_type' | 'co
           ? 'INSUFFICIENT_PUBLIC_CONTENT'
           : null;
     const snapshot = serializeSnapshot(analysis);
-    return { healthStatus, healthDetail, detectedCompanyName: analysis.detectedCompanyName, fetchedUrl: fetched.url, httpStatus: fetched.status, analysis, snapshot, hash: await sha256(snapshot), html: fetched.html };
+    if (healthStatus === 'extraction_failed') trace.stage = 'extraction';
+    trace.log('source_stage', { healthStatus, errorCode: healthDetail });
+    return { healthStatus, healthDetail, detectedCompanyName: analysis.detectedCompanyName, fetchedUrl: fetched.url, httpStatus: httpStatus ?? fetched.status, analysis, snapshot, hash: await sha256(snapshot), html: fetched.html };
   } catch (error) {
-    const healthDetail = error instanceof Error ? error.message : 'UNKNOWN_ERROR';
-    return { healthStatus: classifyFetchFailure(healthDetail), healthDetail, detectedCompanyName: null, fetchedUrl: target.url, httpStatus: httpStatus ?? (healthDetail.match(/^HTTP_(\d{3})$/)?.[1] ? Number(healthDetail.slice(5)) : null) };
+    const failure = checkError(error, trace.stage);
+    const healthDetail = failure.code;
+    trace.log('source_stage', { errorCode: healthDetail, httpStatus: failure.httpStatus });
+    return { healthStatus: classifyFetchFailure(healthDetail), healthDetail, detectedCompanyName: null, fetchedUrl: target.url, httpStatus: error instanceof CheckError ? failure.httpStatus : trace.httpStatus ?? httpStatus, transient: failure.transient, internal: healthDetail === 'CHECK_BUDGET_EXHAUSTED' };
   }
+}
+
+function combineMixiJobAnalyses(jobs: Array<{ post: MixiRecruitmentPost; page: { url: string; html: string; status: number }; analysis: RecruitmentAnalysis }>): RecruitmentAnalysis {
+  const sections = jobs.flatMap(({ post, analysis }) => analysis.sections.map((section) => ({
+    ...section,
+    label: `募集要項 / ${post.title} / ${section.label}`,
+    selector: `mixi-post-${post.id}:${section.selector}`,
+  })));
+  const lines = [...new Set(sections.flatMap((section) => section.lines))];
+  const rawLines = jobs.flatMap(({ analysis }) => analysis.rawLines);
+  const ignored = Object.assign({}, ...jobs.map(({ analysis }) => analysis.ignored));
+  return {
+    adapter: 'mixi-wp-json-v1', selector: 'mixi-new-graduate-jobs', rawTextLength: jobs.reduce((sum, job) => sum + job.analysis.rawTextLength, 0),
+    cleanedTextLength: lines.join('\n').length, recruitmentTextLength: jobs.reduce((sum, job) => sum + job.analysis.recruitmentTextLength, 0),
+    highConfidenceLines: [...new Set(jobs.flatMap(({ analysis }) => analysis.highConfidenceLines))],
+    text: lines.join('\n'), sections, excludedSections: jobs.flatMap(({ analysis }) => analysis.excludedSections),
+    identityMatched: true, detectedCompanyName: '株式会社MIXI', rawLines, ignored, valid: jobs.length > 0 && jobs.every(({ analysis }) => analysis.valid),
+  };
 }
 
 function healthNotification(target: TargetRow, status: Exclude<SourceHealthStatus, 'healthy' | 'source_changed'>, detail: string | null, detectedName: string | null) {
@@ -173,57 +219,50 @@ function buildPendingEvent(target: TargetRow, fetchedUrl: string, hash: string, 
   };
 }
 
-function logCheck(check: PendingCheck, decision: string, notificationDiff: unknown = null) {
-  const { target, analysis, event } = check;
-  const change = event?.change;
-  console.info(JSON.stringify({
-    source: 'company-watch-diff',
-    companyId: target.company_id,
-    companyName: target.company_name,
-    monitoredUrl: safeDiagnosticUrl(check.fetchedUrl),
-    hostname: new URL(check.fetchedUrl).hostname,
-    matchedContentSelector: analysis.selector,
-    sectionSelectors: [...new Set(analysis.sections.map((section) => section.selector))],
-    includedSections: analysis.sections.map((section) => ({ heading: section.label, selector: section.selector, normalizedTextLength: section.lines.join('\n').length })),
-    excludedSections: analysis.excludedSections,
-    companyIdentityMatched: analysis.identityMatched,
-    snapshotHash: check.hash,
-    previousSnapshotHash: check.previousSnapshotHash,
-    rawDiff: {
-      added: change?.normalizedAdded.map(redactDiagnosticLine) || [],
-      removed: change?.normalizedRemoved.map(redactDiagnosticLine) || [],
-    },
-    normalizedDiff: {
-      added: change?.added.map((item) => redactDiagnosticLine(item.text)) || [],
-      removed: change?.removed.map((item) => redactDiagnosticLine(item.text)) || [],
-    },
-    ignoredDiff: analysis.ignored,
-    notificationDiff,
-    watchRunId: check.runId,
-    timestamp: check.checkedAt,
-    decision,
-  }));
+function logCheck(check: PendingCheck, decision: string, _notificationDiff: unknown = null) {
+  check.trace.log('source_complete', { decision, healthStatus: check.healthStatus, completed: !decision.endsWith('failed') });
 }
 
-async function markTargetUnhealthy(env: Env, target: TargetRow, lease: string, checkedAt: string, httpStatus: number | null, healthStatus: SourceHealthStatus, detail: string, detectedName: string | null = null) {
-  try { await recordHealthTransition(env, target, healthStatus, detail, detectedName, checkedAt); } catch (error) { console.error('SOURCE_HEALTH_EVENT_WRITE_FAILED', target.id, error); }
-  await env.DB.prepare("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error=?,health_status=?,health_checked_at=?,health_detail=?,detected_company_name=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
-    .bind(checkedAt, httpStatus, detail, healthStatus, checkedAt, detail, detectedName, checkedAt, target.id, lease).run();
+async function markTargetUnhealthy(env: Env, target: TargetRow, lease: string, checkedAt: string, httpStatus: number | null, healthStatus: SourceHealthStatus, detail: string, detectedName: string | null = null, trace?: SourceTrace, transient = false) {
+  const previousTransient = checkError(new Error(target.health_detail || 'NONE')).transient;
+  const natural = Boolean(trace?.natural);
+  const count = transient ? (previousTransient ? target.transient_failure_count || 0 : 0) + (natural && target.health_failure_run_id !== trace?.runId ? 1 : 0) : 0;
+  const notified = previousTransient && transient ? target.health_alerted_at || null : null;
+  let alert = transient ? natural && count >= 2 && !notified : target.health_status !== healthStatus || previousTransient;
+  if (!target.health_status && alert) {
+    const legacy = await env.DB.prepare("SELECT after_excerpt FROM watch_events WHERE watch_target_id=? AND event_type IN ('source_health_issue','source_health_recovered') ORDER BY detected_at DESC LIMIT 1").bind(target.id).first<{ after_excerpt: string | null }>();
+    if (legacy?.after_excerpt === healthStatus) alert = false;
+  }
+  const update = env.DB.prepare("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error=?,health_status=?,health_checked_at=?,health_detail=?,detected_company_name=?,transient_failure_count=?,health_failure_run_id=?,health_alerted_at=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
+    .bind(checkedAt, httpStatus, detail, healthStatus, checkedAt, detail, detectedName, count, natural ? trace!.runId : target.health_failure_run_id || null, alert ? checkedAt : notified, checkedAt, target.id, lease);
+  trace && (trace.stage = 'persistence');
+  if (alert && healthStatus !== 'healthy' && healthStatus !== 'source_changed') {
+    const copy = healthNotification(target, healthStatus, detail, detectedName);
+    const incident = transient ? target.health_failure_run_id || trace!.runId : checkedAt;
+    const hash = await sha256(`${target.id}|${healthStatus}|${incident}`);
+    const insert = env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,0,? FROM watch_targets WHERE id=? AND lease_until=? AND enabled=1`)
+      .bind(crypto.randomUUID(), target.company_id, target.company_name, target.id, 'source_health_issue', copy.title, copy.summary, target.health_status || 'unverified', healthStatus, checkedAt, target.url, target.source_type, hash, target.id, lease);
+    // The alert marker and event commit together, so write failures remain retryable.
+    await env.DB.batch([insert, update]);
+    trace && (trace.stage = 'notification');
+    trace?.log('source_health_alert', { healthStatus, errorCode: detail });
+  } else await update.run();
 }
 
 async function finalizeCheck(env: Env, check: PendingCheck, sharedChanges: Set<string>) {
+  check.trace.stage = 'notification';
   const event = check.event;
   const shared = Boolean(event && sharedChanges.has(check.target.id));
   let decision = check.baseline ? 'baseline-created-or-rebuilt' : event ? (shared ? 'platform-shared-ignored' : 'notification') : 'no-meaningful-diff';
   let notificationDiff: unknown = null;
   try { await recordHealthTransition(env, check.target, check.healthStatus, check.healthDetail, check.detectedCompanyName, check.checkedAt); }
-  catch (error) { console.error('SOURCE_HEALTH_EVENT_WRITE_FAILED', check.target.id, error); }
+  catch { check.trace.log('source_stage', { errorCode: 'SOURCE_HEALTH_EVENT_WRITE_FAILED' }); }
   if (event && !shared) {
     try {
-      const inserted = await env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,?)`)
-        .bind(event.id, check.target.company_id, check.target.company_name, check.target.id, event.type, event.title, event.summary, event.beforeExcerpt, event.afterExcerpt, check.checkedAt, event.sourceUrl, check.target.source_type, event.contentHash).run();
+      const inserted = await env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,0,? FROM watch_targets WHERE id=? AND lease_until=? AND enabled=1`)
+        .bind(event.id, check.target.company_id, check.target.company_name, check.target.id, event.type, event.title, event.summary, event.beforeExcerpt, event.afterExcerpt, check.checkedAt, event.sourceUrl, check.target.source_type, event.contentHash, check.target.id, check.lease).run();
       if (!inserted.meta.changes) decision = 'notification-deduplicated';
-      else notificationDiff = { type: event.type, section: event.change.sectionLabel, added: event.change.added.map((item) => redactDiagnosticLine(item.text)), removed: event.change.removed.map((item) => redactDiagnosticLine(item.text)) };
+      else notificationDiff = { type: event.type };
     } catch {
       await env.DB.prepare("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error='EVENT_WRITE_FAILED',lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
         .bind(check.checkedAt, check.status, check.checkedAt, check.target.id, check.lease).run();
@@ -232,11 +271,14 @@ async function finalizeCheck(env: Env, check: PendingCheck, sharedChanges: Set<s
     }
   }
   try {
+    check.trace.stage = 'persistence';
     const storedStatus = check.healthStatus === 'healthy' || check.healthStatus === 'source_changed' ? 'active' : 'error';
-    await env.DB.prepare("UPDATE watch_targets SET status=?,last_checked_at=?,last_success_at=?,last_http_status=?,last_hash=?,last_error=?,snapshot=?,snapshot_url=?,snapshot_source_type=?,health_status=?,health_checked_at=?,health_detail=?,detected_company_name=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
+    const stored = await env.DB.prepare("UPDATE watch_targets SET status=?,last_checked_at=?,last_success_at=?,last_http_status=?,last_hash=?,last_error=?,snapshot=?,snapshot_url=?,snapshot_source_type=?,health_status=?,health_checked_at=?,health_detail=?,detected_company_name=?,transient_failure_count=0,health_failure_run_id=NULL,health_alerted_at=NULL,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
       .bind(storedStatus, check.checkedAt, check.checkedAt, check.status, check.hash, check.healthStatus === 'healthy' || check.healthStatus === 'source_changed' ? null : check.healthDetail, check.snapshot, check.snapshotUrl, check.snapshotSourceType, check.healthStatus, check.checkedAt, check.healthDetail, check.detectedCompanyName, check.checkedAt, check.target.id, check.lease).run();
+    if (!stored.meta.changes) { check.trace.log('source_complete', { completed: false, decision: 'lease-lost' }); return; }
   } catch {
-    await markTargetUnhealthy(env, check.target, check.lease, check.checkedAt, check.status, 'extraction_failed', 'SNAPSHOT_WRITE_FAILED');
+    // Persistence failures are internal errors, not evidence that the source broke.
+    check.trace.log('source_stage', { errorCode: 'SNAPSHOT_WRITE_FAILED' });
     logCheck(check, 'snapshot-write-failed', notificationDiff);
     return;
   }
@@ -255,7 +297,10 @@ async function finalizeMynaviEntryCheck(
   entryUrl: string | null,
   entrySignal: string | null,
   recovering: boolean,
+  trace: SourceTrace,
 ) {
+  trace.stage = 'comparison';
+  trace.log('source_stage');
   const current = await env.DB.prepare('SELECT entry_status FROM watch_targets WHERE id=? AND lease_until=? AND enabled=1')
     .bind(target.id, lease).first<{ entry_status: MynaviEntryStatus | null }>();
   if (!current) return;
@@ -264,11 +309,12 @@ async function finalizeMynaviEntryCheck(
   const notify = !baseline && !recovering && entryStatus === 'open' && ['unknown', 'unavailable', 'reservation', 'closed'].includes(previous || '');
   const eventId = notify ? crypto.randomUUID() : null;
   const contentHash = notify ? await sha256(`${target.id}|${previous}|open|${checkedAt}`) : null;
-  const update = env.DB.prepare(`UPDATE watch_targets SET status='active',last_checked_at=?,last_success_at=?,last_http_status=?,last_error=NULL,health_status='healthy',health_checked_at=?,health_detail=NULL,detected_company_name=?,entry_status=?,entry_status_changed_at=CASE WHEN entry_status IS NULL OR entry_status<>? THEN ? ELSE entry_status_changed_at END,entry_last_checked_at=?,entry_url=?,entry_signal=?,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1`)
+  const update = env.DB.prepare(`UPDATE watch_targets SET status='active',last_checked_at=?,last_success_at=?,last_http_status=?,last_error=NULL,health_status='healthy',health_checked_at=?,health_detail=NULL,detected_company_name=?,entry_status=?,entry_status_changed_at=CASE WHEN entry_status IS NULL OR entry_status<>? THEN ? ELSE entry_status_changed_at END,entry_last_checked_at=?,entry_url=?,entry_signal=?,transient_failure_count=0,health_failure_run_id=NULL,health_alerted_at=NULL,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1`)
     .bind(checkedAt, checkedAt, httpStatus, checkedAt, detectedCompanyName, entryStatus, entryStatus, checkedAt, checkedAt, entryUrl, entrySignal, checkedAt, target.id, lease);
 
   let decision = baseline ? 'mynavi-entry-baseline' : notify ? 'mynavi-entry-open-transition' : recovering ? 'mynavi-entry-recovery-baseline' : entryStatus === previous ? 'mynavi-entry-unchanged' : 'mynavi-entry-state-updated';
   try {
+    trace.stage = 'persistence';
     if (notify && eventId && contentHash) {
       const insertEvent = env.DB.prepare(`INSERT OR IGNORE INTO watch_events(id,company_id,company_name,watch_target_id,event_type,title,summary,before_excerpt,after_excerpt,detected_at,source_url,source_type,read,content_hash)
         SELECT ?,?,?,?,?,?,?,?,?,?,?,?,0,? FROM watch_targets WHERE id=? AND entry_status=? AND entry_status_changed_at=? AND last_checked_at=? AND status='active'`)
@@ -280,51 +326,70 @@ async function finalizeMynaviEntryCheck(
       const updated = await update.run();
       if (!updated.meta.changes) decision = 'mynavi-entry-lease-lost';
     }
-  } catch (error) {
-    console.error('MYNAVI_ENTRY_STATE_WRITE_FAILED', target.id, error);
+  } catch {
+    trace.log('source_complete', { errorCode: 'MYNAVI_ENTRY_STATE_WRITE_FAILED', completed: false });
     try {
       await env.DB.prepare("UPDATE watch_targets SET status='error',last_checked_at=?,last_http_status=?,last_error='ENTRY_STATE_WRITE_FAILED',lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1")
         .bind(checkedAt, httpStatus, checkedAt, target.id, lease).run();
     } catch { /* A later scheduled run can retry after the lease expires. */ }
     return;
   }
-  console.info(JSON.stringify({ source: 'mynavi-entry-state', companyId: target.company_id, companyName: target.company_name, monitoredUrl: safeDiagnosticUrl(fetchedUrl), previousStatus: previous, entryStatus, entrySignal, baseline, recovering, notified: notify, timestamp: checkedAt, decision }));
+  trace.log('source_complete', { healthStatus: 'healthy', completed: !decision.endsWith('lease-lost'), decision });
 }
 
-export async function checkTarget(env: Env, target: TargetRow, claimedLease?: string, batch?: PendingCheck[], runId = crypto.randomUUID(), healthOnly = false) {
+export async function checkTarget(env: Env, target: TargetRow, claimedLease?: string, batch?: PendingCheck[], runId: string = crypto.randomUUID(), healthOnly = false, trace = new SourceTrace(target, runId)) {
   const now = new Date().toISOString();
   const lease = claimedLease || new Date(Date.now() + CHECK_LEASE_MS).toISOString();
   if (!claimedLease) {
-    const lock = await env.DB.prepare("UPDATE watch_targets SET status='checking',last_error=NULL,last_http_status=NULL,lease_until=?,updated_at=? WHERE id=? AND enabled=1 AND (lease_until IS NULL OR lease_until<?)")
+    const lock = await env.DB.prepare("UPDATE watch_targets SET status='checking',lease_until=?,updated_at=? WHERE id=? AND enabled=1 AND (lease_until IS NULL OR lease_until<?)")
       .bind(lease, now, target.id, now).run();
-    if (!lock.meta.changes) return;
+    if (!lock.meta.changes) { trace.log('source_complete', { completed: false, decision: 'lease-busy' }); return; }
   }
-  const inspection = await inspectSource(target);
+  trace.log('source_start');
+  const inspection = await inspectSource(target, trace);
   if (!('analysis' in inspection) || inspection.healthStatus !== 'healthy') {
-    await markTargetUnhealthy(env, target, lease, now, inspection.httpStatus, inspection.healthStatus, inspection.healthDetail || 'HEALTH_VALIDATION_FAILED', inspection.detectedCompanyName);
-    console.info(JSON.stringify({ source: 'company-watch-health', companyId: target.company_id, companyName: target.company_name, monitoredUrl: safeDiagnosticUrl(target.url), watchRunId: runId, timestamp: now, healthStatus: inspection.healthStatus, detectedCompanyName: inspection.detectedCompanyName, decision: 'diff-skipped' }));
+    if ('internal' in inspection && inspection.internal) {
+      await env.DB.prepare("UPDATE watch_targets SET status=?,lease_until=NULL WHERE id=? AND lease_until=? AND enabled=1")
+        .bind(target.health_status && !['healthy', 'source_changed'].includes(target.health_status) ? 'error' : 'active', target.id, lease).run();
+      trace.log('source_complete', { completed: false, errorCode: inspection.healthDetail, decision: 'deferred-budget' });
+      return;
+    }
+    await markTargetUnhealthy(env, target, lease, now, inspection.httpStatus, inspection.healthStatus, inspection.healthDetail || 'HEALTH_VALIDATION_FAILED', inspection.detectedCompanyName, trace, 'transient' in inspection && Boolean(inspection.transient));
+    trace.log('source_complete', { completed: true, healthStatus: inspection.healthStatus, errorCode: inspection.healthDetail, decision: 'diff-skipped' });
     return;
   }
   const { analysis, snapshot, hash, fetchedUrl, httpStatus, detectedCompanyName } = inspection;
   if (target.source_type === 'mynavi') {
     let detection;
+    trace.stage = 'extraction';
+    const started = Date.now();
     try { detection = detectMynaviEntryStatus(inspection.html, fetchedUrl); }
     catch (error) {
       detection = { status: 'needs_review' as const, url: null, signal: error instanceof Error ? error.name : 'DETECTOR_ERROR' };
     }
-    await finalizeMynaviEntryCheck(env, target, lease, now, httpStatus, fetchedUrl, detectedCompanyName, detection.status, detection.url, detection.signal, Boolean(target.health_status && target.health_status !== 'healthy'));
+    trace.extractionMs += Date.now() - started;
+    trace.log('source_stage');
+    await finalizeMynaviEntryCheck(env, target, lease, now, httpStatus, fetchedUrl, detectedCompanyName, detection.status, detection.url, detection.signal, Boolean(target.health_status && target.health_status !== 'healthy'), trace);
     return;
   }
   const compatible = hasCompatibleSnapshot(target.snapshot, analysis);
   const sourceChanged = Boolean(target.snapshot && ((target.snapshot_url && target.snapshot_url !== target.normalized_url) || (target.snapshot_source_type && target.snapshot_source_type !== target.source_type) || !compatible));
   const recovering = Boolean(target.health_status && target.health_status !== 'healthy');
   const healthStatus: SourceHealthStatus = sourceChanged && !recovering ? 'source_changed' : 'healthy';
-  const baseline = healthOnly || !target.snapshot || !compatible || sourceChanged || recovering || target.health_status !== 'healthy' || target.snapshot_url !== target.normalized_url || target.snapshot_source_type !== target.source_type;
+  trace.stage = 'comparison';
+  const baseline = !target.snapshot || !compatible || sourceChanged || target.snapshot_url !== target.normalized_url || target.snapshot_source_type !== target.source_type;
   const change = !baseline && !healthOnly ? compareSnapshots(target.snapshot, analysis) : null;
   const previousSnapshotHash = target.last_hash || (target.snapshot ? await sha256(target.snapshot) : null);
   const event = change && hash !== target.last_hash ? buildPendingEvent(target, fetchedUrl, hash, change, runId) : null;
-  const check: PendingCheck = { target, lease, checkedAt: now, status: httpStatus, fetchedUrl, analysis, snapshot, hash, previousSnapshotHash, baseline, event, runId, healthStatus, healthDetail: healthStatus === 'source_changed' ? 'SOURCE_STRUCTURE_CHANGED' : null, detectedCompanyName, snapshotUrl: target.normalized_url, snapshotSourceType: target.source_type };
-  if (batch) batch.push(check);
+  // A health-only inspection must not consume a real change before a business check.
+  if (healthOnly && !baseline) {
+    await env.DB.prepare("UPDATE watch_targets SET status='active',health_status='healthy',health_checked_at=?,health_detail=NULL,last_error=NULL,transient_failure_count=0,health_failure_run_id=NULL,health_alerted_at=NULL,lease_until=NULL WHERE id=? AND lease_until=? AND enabled=1").bind(now, target.id, lease).run();
+    trace.log('source_complete', { completed: true, decision: 'health-only-baseline-preserved', healthStatus: 'healthy' });
+    return;
+  }
+  trace.log('source_stage', { decision: baseline ? 'initialize-baseline' : event ? 'change-detected' : 'unchanged' });
+  const check: PendingCheck = { trace, target, lease, checkedAt: now, status: httpStatus, fetchedUrl, analysis, snapshot, hash, previousSnapshotHash, baseline, event, runId, healthStatus, healthDetail: healthStatus === 'source_changed' ? 'SOURCE_STRUCTURE_CHANGED' : null, detectedCompanyName, snapshotUrl: target.normalized_url, snapshotSourceType: target.source_type };
+  if (batch && event) batch.push(check);
   else await finalizeCheck(env, check, new Set());
 }
 
@@ -343,10 +408,25 @@ async function queueTargetCheck(env: Env, ctx: ExecutionContext, target: TargetR
 export async function scheduled(env: Env) {
   const rows = await env.DB.prepare("SELECT * FROM watch_targets WHERE enabled=1 ORDER BY COALESCE(last_checked_at,'') ASC").all<TargetRow>();
   const runId = crypto.randomUUID();
+  const started = Date.now();
+  const budget = runBudget();
+  let completed = 0; let failed = 0; let processed = 0;
+  console.info({ event: 'watch_run_start', runId, sources: rows.results.length });
   const batch: PendingCheck[] = [];
-  for (let index = 0; index < rows.results.length; index += 4) await Promise.all(rows.results.slice(index, index + 4).map((target) => checkTarget(env, target, undefined, batch, runId)));
+  for (let index = 0; index < rows.results.length; index += 4) await Promise.all(rows.results.slice(index, index + 4).map(async (target) => {
+    const trace = new SourceTrace(target, runId, budget, true);
+    try { await checkTarget(env, target, undefined, batch, runId, false, trace); if (trace.completed) completed++; }
+    catch { failed++; trace.log('source_complete', { completed: false, errorCode: 'CHECK_INTERNAL_FAILED' }); }
+    processed++;
+    console.info({ event: 'watch_run_progress', runId, processed, completed, pendingComparison: batch.length, sources: rows.results.length, requests: budget.requests, retries: budget.retries, wallMs: Date.now() - started });
+  }));
   const sharedChanges = findPlatformSharedChanges(batch.flatMap((check) => check.event ? [check.event.sharedCandidate] : []));
-  for (const check of batch) await finalizeCheck(env, check, sharedChanges);
+  for (const check of batch) {
+    try { await finalizeCheck(env, check, sharedChanges); if (check.trace.completed) completed++; else failed++; }
+    catch { failed++; check.trace.log('source_complete', { completed: false, errorCode: 'CHECK_INTERNAL_FAILED' }); }
+  }
+  console.info({ event: 'watch_run_complete', runId, sources: rows.results.length, completed, unfinished: rows.results.length - completed, internalFailures: failed, requests: budget.requests, retries: budget.retries, wallMs: Date.now() - started });
+  if (failed || completed !== rows.results.length) throw new Error('WATCH_RUN_INCOMPLETE');
 }
 
 function healthCounts(results: Array<{ healthStatus: SourceHealthStatus }>) {
@@ -466,7 +546,7 @@ export default {
       if (!inserted.meta.changes) return json({ id: target.id, duplicate: true, queued: false, status: target.status, lastError: target.last_error || null }, 200, origin);
       if (!healthy) {
         try { await recordHealthTransition(env, { ...target, health_status: null }, inspected.healthStatus, inspected.healthDetail, inspected.detectedCompanyName, now); }
-        catch (error) { console.error('SOURCE_HEALTH_EVENT_WRITE_FAILED', target.id, error); }
+        catch { console.error({ event: 'SOURCE_HEALTH_EVENT_WRITE_FAILED', sourceId: target.id, stage: 'notification' }); }
       }
       return json({ id: target.id, duplicate: false, queued: false, status: target.status, lastError: target.last_error || null, sourceHealth: sourceHealthPayload(inspected) }, 201, origin);
     }
@@ -495,7 +575,7 @@ export default {
           const verified = healthy && 'analysis' in inspected ? inspected : null;
           const now = new Date().toISOString();
           try { await recordHealthTransition(env, current, inspected.healthStatus, inspected.healthDetail, inspected.detectedCompanyName, now); }
-          catch (error) { console.error('SOURCE_HEALTH_EVENT_WRITE_FAILED', current.id, error); }
+          catch { console.error({ event: 'SOURCE_HEALTH_EVENT_WRITE_FAILED', sourceId: current.id, stage: 'notification' }); }
           await env.DB.prepare("UPDATE watch_targets SET enabled=?,status=?,last_error=?,last_http_status=?,lease_until=NULL,label=?,url=?,normalized_url=?,source_type=?,last_checked_at=?,last_success_at=CASE WHEN ?=1 THEN ? ELSE last_success_at END,last_hash=CASE WHEN ?=1 THEN ? ELSE last_hash END,snapshot=CASE WHEN ?=1 THEN ? ELSE snapshot END,snapshot_url=CASE WHEN ?=1 THEN ? ELSE snapshot_url END,snapshot_source_type=CASE WHEN ?=1 THEN ? ELSE snapshot_source_type END,health_status=?,health_checked_at=?,health_detail=?,detected_company_name=?,entry_status=NULL,entry_status_changed_at=NULL,entry_last_checked_at=NULL,entry_url=NULL,entry_signal=NULL,updated_at=? WHERE id=?")
             .bind(enabled ? 1 : 0, !enabled ? 'paused' : healthy ? 'active' : 'error', healthy ? null : inspected.healthDetail, inspected.httpStatus, body.label ?? current.label, normalized, normalized, sourceType, now, healthy ? 1 : 0, now, healthy ? 1 : 0, verified?.hash ?? null, healthy ? 1 : 0, verified?.snapshot ?? null, healthy ? 1 : 0, normalized, healthy ? 1 : 0, sourceType, inspected.healthStatus, now, inspected.healthDetail, inspected.detectedCompanyName, now, id).run();
           const updated = await env.DB.prepare('SELECT * FROM watch_targets WHERE id=?').bind(id).first<TargetRow>();
