@@ -198,12 +198,12 @@ function aimingHrmosHtml(companyName = '株式会社Aiming', extraDetail = '') {
   return `<html><head><title>[28卒]インフラエンジニア | ${companyName}</title><link rel="canonical" href="${aimingHrmosUrl}"></head><body><main><h1>[28卒]インフラエンジニア</h1><article class="pg-body"><section class="pg-markdown"><blockquote><p>具体的な仕事内容</p></blockquote><p>ゲームサーバのクラウド選定、システム設計、構築、運用管理、セキュリティ対応を担当します。社内インフラ整備と開発環境の運用も行います。${extraDetail}</p></section><section class="pg-descriptions"><table><tr><th>職種 / 募集ポジション</th><td>[28卒]インフラエンジニア</td></tr><tr><th>応募資格</th><td>2028年3月卒業者</td></tr></table></section><section class="pg-apply-box"><a class="jsc-apply-trigger" href="${aimingHrmosUrl}/apply">応募する</a></section></article><section class="pg-descriptions"><table><caption>会社情報</caption><tr><th>会社名</th><td>${companyName}</td></tr></table></section></main></body></html>`;
 }
 
-function setFetchPage(page: (url: string) => Response | Promise<Response>) {
+function setFetchPage(page: (url: string) => Response | Promise<Response>, robots?: (url: string) => Response) {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input) => {
     const url = String(input);
     if (url.startsWith('https://cloudflare-dns.com/')) return new Response(JSON.stringify({ Answer: [{ data: '198.51.100.22' }] }), { headers: { 'content-type': 'application/json' } });
-    if (url.endsWith('/robots.txt')) return new Response('User-agent: *\nAllow: /', { headers: { 'content-type': 'text/plain' } });
+    if (url.endsWith('/robots.txt')) return robots ? robots(url) : new Response('User-agent: *\nAllow: /', { headers: { 'content-type': 'text/plain' } });
     return page(url);
   }) as typeof fetch;
   return () => { globalThis.fetch = originalFetch; };
@@ -220,6 +220,36 @@ function target(overrides: Partial<StoredTarget> = {}): StoredTarget {
     ...overrides,
   };
 }
+
+for (const changed of [false, true]) test(`K-Line robots soft-404 preserves baseline; verified recovery ${changed ? 'notifies a real change once' : 'stays silent'} and MyNavi stays separate`, async () => {
+  const db = new MemoryD1();
+  const name = '(株)ケイラインビジネスシステムズ';
+  const url = 'https://www.kbs.kline.co.jp/recruit/newgraduate.html';
+  const row = target({ id: 'kline-official', company_id: 'kline', company_name: name, source_type: 'official', url, normalized_url: url, snapshot: null, last_hash: null, snapshot_url: null, snapshot_source_type: null });
+  const mynavi = target({ id: 'kline-mynavi', company_id: 'kline', company_name: name, entry_status: 'needs_review' });
+  db.targets.set(row.id, row); db.targets.set(mynavi.id, mynavi);
+  let blocked = false; let holiday = '124日'; let officialRequests = 0;
+  const restore = setFetchPage((requestUrl) => {
+    if (requestUrl.endsWith('/404.html')) return new Response('<!doctype html><html><title>404エラーページ</title></html>', { headers: { 'content-type': 'text/html' } });
+    if (requestUrl === url) { officialRequests++; return new Response(officialHtml(name, holiday), { headers: { 'content-type': 'text/html' } }); }
+    return new Response(mynaviHtml(name, '年間休日124日', '他社', '<p>エントリー</p><button>検討リスト登録</button>'), { headers: { 'content-type': 'text/html' } });
+  }, (requestUrl) => blocked && requestUrl.includes('kbs.kline') ? Response.redirect('https://www.kbs.kline.co.jp/404.html') : new Response('User-agent: *\nAllow: /'));
+  try {
+    await scheduled(envFor(db));
+    const saved = { snapshot: row.snapshot, hash: row.last_hash, success: row.last_success_at };
+    assert.ok(saved.snapshot); assert.equal(db.events.size, 0);
+    blocked = true; await scheduled(envFor(db));
+    assert.equal(row.health_status, 'needs_review'); assert.equal(row.last_http_status, 200); assert.equal(row.health_detail, 'ROBOTS_POLICY_UNVERIFIABLE');
+    assert.equal(row.snapshot, saved.snapshot); assert.equal(row.last_hash, saved.hash); assert.equal(row.last_success_at, saved.success);
+    assert.equal(officialRequests, 1, 'the HTML error never grants access to the recruitment page');
+    assert.equal(db.events.size, 0, 'first transient check still does not notify');
+    assert.equal(mynavi.health_status, 'healthy'); assert.equal(mynavi.entry_status, 'needs_review');
+    blocked = false; if (changed) holiday = '130日';
+    await scheduled(envFor(db)); assert.equal(row.health_status, 'healthy'); assert.equal(db.events.size, changed ? 1 : 0);
+    await scheduled(envFor(db)); assert.equal(db.events.size, changed ? 1 : 0);
+    assert.equal(mynavi.entry_status, 'needs_review');
+  } finally { restore(); }
+});
 
 test('a transient 503 retries successfully without a health notification', async () => {
   const db = new MemoryD1(); const row = target(); db.targets.set(row.id, row);

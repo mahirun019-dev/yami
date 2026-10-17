@@ -30,6 +30,16 @@ Manual health-only inspection does not consume a real content change. Normal che
 
 MyNavi continues to use its separate Entry state machine. Its transition conditions, identity checks, recommendation exclusion and recovery suppression are unchanged.
 
+## Robots policy retrieval
+
+RFC 9309 sections 2.3.1.2-2.3.1.5 guide the robots fetch. Up to five consecutive HTTP redirects are followed manually, including public cross-authority destinations. Every destination uses the existing URL and public-DNS guards; loops, invalid locations and excessive redirects never grant access. Redirected rules are evaluated for the original authority, not the policy host.
+
+Actual HTTP 404/410 is treated as unavailable, retaining the existing allowed-access choice. Access-restricted 401/403, server/network failures and unknown responses remain blocked; RFC permits, but does not require, access after 4xx, so this is intentionally conservative. Existing timeouts and retry budgets remain in force.
+
+HTML error/login documents are not parsed as empty robots files. A 200 HTML soft-404 is logged as `html-soft-404`, not treated as an actual HTTP 404. Recognizable plain-text policies still use parseable rules despite malformed lines. Empty/comment-only and sitemap-only policies remain usable. Other arbitrary content is unverified.
+
+The canonical health error stays `ROBOTS_POLICY_UNVERIFIABLE`; `robots_policy` structured log decisions provide finer diagnostics without resetting an existing health incident or changing notification debounce. A blocked source retains its baseline. Deployment does not itself mark any source healthy.
+
 ## Compatibility and rollback
 
 The migration does not update existing URLs, snapshots, events or read flags. The prior Worker can run with the added columns present. To roll back, redeploy the prior Worker version and leave these columns unused; do not drop tables/columns or restore historical data.

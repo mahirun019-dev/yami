@@ -883,24 +883,80 @@ async function assertPublicDns(hostname: string, trace: SourceTrace) {
   await pending;
 }
 
+const ROBOTS_REDIRECT_LIMIT = 5;
+const ROBOTS_REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+async function fetchRobotsPolicy(robotsUrl: string, trace: SourceTrace): Promise<string | null> {
+  let current = robotsUrl;
+  const visited = new Set<string>();
+  const unverified = (status: number | null, decision: string): never => {
+    trace.log('robots_policy', { httpStatus: status, decision, errorCode: 'ROBOTS_POLICY_UNVERIFIABLE' });
+    // Keep the existing health/debounce code; diagnostics distinguish policy failures.
+    throw new CheckError('ROBOTS_POLICY_UNVERIFIABLE', status, true);
+  };
+  for (let redirects = 0; redirects <= ROBOTS_REDIRECT_LIMIT; redirects++) {
+    if (visited.has(current)) return unverified(trace.httpStatus, 'redirect-loop');
+    visited.add(current);
+    await assertPublicDns(new URL(current).hostname, trace);
+    const { response, text } = await requestText(current, { redirect: 'manual', headers: { 'user-agent': CRAWLER_USER_AGENT, accept: 'text/plain' } }, trace, 'robots', 8_000);
+    if (ROBOTS_REDIRECT_STATUSES.has(response.status)) {
+      if (redirects === ROBOTS_REDIRECT_LIMIT) return unverified(response.status, 'redirect-limit');
+      const location = response.headers.get('location');
+      if (!location) return unverified(response.status, 'redirect-without-location');
+      try {
+        const next = new URL(location, current);
+        normalizeUrl(next.toString()); // Apply existing scheme, credential, port and private-host guards.
+        next.hash = '';
+        current = next.toString();
+      } catch { return unverified(response.status, 'unsafe-redirect'); }
+      trace.log('robots_policy', { httpStatus: response.status, decision: 'redirect-followed' });
+      continue;
+    }
+    if (response.status === 404 || response.status === 410) {
+      trace.log('robots_policy', { httpStatus: response.status, decision: 'unavailable' });
+      return null;
+    }
+    // RFC 9309 permits access after 4xx; Yami retains its stricter access-restriction policy.
+    if (response.status === 401 || response.status === 403) return unverified(response.status, 'access-restricted');
+    if (response.status >= 500) return unverified(response.status, 'unreachable');
+    if (!response.ok || response.status === 206) return unverified(response.status, 'unexpected-status');
+
+    const prefix = text.slice(0, 8192).split(/\r?\n/).filter((line) => !/^\s*#/.test(line)).join('\n');
+    const html = /<!doctype\s+html\b|<\/?(?:html|head|body|title|h1|div|p|script|form)\b/i.test(prefix);
+    if (html) {
+      const soft404 = /<(?:title|h1)\b[^>]*>[^<]{0,240}(?:404|not[\s-]*found|見つかりません|存在しません)/i.test(prefix);
+      return unverified(response.status, soft404 ? 'html-soft-404' : 'html-response');
+    }
+    // Parse all usable rules despite malformed lines (2.3.1.5), but do not turn
+    // arbitrary JSON, a login page or an error message into an empty allow policy.
+    const type = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    const empty = text.split(/\r?\n/).every((line) => /^\s*(?:#.*)?$/.test(line));
+    const hasGroup = /^\s*user-agent\s*:\s*(?:[a-z_-]+|\*)\s*(?:#.*)?$/im.test(text);
+    const sitemapOnly = text.split(/\r?\n/).every((line) => /^\s*(?:#.*|sitemap\s*:\s*https?:\/\/\S+\s*)?$/i.test(line));
+    if ((!empty && type && !type.startsWith('text/')) || (!empty && !hasGroup && !sitemapOnly)) return unverified(response.status, 'unrecognized-content');
+    trace.log('robots_policy', { httpStatus: response.status, decision: 'verified' });
+    return text;
+  }
+  return unverified(trace.httpStatus, 'redirect-limit');
+}
+
 async function assertCrawlerAllowed(url: string, trace: SourceTrace) {
   const parsed = new URL(url);
   const robotsUrl = `${parsed.protocol}//${parsed.host}/robots.txt`;
   let pending = trace.budget.robots.get(robotsUrl);
   if (!pending) {
-    pending = (async () => {
-      const { response, text } = await requestText(robotsUrl, { redirect: 'manual', headers: { 'user-agent': CRAWLER_USER_AGENT, accept: 'text/plain' } }, trace, 'robots', 8_000);
-      if (response.status === 404 || response.status === 410) return null;
-      if (!response.ok) throw new CheckError('ROBOTS_POLICY_UNVERIFIABLE', response.status, true);
-      return text;
-    })();
+    pending = fetchRobotsPolicy(robotsUrl, trace);
     trace.budget.robots.set(robotsUrl, pending);
     pending.catch(() => trace.budget.robots.delete(robotsUrl));
   }
   const contents = await pending;
   if (contents === null) return;
   const decision = robotsDecision(robotsUrl, contents, url);
-  if (decision === false) throw new Error('ROBOTS_DISALLOWED');
+  // Even cross-authority redirects remain rules for the original origin (2.3.1.2).
+  if (decision === false) {
+    trace.log('robots_policy', { decision: 'disallowed', errorCode: 'ROBOTS_DISALLOWED' });
+    throw new CheckError('ROBOTS_DISALLOWED', trace.httpStatus);
+  }
   if (decision === undefined) throw new Error('ROBOTS_POLICY_UNVERIFIABLE');
 }
 
