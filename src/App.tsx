@@ -22,7 +22,9 @@ import municipalityData from "./data/japan-municipalities.json";
 import { companyWatchKey, useWatch, WatchProvider } from "./watch/WatchProvider";
 import { CompanyWatchSection, CompanyWatchStatus, NotificationPage, WatchConnectionSettings } from "./watch/WatchUI";
 import { getUnreadProductUpdateCount, subscribeProductUpdateReadState } from "./watch/productUpdates";
-import { YamiAboutBrand, YamiLogoLockup } from "./brand/YamiLogo";
+import { YamiLogoLockup } from "./brand/YamiLogo";
+import { AboutSettings } from "./about/AboutSettings";
+import { aboutCopy } from "./about/i18n";
 import { normalizeDashboardUrl } from "./route";
 
 import {
@@ -4932,16 +4934,6 @@ function CustomizeSettings({ t, data, updatePreferences }: any) {
 function CalendarSettings({ t, exportCalendar }: any) {
   return <section className="settings-section settings-form-section"><h3>{t.calendarIntegration}</h3><p className="settings-muted calendar-description">{t.calendarDescription}</p><button type="button" className="primary settings-wide-action" onClick={() => exportCalendar()}><CalendarDays />{t.calendarExportFuture}</button><div className="calendar-help"><h4>{t.calendarHowTo}</h4>{([[t.calendarIphoneTitle, t.calendarIphone], [t.calendarMacTitle, t.calendarMac], [t.calendarGoogleTitle, t.calendarGoogle]] as Array<[string, string]>).map(([title, steps]) => <section key={title}><strong>{title}</strong><p>{steps}</p></section>)}<p className="calendar-important">{t.calendarNoSync}</p></div></section>;
 }
-function AboutSettings({ locale, mobile = false }: any) {
-  const copy = locale === "ja"
-    ? { title: "Yamiについて", version: "Yami バージョン 1.0", privacy: "プライバシー：データは主にこのデバイスに保存されます。", license: "オープンソースライセンス：MIT License", pwa: "PWA：ホーム画面への追加に対応", icon: "アプリアイコン：Yami ブランドアバター" }
-    : { title: "关于 Yami", version: "Yami 版本 1.0", privacy: "隐私说明：数据主要保存在当前设备。", license: "开源许可：MIT License", pwa: "PWA：支持添加到主屏幕", icon: "应用图标：Yami 品牌头像" };
-  return <section className={`settings-section${mobile ? " mobile-settings-subpage mobile-about" : ""}`}>
-    {mobile ? <h2>{copy.title}</h2> : <h3>{copy.title}</h3>}
-    <YamiAboutBrand />
-    <div className="settings-about-list"><p>{copy.version}</p>{!mobile && <><p>{copy.pwa}</p><p>{copy.icon}</p></>}<p>{copy.privacy}</p><p>{copy.license}</p></div>
-  </section>;
-}
 function BackupRestoreDialog({ locale, busy, onCancel, onConfirm }: { locale: Locale; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
   const cancelButton = useRef<HTMLButtonElement>(null);
   const copy = locale === "ja"
@@ -4968,11 +4960,7 @@ function MobileSettingsDrawer({
   const [transitionPage, setTransitionPage] = useState<string | null | undefined>(undefined);
   const [contentPhase, setContentPhase] = useState<"idle" | "out" | "in">("idle");
   const label = "Yami";
-  const about = locale === "ja"
-    ? { title: "Yamiについて", version: "Yami バージョン 1.0", privacy: "プライバシー：データは主にこのデバイスに保存されます。", license: "オープンソースライセンス：MIT License" }
-    : locale === "en"
-      ? { title: "About Yami", version: "Yami version 1.0", privacy: "Privacy: Data is mainly stored on this device.", license: "Open-source license: MIT License" }
-      : { title: "关于 Yami", version: "Yami 版本 1.0", privacy: "隐私说明：数据主要保存在当前设备。", license: "开源许可：MIT License" };
+  const about = aboutCopy[locale === "ja" ? "ja" : "zh"];
   const dismiss = () => close();
   useEffect(() => {
     if (!open) return;

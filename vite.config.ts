@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { aboutBuildMetadata } from "./build/aboutMetadata";
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, ".", "");
@@ -15,6 +16,7 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base,
+    define: { __YAMI_BUILD__: JSON.stringify(aboutBuildMetadata(process.cwd(), process.env)) },
     plugins: [
       react(),
       VitePWA({

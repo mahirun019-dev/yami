@@ -1,6 +1,7 @@
 export type ProductUpdate = {
   id: string;
   date: string;
+  version?: string;
   title: Record<'ja' | 'zh', string>;
   summary: Record<'ja' | 'zh', string>;
   changes: Record<'ja' | 'zh', string[]>;
@@ -76,6 +77,25 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
       '将主题、语言和每周起始日整合到“常规”设置中',
       '可在同一处调整主页项目的显示与顺序',
       '优化了已保存模板的创建、编辑和删除',
+    ],
+  },
+}, {
+  id: '2026-10-20-yami-about-and-release-information',
+  date: '2026-10-20',
+  title: { ja: 'Yami のアプリ情報を見直しました', zh: 'Yami 应用信息已更新' },
+  summary: { ja: '更新履歴、データの保存先、ライセンスを確認しやすくしました。', zh: '现在可以更清楚地查看更新记录、数据存储说明和许可证信息。' },
+  changes: {
+    ja: [
+      '「Yamiについて」のブランド表示をコンパクトに整理しました',
+      '実際の更新記録とビルド情報を表示し、固定のバージョン表記を廃止しました',
+      '端末内のデータと企業ウォッチのサーバー保存データを区別して説明しました',
+      'プロジェクトのライセンス状況と主要ライブラリのライセンスを確認できます',
+    ],
+    zh: [
+      '精简了“关于 Yami”的品牌展示区域',
+      '接入实际更新记录与构建信息，移除了固定版本号',
+      '明确区分设备本地数据与企业监控服务保存的数据',
+      '可以查看项目许可证状态与主要第三方组件许可证',
     ],
   },
 }];
