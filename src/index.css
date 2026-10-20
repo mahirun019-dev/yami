@@ -7623,20 +7623,10 @@ html[data-theme="dark"] #root {
 
 /* About is an information page, not a branded card or a second settings table. */
 .settings-about-page.settings-section { display: grid; width: 100%; min-width: 0; max-width: 760px; align-content: start; gap: 24px; }
-.settings-about-page .about-brand-intro { display: grid; justify-items: center; gap: 6px; }
-.settings-about-page .about-brand-intro > p { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; text-align: center; }
+.settings-about-page .about-brand-intro { display: grid; justify-items: center; }
 .settings-about-page h4 { margin: 0; color: var(--text-primary); font-size: calc(16px * var(--reading-scale, 1)); font-weight: 650; line-height: 1.4; }
 .settings-about-page h5 { margin: 0; color: var(--text-primary); font-size: var(--text-base); font-weight: 600; line-height: 1.5; }
-.settings-about-page .about-info dl { margin: 8px 0; }
-.settings-about-page .about-info dl > div { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: 12px 0; border-bottom: 1px solid var(--border-color); font-size: calc(14px * var(--reading-scale, 1)); line-height: 1.5; }
-.settings-about-page .about-info dt { color: var(--text-secondary); }
-.settings-about-page .about-info dd { min-width: 0; margin: 0 0 0 auto; color: var(--text-primary); overflow-wrap: anywhere; }
 .settings-about-page .about-muted { margin: 8px 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; }
-.settings-about-page .about-pwa { margin-bottom: 0; color: var(--text-muted); font-size: calc(12px * var(--reading-scale, 1)); }
-.settings-about-page .about-build { color: var(--text-secondary); font-size: var(--text-sm); }
-.settings-about-page .about-build summary { display: list-item; min-height: 44px; padding-block: 12px; cursor: pointer; }
-.settings-about-page .about-build p { margin: 0 0 12px; font-size: inherit; line-height: 1.6; overflow-wrap: anywhere; }
-.settings-about-page code { font-size: inherit; overflow-wrap: anywhere; }
 .settings-about-page .about-links { border-top: 1px solid var(--border-color); }
 .settings-about-page .about-links button { display: flex; width: 100%; min-width: 0; min-height: 72px; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--border-color); border-radius: 0; color: var(--text-primary); background: transparent; text-align: left; transition: background-color 140ms ease; }
 .settings-about-page .about-links button > span { display: grid; min-width: 0; gap: 4px; }

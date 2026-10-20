@@ -3,7 +3,7 @@ import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { YamiAboutBrand } from '../brand/YamiLogo';
 import { PRODUCT_UPDATES } from '../watch/productUpdates';
 import { aboutCopy } from './i18n';
-import { appReleaseInfo, formatReleaseDate, isOfficialVersion, releaseHistory } from './releases';
+import { formatReleaseDate, isOfficialVersion, releaseHistory } from './releases';
 
 type Panel = 'overview' | 'history' | 'privacy' | 'licenses';
 
@@ -13,24 +13,12 @@ export function AboutSettings({ locale, mobile = false }: { locale: string; mobi
   const [panel, setPanel] = useState<Panel>('overview');
   const panelTitle = useRef<HTMLHeadingElement>(null);
   const history = releaseHistory(PRODUCT_UPDATES);
-  const info = appReleaseInfo(PRODUCT_UPDATES);
   useEffect(() => { if (panel !== 'overview') panelTitle.current?.focus(); }, [panel]);
 
   return <section className={`settings-section settings-about-page${mobile ? ' mobile-settings-subpage mobile-about' : ''}`}>
     {mobile ? <h2>{copy.title}</h2> : <h3>{copy.title}</h3>}
     {panel === 'overview' ? <>
-      <div className="about-brand-intro"><YamiAboutBrand /><p>{copy.tagline}</p></div>
-      <section className="about-info"><h4>{copy.appInfo}</h4><dl>
-        <div><dt>{copy.version}</dt><dd>{info.version || copy.unversioned}</dd></div>
-        {info.releasedOn && <div><dt>{copy.releaseDate}</dt><dd><time dateTime={info.releasedOn}>{formatReleaseDate(info.releasedOn, language)}</time></dd></div>}
-        {info.updatedOn && <div><dt>{copy.latestUpdate}</dt><dd><time dateTime={info.updatedOn}>{formatReleaseDate(info.updatedOn, language)}</time></dd></div>}
-      </dl>
-        {!info.version && <p className="about-muted">{copy.versionHint}</p>}
-        <details className="about-build"><summary>{copy.build}</summary>
-          <p>{import.meta.env.DEV && <span>{copy.development} · </span>}{__YAMI_BUILD__.commit ? <><span>{copy.commit}: </span><code>{__YAMI_BUILD__.commit}</code></> : copy.noBuild}</p>
-        </details>
-        <p className="about-muted about-pwa">{copy.pwa}</p>
-      </section>
+      <div className="about-brand-intro"><YamiAboutBrand /></div>
       <nav className="about-links" aria-label={copy.title}>
         {(['history', 'privacy', 'licenses'] as const).map((name) => <button type="button" key={name} onClick={() => setPanel(name)}>
           <span><strong>{copy[name]}</strong><small>{copy[`${name}Hint`]}</small></span><ChevronRight aria-hidden="true" />
