@@ -20,12 +20,12 @@ export function AboutSettings({ locale, mobile = false }: { locale: string; mobi
     {panel === 'overview' ? <>
       <div className="about-brand-intro"><YamiAboutBrand /></div>
       <nav className="about-links" aria-label={copy.title}>
-        {(['history', 'privacy', 'licenses'] as const).map((name) => <button type="button" key={name} onClick={() => setPanel(name)}>
+        {(['history', 'privacy'] as const).map((name) => <button type="button" key={name} onClick={() => setPanel(name)}>
           <span><strong>{copy[name]}</strong><small>{copy[`${name}Hint`]}</small></span><ChevronRight aria-hidden="true" />
         </button>)}
       </nav>
     </> : <div className="about-detail">
-      <button type="button" className="about-back" onClick={() => setPanel('overview')}><ArrowLeft aria-hidden="true" />{copy.back}</button>
+      <button type="button" className="about-back" onClick={() => setPanel(panel === 'licenses' ? 'privacy' : 'overview')}><ArrowLeft aria-hidden="true" />{panel === 'licenses' ? copy.privacy : copy.back}</button>
       <h4 ref={panelTitle} tabIndex={-1}>{copy[panel]}</h4>
       {panel === 'history' && (history.length ? <ol className="about-history">{history.map((update) => <li key={update.id}>
         <div className="about-release-meta"><time dateTime={update.date}>{formatReleaseDate(update.date, language)}</time>{isOfficialVersion(update.version) && <span>v{update.version}</span>}</div>
@@ -36,6 +36,7 @@ export function AboutSettings({ locale, mobile = false }: { locale: string; mobi
         <section><h5>{copy.serverTitle}</h5><p>{copy.serverBody}</p><p>{copy.workerBody}</p></section>
         <section><h5>{copy.externalTitle}</h5><p>{copy.externalBody}</p></section>
         <section><h5>{copy.backupTitle}</h5><p>{copy.backupBody}</p></section>
+        <button type="button" className="about-legal-link" onClick={() => setPanel('licenses')}>{copy.licenses}</button>
       </div>}
       {panel === 'licenses' && <div className="about-prose">
         <section><h5>{copy.projectLicense}</h5>{__YAMI_BUILD__.projectLicense

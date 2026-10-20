@@ -64,7 +64,7 @@ test('the About release uses the existing bilingual product notification records
   assert.equal(announcement.version, undefined);
   assert.equal(announcement.date, '2026-10-20');
   assert.ok(announcement.changes.ja.length && announcement.changes.zh.length);
-  assert.equal(releaseHistory(PRODUCT_UPDATES)[0].id, announcement.id);
+  assert.ok(releaseHistory(PRODUCT_UPDATES).some((record) => record.id === announcement.id));
 });
 
 function fixture() {

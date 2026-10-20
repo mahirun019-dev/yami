@@ -11,6 +11,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-10-20-yami-company-hover-about-links',
+  date: '2026-10-20',
+  title: { ja: '企業カードの操作感を調整しました', zh: '企业卡片交互体验已优化' },
+  summary: { ja: 'PC のホバー表示を見やすくし、「Yamiについて」の主要項目を整理しました。', zh: '增强了 PC 企业卡片的悬停反馈，并精简了“关于 Yami”的主要入口。' },
+  changes: {
+    ja: ['企業カードのホバー表示をライト・ダークそれぞれで調整しました', '「Yamiについて」の主要項目を更新履歴とデータ・プライバシーにまとめました'],
+    zh: ['分别增强了浅色与深色主题下的企业卡片悬停效果', '“关于 Yami”的主要入口精简为更新记录和数据与隐私'],
+  },
+}, {
   id: '2026-09-19-yami-brand-and-notification-update',
   date: '2026-09-19T09:00:00+09:00',
   title: { ja: 'Yamiがアップデートされました', zh: 'Yami 已更新' },

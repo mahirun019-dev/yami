@@ -31,10 +31,17 @@ test('About overview has no app information, version, date, build SHA or PWA pre
   assert.doesNotMatch(overviewMarkup(), /about-info|about-build|about-pwa|copy\.(appInfo|version|latestUpdate|build|pwa)|__YAMI_BUILD__|<time\b|<details\b/);
 });
 
-test('About overview exposes only the three existing detail actions', () => {
+test('About overview exposes only history and privacy, without a primary license row', () => {
   assert.ok(overview);
-  assert.match(overviewMarkup(), /\['history', 'privacy', 'licenses'\]/);
+  assert.match(overviewMarkup(), /\['history', 'privacy'\]/);
+  assert.doesNotMatch(overviewMarkup(), /licenses/);
   const renderedTags: string[] = [];
   visit(overview, (node) => { if (node.type === 'JSXOpeningElement') renderedTags.push(node.name.name); });
   assert.deepEqual(renderedTags, ['div', 'YamiAboutBrand', 'nav', 'button', 'span', 'strong', 'small', 'ChevronRight']);
+});
+
+test('license notices remain accessible as a secondary action within privacy', () => {
+  assert.match(source, /className="about-legal-link" onClick=\{\(\) => setPanel\('licenses'\)\}/);
+  assert.match(source, /__YAMI_BUILD__\.dependencies\.map/);
+  assert.match(source, /panel === 'licenses' \? 'privacy' : 'overview'/);
 });
