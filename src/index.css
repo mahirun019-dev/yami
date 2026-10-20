@@ -10126,20 +10126,25 @@ html[data-theme="dark"] #root {
   --text-xs: calc(11px * var(--font-scale));
   --text-sm: calc(13px * var(--font-scale));
   --text-base: calc(15px * var(--font-scale));
+  --text-body: calc(16px * var(--font-scale));
   --text-lg: calc(18px * var(--font-scale));
   --text-xl: calc(21px * var(--font-scale));
 }
-:root[data-font-size="xs"] { --font-scale: .91; }
-:root[data-font-size="small"] { --font-scale: .955; }
+:root[data-font-size="xs"] { --font-scale: .85; }
+:root[data-font-size="small"] { --font-scale: .92; }
 :root[data-font-size="normal"] { --font-scale: 1; }
-:root[data-font-size="large"] { --font-scale: 1.055; }
-:root[data-font-size="xl"] { --font-scale: 1.11; }
+:root[data-font-size="large"] { --font-scale: 1.10; }
+:root[data-font-size="xl"] { --font-scale: 1.20; }
+
+/* Scale inherited copy too, without changing rem-based layout or scaling text twice. */
+body { font-size: var(--text-body); }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 .settings-font-size-content { display: grid; width: min(100%, 460px); min-width: 0; gap: 3px; }
 .settings-font-size-slider-row { display: grid; min-width: 0; min-height: 44px; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; gap: 10px; }
 .settings-font-size-a { color: var(--text-secondary); text-align: center; line-height: 1; }
-.settings-font-size-a-small { font-size: 13px; }
-.settings-font-size-a-large { font-size: 18px; }
+.settings-font-size-a-small { font-size: var(--text-sm); }
+.settings-font-size-a-large { font-size: var(--text-lg); }
 .settings-font-size-track { position: relative; width: 100%; height: 44px; min-width: 0; touch-action: pan-y; cursor: pointer; user-select: none; }
 .settings-font-size-track:focus { outline: none; }
 .settings-font-size-track:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; border-radius: 8px; }
@@ -10176,7 +10181,7 @@ html[data-theme="dark"] #root {
     position: relative;
     width: 100%;
     min-height: 49px;
-    height: 49px;
+    height: auto;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -10187,14 +10192,19 @@ html[data-theme="dark"] #root {
   .settings-page-scope .settings-nav-inner {
     display: grid;
     width: 100%;
-    height: 100%;
+    min-height: 49px;
     grid-template-columns: 19px minmax(0, 1fr) 16px;
     align-items: center;
     gap: 9px;
-    padding: 0 14px 0 16px;
+    padding: 12px 14px 12px 16px;
     box-sizing: border-box;
     background: transparent;
     text-align: left;
+  }
+  .settings-page-scope .settings-nav-label {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .settings-page-scope .settings-nav-inner > svg:first-child { width: 19px; height: 19px; }
   .settings-page-scope .settings-nav-item .settings-nav-chevron {
@@ -10294,6 +10304,16 @@ html[data-theme="dark"] #root {
 
 @media (max-width: 767px) {
   .settings-font-size-content { width: 100%; }
+  .mobile-settings-nav > button {
+    height: auto;
+    min-height: 56px;
+    padding-block: 8px;
+  }
+  .mobile-settings-nav > button > span {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .mobile-company-fab { display: none; }
