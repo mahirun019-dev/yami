@@ -54,5 +54,5 @@ test('this frontend release has one bilingual product announcement without fabri
   assert.equal(records.length, 1);
   assert.equal(records[0].date, '2026-10-20');
   assert.ok(records[0].changes.ja.length && records[0].changes.zh.length);
-  assert.equal(releaseHistory(PRODUCT_UPDATES)[0].id, records[0].id);
+  assert.ok(releaseHistory(PRODUCT_UPDATES).some((record) => record.id === records[0].id));
 });

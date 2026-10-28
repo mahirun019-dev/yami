@@ -2518,6 +2518,13 @@ function SidebarNavIcon({ view, active }: { view: View; active: boolean }) {
   );
 }
 
+function MobileNavIcon({ view, active }: { view: View; active: boolean }) {
+  const Icon = sidebarIcons[view];
+  return <span className="mobile-nav-icon" data-icon={view} data-filled={active}>
+    <Icon size={28} weight={active ? "fill" : "regular"} aria-hidden="true" focusable="false" />
+  </span>;
+}
+
 function Nav({
   view,
   setView,
@@ -2675,7 +2682,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <SidebarNavIcon view="dashboard" active={view === "dashboard"} />
+        <MobileNavIcon view="dashboard" active={view === "dashboard"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.dashboard}</span>
       </button>
       <button
@@ -2687,7 +2694,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <SidebarNavIcon view="companies" active={view === "companies"} />
+        <MobileNavIcon view="companies" active={view === "companies"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.companies}</span>
       </button>
       <button
@@ -2699,7 +2706,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <span className="mobile-nav-bell"><SidebarNavIcon view="notifications" active={view === "notifications"} />{unread > 0 && <i>{unread > 99 ? "99+" : unread}</i>}</span>
+        <span className="mobile-nav-bell"><MobileNavIcon view="notifications" active={view === "notifications"} />{unread > 0 && <i>{unread > 99 ? "99+" : unread}</i>}</span>
         <span className="mobile-nav-label" aria-hidden="true">{t.notifications}</span>
       </button>
       <button
@@ -2711,7 +2718,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <SidebarNavIcon view="schedule" active={view === "schedule"} />
+        <MobileNavIcon view="schedule" active={view === "schedule"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.schedule}</span>
       </button>
       <button
@@ -2723,7 +2730,7 @@ function MobileNav({
         onPointerUp={(e) => { delete e.currentTarget.dataset.pressed; }}
         onPointerLeave={(e) => { delete e.currentTarget.dataset.pressed; }}
       >
-        <SidebarNavIcon view="materials" active={view === "materials"} />
+        <MobileNavIcon view="materials" active={view === "materials"} />
         <span className="mobile-nav-label" aria-hidden="true">{t.materials}</span>
       </button>
     </nav>

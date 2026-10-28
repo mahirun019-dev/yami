@@ -11,6 +11,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-10-29-yami-mobile-navigation-icons',
+  date: '2026-10-29',
+  title: { ja: 'モバイルナビゲーションを調整しました', zh: '手机底部导航图标已优化' },
+  summary: { ja: '下部ナビゲーションのアイコンの大きさと見え方を揃えました。', zh: '统一了底部导航图标的视觉大小与重量。' },
+  changes: {
+    ja: ['アイコンの配置枠を統一し、図形ごとの見た目を調整しました', 'ナビゲーションの操作や表示・非表示の動作はそのままです'],
+    zh: ['统一图标容器，并根据图形进行光学尺寸校正', '保留原有导航点击及隐藏、恢复交互'],
+  },
+}, {
   id: '2026-10-20-yami-company-hover-about-links',
   date: '2026-10-20',
   title: { ja: '企業カードの操作感を調整しました', zh: '企业卡片交互体验已优化' },

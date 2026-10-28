@@ -7951,16 +7951,37 @@ html[data-theme="dark"] #root {
 }
 
 @media (max-width: 767px) {
-  .career-mobile-nav > button > .sidebar-nav-icon,
-  .career-mobile-nav .mobile-nav-bell > .sidebar-nav-icon {
-    width: 19px;
-    height: 19px;
-    flex-basis: 19px;
+  .career-mobile-nav .mobile-nav-icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    --mobile-glyph-size: 28px;
+  }
+
+  .career-mobile-nav .mobile-nav-icon[data-icon="dashboard"] {
+    --mobile-glyph-size: 26px;
+  }
+
+  .career-mobile-nav .mobile-nav-icon[data-icon="dashboard"][data-filled="true"] {
+    --mobile-glyph-size: 24.5px;
+  }
+
+  .career-mobile-nav .mobile-nav-icon[data-icon="notifications"] {
+    --mobile-glyph-size: 25px;
+  }
+
+  [data-testid="mobile-bottom-nav"] .mobile-nav-icon > svg {
+    width: var(--mobile-glyph-size) !important;
+    height: var(--mobile-glyph-size) !important;
+    flex: none;
+    display: block;
   }
 
   .career-mobile-nav .mobile-nav-bell {
-    width: 19px;
-    height: 19px;
+    width: 28px;
+    height: 28px;
   }
 }
 
