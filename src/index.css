@@ -7620,6 +7620,34 @@ html[data-theme="dark"] #root {
   border: 1.5px solid var(--bg-surface);
 }
 
+@media (min-width: 768px) {
+  .notification-page .has-product-brand .notification-page-brand {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    overflow: visible;
+  }
+  .notification-page .has-product-brand .yami-brand-avatar {
+    display: block;
+    width: 42px;
+    height: 42px;
+    max-width: none;
+    border-radius: 0;
+    object-fit: contain;
+  }
+  .notification-page .has-product-brand .notification-page-dot {
+    top: 0;
+    right: -9px;
+  }
+  .notification-page .has-product-brand .notification-page-product-title,
+  .notification-page .has-product-brand .notification-page-product-title > span:not(.yami-wordmark-assets) {
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (max-width: 767px) {
   .mobile-settings-subpage.mobile-about .yami-about-brand > .yami-brand-illustration { height: 88px; }
   .mobile-settings-subpage.mobile-about .yami-about-brand > .yami-wordmark-assets { width: 88px; height: 40px; }

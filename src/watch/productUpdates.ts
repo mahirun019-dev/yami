@@ -11,6 +11,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-10-29-yami-desktop-notification-avatar',
+  date: '2026-10-29',
+  title: { ja: 'PC の公式通知表示を調整しました', zh: 'PC 官方通知展示已优化' },
+  summary: { ja: 'Yami のアバター表示と長いタイトルの折り返しを整えました。', zh: '完善了 Yami 头像显示与长标题换行。' },
+  changes: {
+    ja: ['PC の公式通知でアバターを切り取らずに表示します', '未読マークの配置と長いタイトルの表示を調整しました'],
+    zh: ['PC 官方通知完整显示现有头像素材', '优化未读标记位置及长标题显示'],
+  },
+}, {
   id: '2026-10-29-yami-mobile-navigation-icons',
   date: '2026-10-29',
   title: { ja: 'モバイルナビゲーションを調整しました', zh: '手机底部导航图标已优化' },
