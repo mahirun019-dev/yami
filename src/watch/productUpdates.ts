@@ -11,6 +11,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-10-30-yami-plan-preview',
+  date: '2026-10-30',
+  title: { ja: 'プランと料金の紹介ページを追加しました', zh: '新增计划与价格介绍页' },
+  summary: { ja: '現在の機能は無料のまま、Free と準備中の Pro を紹介します。課金は開始していません。', zh: '现有功能继续免费，展示 Free 与准备中的 Pro；尚未开放收费。' },
+  changes: {
+    ja: ['設定から Free の現行機能と Pro の将来案を確認できます', '月額 ¥490 はテスト価格です。購入・サブスクリプションは開始していません'],
+    zh: ['可从设置查看 Free 的现有能力及 Pro 的未来规划', '¥490 / 月仅为日元测试价格，未开放购买或订阅'],
+  },
+}, {
   id: '2026-10-29-yami-desktop-notification-avatar',
   date: '2026-10-29',
   title: { ja: 'PC の公式通知表示を調整しました', zh: 'PC 官方通知展示已优化' },

@@ -25,6 +25,8 @@ import { getUnreadProductUpdateCount, subscribeProductUpdateReadState } from "./
 import { YamiLogoLockup } from "./brand/YamiLogo";
 import { AboutSettings } from "./about/AboutSettings";
 import { aboutCopy } from "./about/i18n";
+import { PlanSettings } from "./plans/PlanSettings";
+import { planCopy } from "./plans/i18n";
 import { normalizeDashboardUrl } from "./route";
 
 import {
@@ -5129,6 +5131,7 @@ function MobileSettingsDrawer({
       <button type="button" onClick={() => changePage("calendar")}><CalendarSync aria-hidden="true" /><span>{t.calendarIntegration}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("watch")}><Eye aria-hidden="true" /><span>{locale === "ja" ? "企業ウォッチ接続" : "企业监控连接"}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("data")}><Database aria-hidden="true" /><span>{t.data}</span><ChevronRight aria-hidden="true" /></button>
+      <button type="button" onClick={() => changePage("plans")}><BriefcaseBusiness aria-hidden="true" /><span>{planCopy[locale === "ja" ? "ja" : "zh"].title}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("about")}><Info aria-hidden="true" /><span>{about.title}</span><ChevronRight aria-hidden="true" /></button>
     </nav>;
     if (pageValue === "general") return <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} mobile />;
@@ -5138,6 +5141,7 @@ function MobileSettingsDrawer({
     if (pageValue === "templates") return <section className="mobile-settings-subpage"><TemplateManager t={t} data={data} setData={setData} /></section>;
     if (pageValue === "calendar") return <CalendarSettings t={t} data={data} updatePreferences={updatePreferences} exportCalendar={exportCalendar} />;
     if (pageValue === "watch") return <section className="mobile-settings-subpage"><WatchConnectionSettings locale={locale} /></section>;
+    if (pageValue === "plans") return <PlanSettings locale={locale} mobile />;
     return <AboutSettings locale={locale} mobile />;
   };
   const headerPage = transitionPage !== undefined
@@ -5164,7 +5168,7 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
   const ui = locale === "ja"
     ? { general: "一般", data: "データとバックアップ", about: "Yamiについて" }
     : { general: "常规", data: "数据与备份", about: "关于 Yami" };
-  const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["about", ui.about, Info]] as const;
+  const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["plans", planCopy[ja ? "ja" : "zh"].title, BriefcaseBusiness], ["about", ui.about, Info]] as const;
   const currentTitle = tabs.find(([key]) => key === tab)?.[1] ?? ui.general;
   return <div className="settings-page-scope desktop-settings-page"><nav className="desktop-settings-nav settings-sidebar"><header className="settings-column-header settings-menu-heading"><h2 className="settings-column-title">{t.settings}</h2></header><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
     <header className="settings-column-header"><h2 className="settings-column-title">{currentTitle}</h2></header>
@@ -5176,6 +5180,7 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
     {tab === "watch" && <WatchConnectionSettings locale={locale} />}
     {tab === "data" && <DataSettings data={data} theme={theme} locale={locale} json={json} />}
     {tab === "about" && <AboutSettings locale={locale} />}
+    {tab === "plans" && <PlanSettings locale={locale} />}
   </div><input hidden ref={iconRef} type="file" accept="image/*" onChange={upload} />
   </div>;
 }
