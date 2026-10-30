@@ -11,6 +11,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-10-30-yami-plan-copy-refinement',
+  date: '2026-10-30',
+  title: { ja: 'プラン紹介の文面を整理しました', zh: '精简计划介绍文案' },
+  summary: { ja: '重複する説明を減らし、Free と Pro の比較を読みやすくしました。', zh: '移除重复说明，让 Free 与 Pro 的对比更加清晰。' },
+  changes: {
+    ja: ['ページ上下と Free 内の重複する説明を削除しました', '機能・価格・準備中の表示と利用条件は変更していません'],
+    zh: ['删除页面上下及 Free 内的重复说明', '功能、价格、准备中标识和使用条件均未改变'],
+  },
+}, {
   id: '2026-10-30-yami-plan-preview',
   date: '2026-10-30',
   title: { ja: 'プランと料金の紹介ページを追加しました', zh: '新增计划与价格介绍页' },

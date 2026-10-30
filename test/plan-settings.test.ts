@@ -14,9 +14,13 @@ test('both languages expose identical plan information with existing sync free',
   for (const copy of Object.values(planCopy)) {
     assert.equal(copy.freeFeatures.length, 6);
     assert.equal(copy.proFeatures.length, 4);
-    assert.ok(copy.proNote && copy.experiment && copy.priceNote && copy.protection);
+    assert.ok(copy.proNote && copy.experiment && copy.priceNote);
     assert.doesNotMatch(copy.proFeatures.join(''), /\d/);
   }
+});
+test('plan comparison omits repeated free reassurance copy', () => {
+  assert.doesNotMatch(component, /copy\.(intro|syncNote|protectionTitle|protection)\b|plan-assurance|plan-lead/);
+  assert.doesNotMatch(css, /plan-assurance|plan-lead/);
 });
 test('plans are presentation only, without purchase, permissions or data mutations', () => {
   assert.doesNotMatch(component, /fetch\(|localStorage|sessionStorage|useWatch|setData|onClick|<button|<a\b|<form|stripe|checkout|subscriptionId/i);

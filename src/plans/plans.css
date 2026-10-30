@@ -2,7 +2,6 @@
 .settings-page-scope .desktop-settings-content > .settings-plan-page.settings-section { display: grid; width: 100%; max-width: 920px; min-width: 0; gap: 24px; align-content: start; }
 .settings-plan-page p { margin: 0; }
 .settings-plan-page .plan-intro { display: grid; gap: 8px; color: var(--text-secondary); font-size: calc(13px * var(--reading-scale, 1)); line-height: 1.65; }
-.settings-plan-page .plan-lead { color: var(--text-primary); font-size: calc(17px * var(--reading-scale, 1)); font-weight: 600; }
 .settings-plan-page .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 18px; min-width: 0; }
 .settings-plan-page .plan-option { min-width: 0; padding: 22px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-surface); box-shadow: none; }
 .settings-plan-page .plan-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
@@ -21,7 +20,4 @@
 .settings-plan-page .plan-future-mark { width: 4px; height: 4px; margin: 8px 6px 0; border-radius: 50%; background: var(--text-secondary); }
 .settings-plan-page .plan-footnote { margin-top: 12px; color: var(--text-secondary); font-size: calc(12px * var(--reading-scale, 1)); line-height: 1.65; overflow-wrap: anywhere; }
 .settings-plan-page .plan-unavailable { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-color); color: var(--text-secondary); font-size: calc(13px * var(--reading-scale, 1)); font-weight: 500; }
-.settings-plan-page .plan-assurance { padding-top: 20px; border-top: 1px solid var(--border-color); }
-.settings-plan-page .plan-assurance h3 { margin: 0 0 8px; font-size: calc(14px * var(--reading-scale, 1)); font-weight: 600; }
-.settings-plan-page .plan-assurance p { color: var(--text-secondary); font-size: calc(13px * var(--reading-scale, 1)); line-height: 1.7; }
 @media(max-width: 767px) { .settings-plan-page .plan-option { padding: 18px; } .settings-plan-page .plan-grid { grid-template-columns: minmax(0, 1fr); } }
