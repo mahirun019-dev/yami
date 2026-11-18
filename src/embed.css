@@ -28,8 +28,13 @@ html[data-embed="argon"] .career-app {
   --border-card: rgba(0, 0, 0, 0.07) !important;
   --text-secondary: #474c54 !important;
   --text-muted: #5b6069 !important;
+  --stat-divider: rgba(0, 0, 0, 0.1);
+  --action-banner-bg: rgba(0, 0, 0, 0.045);
+  --action-banner-hover: rgba(0, 0, 0, 0.08);
   --embed-hairline: rgba(0, 0, 0, 0.09);
   --embed-dialog-bg: rgba(250, 250, 251, 0.97);
+  --embed-dialog-input-bg: #ffffff;
+  --embed-dialog-muted-bg: #f1f2f4;
   --embed-text-shadow: none;
 }
 
@@ -47,8 +52,13 @@ html[data-embed="argon"][data-theme="dark"] .career-app {
   --border-card: rgba(255, 255, 255, 0.08) !important;
   --text-secondary: #c2c7cf !important;
   --text-muted: #a2a8b1 !important;
+  --stat-divider: rgba(255, 255, 255, 0.14);
+  --action-banner-bg: rgba(255, 255, 255, 0.07);
+  --action-banner-hover: rgba(255, 255, 255, 0.12);
   --embed-hairline: rgba(255, 255, 255, 0.1);
   --embed-dialog-bg: rgba(30, 33, 39, 0.97);
+  --embed-dialog-input-bg: #171a20;
+  --embed-dialog-muted-bg: #242830;
 }
 
 /* Argon 透明, white ink (dark appearance): light ink, dark translucent plates, a soft shadow under text. */
@@ -57,12 +67,20 @@ html[data-embed="argon"][data-argon-material="clear"][data-theme="dark"] .career
   --text-primary: #fff !important;
   --text-secondary: rgba(255, 255, 255, 0.84) !important;
   --text-muted: rgba(255, 255, 255, 0.72) !important;
+  --text-disabled: rgba(255, 255, 255, 0.45) !important;
   --bg-surface: rgba(0, 0, 0, 0.22) !important;
   --bg-muted: rgba(255, 255, 255, 0.1) !important;
   --bg-input: rgba(0, 0, 0, 0.18) !important;
+  --bg-hover: rgba(255, 255, 255, 0.12) !important;
+  --bg-card-hover: rgba(0, 0, 0, 0.34) !important;
+  --bg-selected: rgba(255, 255, 255, 0.16) !important;
   --border-color: rgba(255, 255, 255, 0.22) !important;
   --border-default: rgba(255, 255, 255, 0.22) !important;
+  --border-strong: rgba(255, 255, 255, 0.3) !important;
   --border-card: rgba(255, 255, 255, 0.16) !important;
+  --stat-divider: rgba(255, 255, 255, 0.2);
+  --action-banner-bg: rgba(0, 0, 0, 0.24);
+  --action-banner-hover: rgba(0, 0, 0, 0.34);
   --embed-hairline: rgba(255, 255, 255, 0.18);
   --embed-text-shadow: 0 0.5px 1.6px rgba(0, 0, 0, 0.5);
 }
@@ -73,17 +91,86 @@ html[data-embed="argon"][data-argon-material="clear"][data-theme="light"] .caree
   --text-primary: #0d0e10 !important;
   --text-secondary: rgba(0, 0, 0, 0.74) !important;
   --text-muted: rgba(0, 0, 0, 0.64) !important;
+  --text-disabled: rgba(0, 0, 0, 0.42) !important;
   --bg-surface: rgba(255, 255, 255, 0.34) !important;
   --bg-muted: rgba(0, 0, 0, 0.06) !important;
-  --bg-input: rgba(255, 255, 255, 0.4) !important;
+  --bg-input: rgba(255, 255, 255, 0.42) !important;
+  --bg-hover: rgba(0, 0, 0, 0.07) !important;
+  --bg-card-hover: rgba(255, 255, 255, 0.5) !important;
+  --bg-selected: rgba(0, 0, 0, 0.1) !important;
   --border-color: rgba(0, 0, 0, 0.16) !important;
   --border-default: rgba(0, 0, 0, 0.16) !important;
+  --border-strong: rgba(0, 0, 0, 0.24) !important;
+  --border-card: rgba(0, 0, 0, 0.12) !important;
+  --stat-divider: rgba(0, 0, 0, 0.16);
+  --action-banner-bg: rgba(255, 255, 255, 0.38);
+  --action-banner-hover: rgba(255, 255, 255, 0.56);
   --embed-hairline: rgba(0, 0, 0, 0.14);
   --embed-text-shadow: 0 0 1.4px rgba(255, 255, 255, 0.75);
 }
 
 html[data-embed="argon"] body {
   text-shadow: var(--embed-text-shadow);
+}
+
+html[data-embed="argon"] .dashboard-date {
+  color: var(--text-primary) !important;
+}
+
+/* Solid filled pills and notifications keep crisp ink without glass text halo. */
+html[data-embed="argon"] .primary-action,
+html[data-embed="argon"] .primary,
+html[data-embed="argon"] .backup-action-block > button.primary,
+html[data-embed="argon"] .danger-solid,
+html[data-embed="argon"] .toast {
+  text-shadow: none;
+}
+
+/* Keep cards and funnel counters translucent instead of index.css hardcoded hex fills. */
+html[data-embed="argon"][data-theme] .career-app .company-card.entity-card {
+  border-color: var(--border-card) !important;
+  background: var(--bg-surface) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-embed="argon"][data-theme] .career-app .company-card.entity-card:hover {
+    border-color: var(--border-default) !important;
+    background: var(--bg-card-hover) !important;
+  }
+}
+
+html[data-embed="argon"][data-theme] .career-app .company-card.entity-card:active {
+  border-color: var(--border-default) !important;
+  background: var(--bg-card-hover) !important;
+}
+
+html[data-embed="argon"][data-theme] .dashboard-progress-module .funnel b {
+  color: var(--text-secondary) !important;
+  background: var(--bg-muted) !important;
+}
+
+html[data-embed="argon"][data-theme] .dashboard-progress-module .funnel b.has-count {
+  color: var(--text-primary) !important;
+  background: var(--bg-selected) !important;
+}
+
+html[data-embed="argon"][data-theme] .career-app .filter-bar button:not(.active),
+html[data-embed="argon"][data-theme] .career-app .task-due span,
+html[data-embed="argon"][data-theme] .career-app .text-button {
+  color: var(--text-secondary) !important;
+}
+
+html[data-embed="argon"][data-theme] .career-app .filter-bar button.active {
+  color: var(--text-primary) !important;
+  background: var(--bg-selected) !important;
+}
+
+html[data-embed="argon"][data-theme] .career-app .text-button:hover {
+  color: var(--text-primary) !important;
+}
+
+html[data-embed="argon"][data-argon-material="clear"][data-theme="dark"] .task-due b {
+  color: var(--danger);
 }
 
 /* ---- Page layers: no background of their own ------------------------------ */
@@ -118,7 +205,10 @@ html[data-embed="argon"] .career-app {
 html[data-embed="argon"] .career-app .sidebar,
 html[data-embed="argon"] .career-app .mobile-header,
 html[data-embed="argon"] .career-mobile-nav,
-html[data-embed="argon"] [data-mobile-bottom-nav="true"] {
+html[data-embed="argon"] [data-mobile-bottom-nav="true"],
+html[data-embed="argon"] .mobile-company-fab,
+html[data-embed="argon"] .career-app .company-toolbar-add-action,
+html[data-embed="argon"] .career-app .company-toolbar.is-empty {
   display: none !important;
 }
 
@@ -146,9 +236,141 @@ html[data-embed="argon"] .embed-head-actions {
   flex: 0 0 auto;
 }
 
+/* Narrow Argon pane (< 768px): mobile nav and header stay hidden, so reset the
+ * top mobile-header inset and keep inline settings usable in one column. */
+@media (max-width: 767px) {
+  html[data-embed="argon"] .app-shell > .student-app > .workspace {
+    padding: 20px 22px 42px !important;
+  }
+
+  html[data-embed="argon"] .career-app .workspace.workspace-settings {
+    padding: 0 !important;
+  }
+
+  html[data-embed="argon"] .career-app .company-toolbar {
+    grid-template-columns: minmax(0, 1fr) 52px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope.desktop-settings-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-sidebar {
+    padding: 20px 22px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--embed-hairline);
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-menu-heading {
+    margin: 0 0 12px;
+    padding: 0 0 12px;
+    border-bottom: 1px solid var(--embed-hairline);
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-menu-heading h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: calc(22px * var(--reading-scale, 1));
+    font-weight: 650;
+    line-height: 1.25;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-item,
+  html[data-embed="argon"] .settings-page-scope .settings-nav-item.is-active {
+    width: auto;
+    min-height: 36px;
+    height: auto;
+    padding: 0;
+    border-radius: 9px;
+    font-size: calc(13px * var(--reading-scale, 1));
+    font-weight: 500;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 6px 11px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-inner > svg:first-child {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-chevron,
+  html[data-embed="argon"] .settings-page-scope .settings-nav-item[aria-selected="true"]::after {
+    display: none;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .desktop-settings-content {
+    min-width: 0;
+    padding: 20px 22px 42px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .desktop-settings-content > .settings-column-header {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--embed-hairline);
+  }
+
+  html[data-embed="argon"] .settings-page-scope .desktop-settings-content > .settings-column-header .settings-column-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: calc(18px * var(--reading-scale, 1));
+    font-weight: 650;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .desktop-settings-content > .settings-section > h3,
+  html[data-embed="argon"] .settings-page-scope .desktop-settings-content > .watch-connection-settings > h3 {
+    display: none;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-section {
+    padding: 0;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-saved-data dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-saved-data dl > div {
+    min-height: 46px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-saved-data dl > div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-saved-data dl > div:last-child {
+    grid-column: 1 / -1;
+    border-right: 0;
+    border-bottom: 0;
+  }
+}
+
 /* ---- Page switch: Argon's push --------------------------------------------
- * Going down Argon's sidebar the new page comes up from below, butted against
- * the old one as it leaves upward; going up, the reverse. */
+ * Matches Argon's CASpringAnimation(perceptualDuration: 0.3, bounce: 0.1)
+ * settling in 426ms so embedded page transitions feel native. */
 
 @keyframes yami-embed-out-up { to { transform: translateY(-100vh); } }
 @keyframes yami-embed-in-up { from { transform: translateY(100vh); } }
@@ -158,13 +380,14 @@ html[data-embed="argon"] .embed-head-actions {
 @keyframes yami-embed-fade-in { from { opacity: 0; } }
 
 html[data-embed-push]::view-transition-group(root) {
-  animation-duration: 340ms;
+  animation-duration: 426ms;
 }
 
 html[data-embed-push]::view-transition-old(root),
 html[data-embed-push]::view-transition-new(root) {
-  animation-duration: 340ms;
+  animation-duration: 426ms;
   animation-timing-function: cubic-bezier(0.22, 0.95, 0.3, 1);
+  animation-timing-function: linear(0, 0.0762, 0.2346, 0.4086, 0.5661, 0.695, 0.7938, 0.8658, 0.9161, 0.95, 0.9719, 0.9854, 0.9935, 0.998, 1.0003, 1.0012, 1.0015, 1.0014, 1.0012, 1.0009, 1);
   mix-blend-mode: normal;
 }
 
@@ -174,6 +397,7 @@ html[data-embed-push="up"]::view-transition-old(root) { animation-name: yami-emb
 html[data-embed-push="up"]::view-transition-new(root) { animation-name: yami-embed-in-down; }
 
 @media (prefers-reduced-motion: reduce) {
+  html[data-embed-push]::view-transition-group(root) { animation-duration: 150ms; }
   html[data-embed-push]::view-transition-old(root) { animation: yami-embed-fade-out 150ms ease-out both; }
   html[data-embed-push]::view-transition-new(root) { animation: yami-embed-fade-in 150ms ease-out both; }
 }
@@ -183,30 +407,83 @@ html[data-embed-push="up"]::view-transition-new(root) { animation-name: yami-emb
 
 html[data-embed="argon"][data-theme] .settings-page-scope,
 html[data-embed="argon"][data-theme] .desktop-settings-page,
-html[data-embed="argon"][data-theme] .desktop-settings-content {
+html[data-embed="argon"][data-theme] .desktop-settings-content,
+html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-content > .settings-section {
   background: transparent !important;
   background-color: transparent !important;
 }
 
-html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-nav.settings-sidebar {
+html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-nav.settings-sidebar,
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-menu-heading,
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-column-header {
   background: transparent !important;
   border-color: var(--embed-hairline) !important;
 }
 
 html[data-embed="argon"][data-theme] .empty-small,
 html[data-embed="argon"][data-theme] .career-app .timeline > .empty-small--schedule,
-html[data-embed="argon"][data-theme] .materials-empty-tile {
+html[data-embed="argon"][data-theme] .materials-empty-tile,
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-saved-data dl,
+html[data-embed="argon"][data-theme] .settings-page-scope .backup-notes {
   background: var(--bg-surface) !important;
 }
 
-html[data-embed="argon"][data-theme] .settings-page-scope .is-selected {
+html[data-embed="argon"][data-theme] .empty-small strong {
+  color: var(--text-primary) !important;
+}
+
+html[data-embed="argon"][data-theme] .empty-small p {
+  color: var(--text-secondary) !important;
+}
+
+html[data-embed="argon"] .app-shell.app-shell-settings {
+  --settings-column-divider: var(--embed-hairline);
+  --settings-active-row: var(--bg-selected);
+  --settings-hover-row: var(--bg-hover);
+  --settings-nav-hover-row: var(--bg-hover);
+  --settings-nav-active-row: var(--bg-selected);
+}
+
+html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .is-selected,
+html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item[aria-selected="true"] {
   background: var(--bg-selected) !important;
 }
 
-/* Dialogs and drawers float over the page: near-solid, no glass behind their text. */
+html[data-embed="argon"] .settings-page-scope .settings-nav-item[aria-selected="true"] svg * {
+  fill: none !important;
+}
+
+html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item:hover:not([aria-selected="true"]),
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list button:hover {
+  background: var(--bg-hover) !important;
+}
+
+/* Dialogs, sheets, and popovers float over the page: near-solid, no glass behind their text. */
+html[data-embed="argon"][data-theme] .modal-layer,
+html[data-embed="argon"][data-theme] .backup-restore-layer,
+html[data-embed="argon"][data-theme] .watch-disconnect-layer,
+html[data-embed="argon"][data-theme] .template-delete-layer,
+html[data-embed="argon"][data-theme] .stage-progression-warning-layer,
+html[data-embed="argon"][data-theme] .company-filter-sheet-layer,
+html[data-embed="argon"][data-theme] .record-action-menu {
+  --bg-surface: var(--embed-dialog-bg);
+  --bg-input: var(--embed-dialog-input-bg);
+  --bg-muted: var(--embed-dialog-muted-bg);
+  text-shadow: none;
+}
+
 html[data-embed="argon"][data-theme] .modal-layer .drawer,
+html[data-embed="argon"][data-theme] .modal-layer .drawer > header,
+html[data-embed="argon"][data-theme] .modal-layer .form-actions,
 html[data-embed="argon"][data-theme] .modal-layer .entity-card,
-html[data-embed="argon"][data-theme] .modal-layer [role="dialog"] {
+html[data-embed="argon"][data-theme] .modal-layer [role="dialog"],
+html[data-embed="argon"][data-theme] .backup-restore-dialog,
+html[data-embed="argon"][data-theme] .watch-disconnect-dialog,
+html[data-embed="argon"][data-theme] .template-delete-dialog,
+html[data-embed="argon"][data-theme] .stage-progression-warning-dialog,
+html[data-embed="argon"][data-theme] .company-filter-sheet,
+html[data-embed="argon"][data-theme] .career-app .record-action-menu,
+html[data-embed="argon"][data-theme] .career-app .record-action-menu .record-action-surface {
   background: var(--embed-dialog-bg) !important;
   text-shadow: none;
 }

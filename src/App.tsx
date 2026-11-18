@@ -1453,6 +1453,7 @@ export default function App() {
   const account=useAccount();
   const localStorage=useMemo(()=>storageForOwner(account?.user.userId),[account?.user.userId]);
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const useInlineSettings = !isMobile || isArgonEmbed;
   const [data, setData] = useState<Data>(()=>load(localStorage));
   const initialRoute = readRouteState();
   const [view, setViewState] = useState<View>(() => getStartupView(data, initialRoute)),
@@ -1465,7 +1466,7 @@ export default function App() {
       const saved = localStorage.getItem(LOCALE);
       return saved === "ja" ? "ja" : "zh";
     }),
-    [settings, setSettings] = useState(() => !isMobile && initialRoute.settings),
+    [settings, setSettings] = useState(() => useInlineSettings && initialRoute.settings),
     [mobileSettingsPage, setMobileSettingsPage] = useState<string | null>(null),
     [form, setForm] = useState<CreateType | null>(null),
     [eventFormPreset, setEventFormPreset] = useState<EventFormPreset>(),
@@ -1527,7 +1528,7 @@ export default function App() {
   };
   const setView = (nextView: View) => navigate(nextView);
   const setSettingsOpen = (open: boolean) => {
-    if (open && !isMobile && !settings) {
+    if (open && useInlineSettings && !settings) {
       const params = new URLSearchParams(window.location.search);
       params.set("from", view);
       params.set("view", "settings");
@@ -1536,7 +1537,7 @@ export default function App() {
     setSettings(open);
   };
   const closeSettingsPage = () => {
-    if (!isMobile) {
+    if (useInlineSettings) {
       const params = new URLSearchParams(window.location.search);
       if (params.get("view") === "settings") {
         const returnView = params.get("from");
@@ -1560,7 +1561,7 @@ export default function App() {
     if (matchingCompany) { setWatchHighlightEventId(eventId); selectCompany(matchingCompany.id); }
   };
   const openWatchSettings = () => {
-    if (isMobile) {
+    if (!useInlineSettings) {
       setMobileSettingsPage("watch");
     }
     setSettingsOpen(true);
@@ -1579,7 +1580,7 @@ export default function App() {
         restoreCompanyListScrollRef.current = true;
       }
       setViewState(route.view);
-      setSettings(!isMobile && route.settings);
+      setSettings(useInlineSettings && route.settings);
       setCompanyFilter(route.companyFilter);
       setScheduleFilter(route.scheduleFilter);
       setSelected(route.selectedCompanyId || undefined);
@@ -1589,7 +1590,7 @@ export default function App() {
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [isMobile]);
+  }, [useInlineSettings]);
   useEffect(() => {
     if (view !== "companies") return;
     const frame = requestAnimationFrame(() => {
@@ -1745,7 +1746,10 @@ export default function App() {
     const m = matchMedia("(prefers-color-scheme:dark)");
     const applyTheme = () => {
       // Embedded in Argon: follow the host window's appearance; the saved choice is kept for the web version.
-      const isDark = isArgonEmbed ? m.matches : theme === "dark" || (theme === "system" && m.matches);
+      const argonScheme = isArgonEmbed ? document.documentElement.dataset.argonScheme : undefined;
+      const isDark = isArgonEmbed
+        ? (argonScheme === "dark" ? true : argonScheme === "light" ? false : m.matches)
+        : theme === "dark" || (theme === "system" && m.matches);
       document.documentElement.dataset.theme = isDark ? "dark" : "light";
       document.documentElement.style.colorScheme = isDark ? "dark" : "light";
       document.querySelector('meta[name="theme-color"]')?.setAttribute("content", isDark ? "#000000" : "#f7f7f8");
@@ -1759,7 +1763,14 @@ export default function App() {
     applyTheme();
     localStorage.setItem(THEME, theme);
     m.addEventListener("change", applyTheme);
-    return () => m.removeEventListener("change", applyTheme);
+    const observer = isArgonEmbed && typeof MutationObserver !== "undefined"
+      ? new MutationObserver(applyTheme)
+      : undefined;
+    observer?.observe(document.documentElement, { attributes: true, attributeFilter: ["data-argon-scheme"] });
+    return () => {
+      m.removeEventListener("change", applyTheme);
+      observer?.disconnect();
+    };
   }, [theme]);
   useEffect(() => {
     if (!toast) return;
@@ -2217,8 +2228,8 @@ export default function App() {
     setForm("schedule");
   };
   return (
-    <WatchProvider><div className={`app-shell${!isMobile && settings ? " app-shell-settings" : ""}`} data-app-shell="true">
-      <div className={`student-app career-app${!isMobile && settings ? " has-desktop-settings" : ""}`} onClickCapture={handleExternalLinkClick}>
+    <WatchProvider><div className={`app-shell${useInlineSettings && settings ? " app-shell-settings" : ""}`} data-app-shell="true">
+      <div className={`student-app career-app${useInlineSettings && settings ? " has-desktop-settings" : ""}`} onClickCapture={handleExternalLinkClick}>
         {isArgonEmbed && <EmbedBridge view={view} settings={settings} go={(page) => {
           if (page === "settings") { setSettingsOpen(true); return; }
           if (settings) closeSettingsPage();
@@ -2253,9 +2264,9 @@ export default function App() {
         </header>
         <main
           ref={workspaceRef}
-          className={`workspace${!isMobile && settings ? " workspace-settings" : ""}`}
+          className={`workspace${useInlineSettings && settings ? " workspace-settings" : ""}`}
         >
-          {!isMobile && settings ? (
+          {useInlineSettings && settings ? (
             <SettingsPanel
               t={t}
               theme={theme}
@@ -2373,7 +2384,7 @@ export default function App() {
           )}
           </>}
         </main>
-        {isMobile && (
+        {!useInlineSettings && (
           <MobileSettingsDrawer
             t={t}
             page={mobileSettingsPage}
@@ -2490,7 +2501,7 @@ export default function App() {
           <Toast t={t} toast={toast} close={() => setToast(undefined)} />
         )}
       </div>
-      {isMobile && !hasOpenOverlay && createPortal(
+      {isMobile && !isArgonEmbed && !hasOpenOverlay && createPortal(
         <>
           <MobileNav view={view} setView={setView} t={t} />
           {view !== "companies" && <button
