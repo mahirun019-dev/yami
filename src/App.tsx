@@ -3126,6 +3126,13 @@ function Dashboard({
           </PrimaryActionButton>
         </div>
         </div>
+        {data.companies.length === 0 && <section className="dashboard-onboarding" aria-labelledby="dashboard-onboarding-title">
+          <div>
+            <strong id="dashboard-onboarding-title">{t.language === "言語" ? "まずは企業を追加しましょう" : t.language === "Language" ? "Start by adding a company" : "先添加第一家企业"}</strong>
+            <p>{t.language === "言語" ? "応募先の企業を登録すると、選考の進み具合・締切・日程がこのホームにまとまります。" : t.language === "Language" ? "Add the companies you are applying to and your progress, deadlines and schedule will appear here." : "登记想应聘的企业后，选考进度、截止日期和日程都会汇总到主页。"}</p>
+          </div>
+          <PrimaryActionButton onClick={() => open("company")}><Plus aria-hidden="true" />{t.addCompany}</PrimaryActionButton>
+        </section>}
         <div className="main-dashboard-layout">
           <div className="dashboard-main">
             <div className="dashboard-summary">

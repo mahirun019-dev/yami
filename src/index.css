@@ -10452,3 +10452,98 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     box-shadow: 0 3px 10px rgba(0, 0, 0, .26);
   }
 }
+
+/* ---- 2026-11-18 design pass ------------------------------------------------
+   Appended last so it wins over the earlier overlapping rule sets without
+   editing them. Covers: notification brand tile, neutral dark empty state,
+   home onboarding card, metric label sizes, single add-company action on
+   desktop, and wrapping funnel labels on phones. */
+
+/* 1. Product-update avatar sits on a warm brand tile instead of floating. */
+.notification-page-row.has-product-brand .notification-page-brand {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e9dfc6;
+  border-radius: 12px;
+  background: #faf5e9;
+  overflow: visible;
+}
+.notification-page-row.has-product-brand .notification-page-brand .yami-brand-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 0;
+  object-fit: contain;
+}
+[data-theme="dark"] .notification-page-row.has-product-brand .notification-page-brand {
+  border-color: #3b3322;
+  background: #221d13;
+}
+
+/* 2. Dark company empty state uses the neutral surface like every other card. */
+[data-theme="dark"] .career-app .company-grid > .empty-small {
+  border-color: var(--border-default, var(--border-color)) !important;
+  background: var(--bg-surface) !important;
+}
+
+/* 3. Home onboarding card shown only while no company is registered. */
+.career-app .dashboard-onboarding {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--border-default, var(--border-color));
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+.career-app .dashboard-onboarding > div { display: grid; gap: 4px; min-width: 0; }
+.career-app .dashboard-onboarding strong {
+  color: var(--text-primary);
+  font-size: calc(16px * var(--reading-scale, 1));
+  font-weight: 650;
+  line-height: 1.4;
+}
+.career-app .dashboard-onboarding p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: calc(13px * var(--reading-scale, 1));
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.career-app .dashboard-onboarding .primary-action {
+  flex: 0 0 auto;
+  min-height: 42px;
+  gap: 6px;
+  padding-inline: 16px;
+  white-space: nowrap;
+}
+.career-app .dashboard-onboarding .primary-action svg { width: 17px; height: 17px; }
+
+/* 4. Metric labels stay readable next to the large numbers. */
+@media (min-width: 768px) and (max-width: 1040px) {
+  .career-app .dashboard-summary .metric .metric-label { font-size: calc(13px * var(--reading-scale, 1)); }
+}
+@media (max-width: 767px) {
+  .career-app .dashboard-summary .metric .metric-label { font-size: calc(12.5px * var(--reading-scale, 1)); }
+  .career-app .dashboard-onboarding { flex-direction: column; align-items: stretch; padding: 16px; }
+  .career-app .dashboard-onboarding .primary-action { width: 100%; min-height: 46px; justify-content: center; }
+}
+
+/* 5. With the sidebar visible (>=761px) its add-company button is the single entry point. */
+@media (min-width: 761px) {
+  .career-app .company-toolbar-add-action { display: none !important; }
+  .career-app .company-toolbar { grid-template-columns: minmax(0, 1fr) minmax(148px, 180px) minmax(148px, 180px); }
+  .career-app .company-toolbar.is-empty { display: none; }
+}
+
+/* 6. Long stage names wrap on phones instead of being cut with an ellipsis. */
+@media (max-width: 767px) {
+  .dashboard-progress-module .funnel .funnel-row-label {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+  }
+}
