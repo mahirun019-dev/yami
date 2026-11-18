@@ -1,7 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import "./embed";
 import App from "./App";
 import "./index.css";
+import "./embed.css";
 import { normalizeDashboardUrl } from "./route";
 import {AccountBoundary} from './account/AccountBoundary';
 import {ACCOUNT_MODE} from './account/storage';

@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-embed-mode',
+  date: '2026-11-18',
+  title: { ja: 'Mac アプリ Argon 内での表示に対応しました', zh: '支持在 Mac 应用 Argon 中显示' },
+  summary: { ja: 'Argon の中で Yami を開くと、Argon の画面になじむ表示になります。Web 版とスマートフォンでの表示やデータは変わりません。', zh: '在 Argon 中打开 Yami 时，界面会融入 Argon 的窗口。网页版和手机上的显示与数据保持不变。' },
+  changes: {
+    ja: ['Argon 内では背景を透明にし、ナビゲーションを上部にまとめます', 'Argon 内ではテーマが Argon の外観設定に従います', 'Web 版・スマートフォンの表示と保存データには影響しません'],
+    zh: ['在 Argon 中背景透明，导航收进顶部一栏', '在 Argon 中主题跟随 Argon 的外观设置', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-plan-page-removed',
   date: '2026-11-18',
   title: { ja: 'プランと料金ページを削除し、企業ウォッチと画面を改善しました', zh: '已移除计划与价格页面，并改进企业监控与界面' },

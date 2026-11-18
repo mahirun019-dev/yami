@@ -1,0 +1,253 @@
+/*
+ * Embed mode (see src/embed.ts). Every rule is scoped to html[data-embed="argon"],
+ * so the regular web version is untouched.
+ *
+ * The page draws no background: the host window's glass and content wash show
+ * through. Surfaces become translucent, secondary text is a little stronger (it
+ * sits on glass, not on a flat page), and Argon's 透明 material gets its own ink.
+ */
+
+/* ---- Colors ------------------------------------------------------------- */
+
+html[data-embed="argon"],
+html[data-embed="argon"] .career-app {
+  --bg-page: transparent !important;
+  --bg-app: transparent !important;
+  --page-bg: transparent !important;
+  --app-page-bg: transparent !important;
+  --bg-sidebar: transparent !important;
+  --bg-surface: rgba(255, 255, 255, 0.62) !important;
+  --bg-surface-elevated: rgba(255, 255, 255, 0.86) !important;
+  --bg-muted: rgba(0, 0, 0, 0.045) !important;
+  --bg-input: rgba(255, 255, 255, 0.72) !important;
+  --bg-hover: rgba(0, 0, 0, 0.05) !important;
+  --bg-card-hover: rgba(255, 255, 255, 0.78) !important;
+  --bg-selected: rgba(0, 0, 0, 0.07) !important;
+  --border-color: rgba(0, 0, 0, 0.11) !important;
+  --border-default: rgba(0, 0, 0, 0.11) !important;
+  --border-card: rgba(0, 0, 0, 0.07) !important;
+  --text-secondary: #474c54 !important;
+  --text-muted: #5b6069 !important;
+  --embed-bar-bg: rgba(255, 255, 255, 0.55);
+  --embed-hairline: rgba(0, 0, 0, 0.09);
+  --embed-nav-active: rgba(0, 0, 0, 0.075);
+  --embed-dialog-bg: rgba(250, 250, 251, 0.97);
+  --embed-text-shadow: none;
+}
+
+html[data-embed="argon"][data-theme="dark"],
+html[data-embed="argon"][data-theme="dark"] .career-app {
+  --bg-surface: rgba(28, 31, 37, 0.58) !important;
+  --bg-surface-elevated: rgba(36, 39, 46, 0.92) !important;
+  --bg-muted: rgba(255, 255, 255, 0.06) !important;
+  --bg-input: rgba(255, 255, 255, 0.07) !important;
+  --bg-hover: rgba(255, 255, 255, 0.07) !important;
+  --bg-card-hover: rgba(40, 44, 52, 0.7) !important;
+  --bg-selected: rgba(255, 255, 255, 0.1) !important;
+  --border-color: rgba(255, 255, 255, 0.12) !important;
+  --border-default: rgba(255, 255, 255, 0.12) !important;
+  --border-card: rgba(255, 255, 255, 0.08) !important;
+  --text-secondary: #c2c7cf !important;
+  --text-muted: #a2a8b1 !important;
+  --embed-bar-bg: rgba(20, 22, 27, 0.5);
+  --embed-hairline: rgba(255, 255, 255, 0.1);
+  --embed-nav-active: rgba(255, 255, 255, 0.1);
+  --embed-dialog-bg: rgba(30, 33, 39, 0.97);
+}
+
+/* Argon 透明, white ink (dark appearance): light ink, dark translucent plates, a soft shadow under text. */
+html[data-embed="argon"][data-argon-material="clear"][data-theme="dark"],
+html[data-embed="argon"][data-argon-material="clear"][data-theme="dark"] .career-app {
+  --text-primary: #fff !important;
+  --text-secondary: rgba(255, 255, 255, 0.84) !important;
+  --text-muted: rgba(255, 255, 255, 0.72) !important;
+  --bg-surface: rgba(0, 0, 0, 0.22) !important;
+  --bg-muted: rgba(255, 255, 255, 0.1) !important;
+  --bg-input: rgba(0, 0, 0, 0.18) !important;
+  --border-color: rgba(255, 255, 255, 0.22) !important;
+  --border-default: rgba(255, 255, 255, 0.22) !important;
+  --border-card: rgba(255, 255, 255, 0.16) !important;
+  --embed-bar-bg: rgba(0, 0, 0, 0.2);
+  --embed-hairline: rgba(255, 255, 255, 0.18);
+  --embed-nav-active: rgba(255, 255, 255, 0.16);
+  --embed-text-shadow: 0 0.5px 1.6px rgba(0, 0, 0, 0.5);
+}
+
+/* Argon 透明, dark ink (light wallpaper below 50 %): dark ink, faint light plates, a white halo under text. */
+html[data-embed="argon"][data-argon-material="clear"][data-theme="light"],
+html[data-embed="argon"][data-argon-material="clear"][data-theme="light"] .career-app {
+  --text-primary: #0d0e10 !important;
+  --text-secondary: rgba(0, 0, 0, 0.74) !important;
+  --text-muted: rgba(0, 0, 0, 0.64) !important;
+  --bg-surface: rgba(255, 255, 255, 0.34) !important;
+  --bg-muted: rgba(0, 0, 0, 0.06) !important;
+  --bg-input: rgba(255, 255, 255, 0.4) !important;
+  --border-color: rgba(0, 0, 0, 0.16) !important;
+  --border-default: rgba(0, 0, 0, 0.16) !important;
+  --embed-bar-bg: rgba(255, 255, 255, 0.28);
+  --embed-hairline: rgba(0, 0, 0, 0.14);
+  --embed-nav-active: rgba(0, 0, 0, 0.08);
+  --embed-text-shadow: 0 0 1.4px rgba(255, 255, 255, 0.75);
+}
+
+html[data-embed="argon"] body {
+  text-shadow: var(--embed-text-shadow);
+}
+
+/* ---- Page layers: no background of their own ------------------------------ */
+
+html[data-embed="argon"],
+html[data-embed="argon"] body,
+html[data-embed="argon"] #root,
+html[data-embed="argon"] .app-shell,
+html[data-embed="argon"] .career-app,
+html[data-embed="argon"] .career-app .workspace,
+html[data-embed="argon"] .workspace {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+html[data-embed="argon"] .app-shell {
+  padding: 0 !important;
+}
+
+/* ---- Layout: one column, compact navigation bar on top ------------------- */
+
+html[data-embed="argon"] .career-app {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  min-height: 100dvh;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar {
+  position: sticky !important;
+  top: 0;
+  z-index: 30;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 8px 34px !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--embed-hairline) !important;
+  background: var(--embed-bar-bg) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  backdrop-filter: blur(24px) saturate(1.3);
+}
+
+/* Argon's sidebar already carries the Yami mark. */
+html[data-embed="argon"] .career-app .sidebar .brand {
+  display: none !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar > .nav-list {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  width: auto !important;
+  flex-wrap: nowrap;
+  gap: 2px !important;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+html[data-embed="argon"] .career-app .sidebar .nav-list button {
+  width: auto !important;
+  min-height: 36px !important;
+  flex: 0 0 auto;
+  padding: 0 !important;
+  color: var(--text-secondary) !important;
+  font-size: calc(14px * var(--reading-scale, 1)) !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar .nav-list button.active,
+html[data-embed="argon"] .career-app .sidebar .nav-list button[aria-current="page"],
+html[data-embed="argon"] .career-app .sidebar .nav-list button:hover {
+  color: var(--text-primary) !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar .sidebar-nav-capsule {
+  min-height: 34px !important;
+  gap: 7px !important;
+  padding-inline: 11px !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar .nav-list button svg.sidebar-nav-icon {
+  width: 19px !important;
+  height: 19px !important;
+  flex-basis: 19px !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar .nav-list button.active > .sidebar-nav-capsule,
+html[data-embed="argon"] .career-app .sidebar .nav-list button[aria-current="page"] > .sidebar-nav-capsule {
+  background: var(--embed-nav-active) !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar .sidebar-flex-spacer {
+  flex: 1 1 auto;
+}
+
+html[data-embed="argon"] .career-app .sidebar .sidebar-footer-actions {
+  flex: 0 0 auto;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html[data-embed="argon"] .career-app .workspace {
+  min-height: 0 !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar .sidebar-company-action {
+  width: auto !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding-inline: 14px !important;
+  gap: 6px !important;
+  font-size: calc(14px * var(--reading-scale, 1)) !important;
+}
+
+html[data-embed="argon"] .career-app .sidebar .sidebar-company-action svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* ---- Surfaces that paint a page-sized background in the web version ----- */
+/* [data-theme] in the selector outranks the web version's [data-theme="dark"] … rules. */
+
+html[data-embed="argon"][data-theme] .settings-page-scope,
+html[data-embed="argon"][data-theme] .desktop-settings-page,
+html[data-embed="argon"][data-theme] .desktop-settings-content {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-nav.settings-sidebar {
+  background: var(--embed-bar-bg) !important;
+  border-color: var(--embed-hairline) !important;
+}
+
+html[data-embed="argon"][data-theme] .empty-small,
+html[data-embed="argon"][data-theme] .career-app .timeline > .empty-small--schedule,
+html[data-embed="argon"][data-theme] .materials-empty-tile {
+  background: var(--bg-surface) !important;
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .is-selected {
+  background: var(--bg-selected) !important;
+}
+
+/* Dialogs and drawers float over the page: near-solid, no glass behind their text. */
+html[data-embed="argon"][data-theme] .modal-layer .drawer,
+html[data-embed="argon"][data-theme] .modal-layer .entity-card,
+html[data-embed="argon"][data-theme] .modal-layer [role="dialog"] {
+  background: var(--embed-dialog-bg) !important;
+  text-shadow: none;
+}
