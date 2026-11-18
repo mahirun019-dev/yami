@@ -5233,13 +5233,45 @@ function MobileSettingsDrawer({
 }
 function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, json, iconRef, upload, updatePreferences, exportCalendar }: any) {
   const [tab, setTab] = useState("general");
+  const [tabDir, setTabDir] = useState<"down" | "up" | null>(null);
+  const navListRef = useRef<HTMLDivElement | null>(null);
+  const navItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [indicator, setIndicator] = useState<{ x: number; y: number; width: number; height: number; ready: boolean; animated: boolean }>({ x: 0, y: 0, width: 0, height: 0, ready: false, animated: false });
   const ja = locale === "ja";
   const ui = locale === "ja"
     ? { general: "一般", data: "データとバックアップ", about: "Yamiについて" }
     : { general: "常规", data: "数据与备份", about: "关于 Yami" };
   const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["about", ui.about, Info]] as const;
   const currentTitle = tabs.find(([key]) => key === tab)?.[1] ?? ui.general;
-  return <div className="settings-page-scope desktop-settings-page"><nav className="desktop-settings-nav settings-sidebar"><header className="settings-column-header settings-menu-heading"><h2 className="settings-column-title">{t.settings}</h2></header><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
+  const selectTab = (nextKey: string) => {
+    if (nextKey === tab) return;
+    const oldIndex = tabs.findIndex(([key]) => key === tab);
+    const nextIndex = tabs.findIndex(([key]) => key === nextKey);
+    if (oldIndex >= 0 && nextIndex >= 0) setTabDir(nextIndex > oldIndex ? "down" : "up");
+    setTab(nextKey);
+  };
+  useLayoutEffect(() => {
+    if (!isArgonEmbed) return;
+    const list = navListRef.current;
+    const measure = () => {
+      const target = navItemRefs.current[tab];
+      if (!target) return;
+      setIndicator((prev) => ({
+        x: target.offsetLeft,
+        y: target.offsetTop,
+        width: target.offsetWidth,
+        height: target.offsetHeight,
+        ready: true,
+        animated: prev.ready,
+      }));
+    };
+    measure();
+    if (!list || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [tab, locale]);
+  return <div className="settings-page-scope desktop-settings-page"><nav className="desktop-settings-nav settings-sidebar"><header className="settings-column-header settings-menu-heading"><h2 className="settings-column-title">{t.settings}</h2></header><div ref={navListRef} className="settings-nav-list" data-has-indicator={isArgonEmbed && indicator.ready ? "true" : undefined}>{isArgonEmbed && indicator.ready && <span className={`settings-nav-indicator${indicator.animated ? " is-animated" : ""}`} aria-hidden="true" style={{ width: `${indicator.width}px`, height: `${indicator.height}px`, transform: `translate3d(${indicator.x}px, ${indicator.y}px, 0)` }} />}{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} buttonRef={(node) => { navItemRefs.current[key] = node; }} onClick={() => selectTab(key)} />)}</div></nav><div key={isArgonEmbed ? tab : undefined} className="desktop-settings-content" data-tab-dir={isArgonEmbed && tabDir ? tabDir : undefined}>
     <header className="settings-column-header"><h2 className="settings-column-title">{currentTitle}</h2></header>
     {tab === "general" && <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} />}
     {tab === "job-settings" && <JobHuntSettings t={t} data={data} updatePreferences={updatePreferences} />}
@@ -5253,6 +5285,6 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
   </div><input hidden ref={iconRef} type="file" accept="image/*" onChange={upload} />
   </div>;
 }
-function SettingsNavItem({ label, icon: Icon, active, onClick }: { label: string; icon: React.ComponentType<any>; active: boolean; onClick: () => void }) {
-  return <button type="button" className={`settings-nav-item ${active ? "active" : ""}`} aria-selected={active} onClick={onClick}><span className="settings-nav-inner"><Icon size={19} aria-hidden="true" /><span className="settings-nav-label">{label}</span><ChevronRight className="settings-nav-chevron" size={16} aria-hidden="true" /></span></button>;
+function SettingsNavItem({ label, icon: Icon, active, onClick, buttonRef }: { label: string; icon: React.ComponentType<any>; active: boolean; onClick: () => void; buttonRef?: (node: HTMLButtonElement | null) => void }) {
+  return <button ref={buttonRef} type="button" className={`settings-nav-item ${active ? "active" : ""}`} aria-selected={active} onClick={onClick}><span className="settings-nav-inner"><Icon size={19} aria-hidden="true" /><span className="settings-nav-label">{label}</span><ChevronRight className="settings-nav-chevron" size={16} aria-hidden="true" /></span></button>;
 }

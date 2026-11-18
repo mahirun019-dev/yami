@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-embed-transitions',
+  date: '2026-11-18',
+  title: { ja: 'Argon 内の設定切り替えアニメーションとモーダルの透過感を改善しました', zh: '新增 Argon 设置页切换动画，并提升弹窗通透感' },
+  summary: { ja: '設定メニューの選択ハイライト移動と内容切り替えにアニメーションを追加し、モーダル表示時に背景を柔らかくぼかして透過感を高めました。', zh: '为设置导航选中项加入了跟随 Argon 弹簧曲线的滑动动画与内容切换动画，并优化弹窗打开时的背景柔焦与半透明玻璃质感。' },
+  changes: {
+    ja: ['設定タブ切り替え時に選択ピルが滑らかに移動し、内容も切り替え方向に合わせてアニメーションします', 'モーダル表示時に背後のページを柔らかくぼかし、ダイアログ自体の透過感を高めました', 'Web 版・スマートフォンでの表示と保存データには影響しません'],
+    zh: ['切换设置分组时，选中高亮胶囊按 Argon 弹簧曲线顺滑滑动，右侧内容随方向平滑切换', '打开弹窗时柔和虚化背后页面，提高弹窗本身的半透明玻璃通透度', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-argon-embed-modals',
   date: '2026-11-18',
   title: { ja: 'Argon 内のモーダルやアクションメニューの表示を改善しました', zh: '优化了 Argon 中的弹窗表单与操作菜单样式' },
