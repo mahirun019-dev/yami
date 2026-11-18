@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-embed-controls',
+  date: '2026-11-18',
+  title: { ja: 'Argon 内でのホバー・選択表示とプルダウンメニューを整えました', zh: '优化了 Argon 中的悬停/选中高亮与下拉菜单显示' },
+  summary: { ja: 'Argon 内で使う際の設定メニューのハイライト、強調色、セレクトメニューの見え方を Argon に合わせて調整しました。', zh: '调整了在 Argon 中使用时的设置悬停/选中高亮、强调色联动以及下拉弹出菜单的显示效果。' },
+  changes: {
+    ja: ['設定サイドバーや各種リストのホバー・選択表示を角丸ピルと Argon の強調色に合わせました', 'プルダウンメニューを透明背景のまま透けさせず、読みやすいメニュー表示に調整しました', 'Web 版・スマートフォンでの表示と保存データには影響しません'],
+    zh: ['将设置侧栏与列表的悬停/选中高亮调整为圆角样式，并联动 Argon 的强调色设置', '改进嵌入模式下的下拉弹出菜单样式，避免背景图案透出影响阅读，空间不足时自动向上弹出', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-argon-embed-polish',
   date: '2026-11-18',
   title: { ja: 'Argon 内での狭い画面と透明表示を調整しました', zh: '优化了 Argon 中的窄窗口与透明外观显示' },
