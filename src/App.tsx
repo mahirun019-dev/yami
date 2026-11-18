@@ -1,4 +1,4 @@
-import { installEmbedNavigation, isArgonEmbed, postToHost, type EmbedPage } from "./embed";
+import { installEmbedNavigation, isArgonEmbed, openEmbedActionMenu, postToHost, registerEmbedSwipeHandler, usesArgonNativeMenus, type EmbedPage } from "./embed";
 import {
   memo,
   useEffect,
@@ -2230,7 +2230,7 @@ export default function App() {
   return (
     <WatchProvider><div className={`app-shell${useInlineSettings && settings ? " app-shell-settings" : ""}`} data-app-shell="true">
       <div className={`student-app career-app${useInlineSettings && settings ? " has-desktop-settings" : ""}`} onClickCapture={handleExternalLinkClick}>
-        {isArgonEmbed && <EmbedBridge view={view} settings={settings} go={(page) => {
+        {isArgonEmbed && <EmbedBridge view={view} settings={settings} canGoBack={!settings && view === "companies" && Boolean(selected)} go={(page) => {
           if (page === "settings") { setSettingsOpen(true); return; }
           if (settings) closeSettingsPage();
           navigate(page);
@@ -2618,7 +2618,7 @@ function Nav({
 }
 
 /** Embedded in Argon: the host's sidebar is the navigation. Reports the page and unread count, takes page switches. */
-function EmbedBridge({ view, settings, go }: { view: View; settings: boolean; go: (page: EmbedPage) => void }) {
+function EmbedBridge({ view, settings, canGoBack, go }: { view: View; settings: boolean; canGoBack: boolean; go: (page: EmbedPage) => void }) {
   const { events } = useWatch();
   const unreadProductUpdates = useSyncExternalStore(subscribeProductUpdateReadState, getUnreadProductUpdateCount, () => 0);
   const unread = events.filter((event) => !event.read).length + unreadProductUpdates;
@@ -2628,7 +2628,7 @@ function EmbedBridge({ view, settings, go }: { view: View; settings: boolean; go
   const goRef = useRef(go);
   goRef.current = go;
   useEffect(() => installEmbedNavigation(() => pageRef.current, (next) => flushSync(() => goRef.current(next))), []);
-  useEffect(() => postToHost({ type: "state", page, unread }), [page, unread]);
+  useEffect(() => postToHost({ type: "state", page, unread, canGoBack }), [page, unread, canGoBack]);
   return null;
 }
 
@@ -2859,8 +2859,33 @@ function RecordActionMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const actionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [popoverSide, setPopoverSide] = useState<"bottom" | "top">("bottom");
+  const anchorRef = useRef<HTMLSpanElement | null>(null);
+  const nativeMenuActive = open && usesArgonNativeMenus();
+  useEffect(() => {
+    if (!nativeMenuActive) return;
+    const trigger = anchorRef.current?.parentElement?.querySelector<HTMLElement>(":scope > button");
+    if (!trigger) { close(); return; }
+    const symbols: Record<string, string> = {
+      document: "doc.text",
+      interview: "briefcase",
+      aptitude: "checklist",
+      briefing: "calendar",
+      other: "note.text",
+    };
+    openEmbedActionMenu(
+      trigger,
+      actions.map((action) => ({
+        id: action.id,
+        label: action.description ? `${action.label} · ${action.description}` : action.label,
+        symbol: symbols[action.id],
+        choose: action.choose,
+      })),
+      close,
+      placement === "bottom-end" ? "end" : "start"
+    );
+  }, [nativeMenuActive]);
   useLayoutEffect(() => {
-    if (!open || isMobile) return;
+    if (!open || isMobile || nativeMenuActive) return;
     const menu = menuRef.current;
     const trigger = menu?.parentElement?.querySelector<HTMLElement>(":scope > button");
     if (!menu || !trigger) return;
@@ -2870,7 +2895,7 @@ function RecordActionMenu({
     setPopoverSide(roomBelow < menu.scrollHeight && roomAbove > roomBelow ? "top" : "bottom");
   }, [actions.length, isMobile, open, placement]);
   useEffect(() => {
-    if (!open) return;
+    if (!open || nativeMenuActive) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -2905,6 +2930,7 @@ function RecordActionMenu({
       if (isMobile) body.style.overflow = previousOverflow;
     };
   }, [close, isMobile, open, restoreFocus]);
+  if (nativeMenuActive) return <span ref={anchorRef} hidden aria-hidden="true" />;
   if (isMobile && !open) return null;
   const hasDescriptions = actions.some((action) => action.description);
   const content = (
@@ -3451,44 +3477,112 @@ function Companies({
     setSortBy(defaultSort);
     setDraftSortBy(defaultSort);
   }, [data.preferences?.customize?.companySort]);
-  if (co) {
-    const materials = data.materials.filter((x: any) => x.companyId === co.id),
-      interviews = data.interviews.filter((x: any) => x.companyId === co.id),
-      preps = data.preparations.filter((x: any) => x.companyId === co.id),
-      futureEvents = companyFutureEvents(data.events, co.id),
-      historyEvents = companyHistoryEvents(data.events, co.id),
+  const [swipeDx, setSwipeDx] = useState<number | null>(null);
+  const [exitingCo, setExitingCo] = useState<Company | undefined>(undefined);
+  const [popping, setPopping] = useState(false);
+  const [entering, setEntering] = useState(false);
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  const prevCoIdRef = useRef<string | undefined>(co?.id);
+  useLayoutEffect(() => {
+    if (!isArgonEmbed) return;
+    const prevId = prevCoIdRef.current;
+    prevCoIdRef.current = co?.id;
+    if (co && !prevId) {
+      setPopping(false);
+      setSwipeDx(null);
+      setEntering(true);
+      const frame = requestAnimationFrame(() => setEntering(false));
+      return () => cancelAnimationFrame(frame);
+    }
+    if (!co && prevId) {
+      setSwipeDx(null);
+      setPopping(false);
+    }
+  }, [co?.id]);
+  const triggerPop = () => {
+    if (!isArgonEmbed || !co) { onBack(); return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setSwipeDx(null);
+      onBack();
+      return;
+    }
+    setExitingCo(co);
+    setPopping(true);
+    const width = stackRef.current?.clientWidth || window.innerWidth;
+    setSwipeDx(width);
+    window.setTimeout(() => {
+      onBack();
+      setPopping(false);
+      setExitingCo(undefined);
+      setSwipeDx(null);
+    }, 260);
+  };
+  useEffect(() => {
+    if (!isArgonEmbed || !co) {
+      registerEmbedSwipeHandler(null);
+      return;
+    }
+    registerEmbedSwipeHandler({
+      onMove: (dx) => {
+        setPopping(false);
+        setSwipeDx(Math.max(0, dx));
+      },
+      onEnd: (velocity) => {
+        const width = stackRef.current?.clientWidth || window.innerWidth;
+        setSwipeDx((current) => {
+          const offset = current ?? 0;
+          if (offset > width / 3 || velocity > 700) {
+            window.setTimeout(() => triggerPop(), 0);
+            return offset;
+          }
+          setPopping(true);
+          window.setTimeout(() => setPopping(false), 240);
+          return 0;
+        });
+      },
+    });
+    return () => registerEmbedSwipeHandler(null);
+  }, [co?.id, onBack]);
+
+  const activeDetailCo = co ?? exitingCo;
+  const renderDetail = (targetCo: Company) => {
+    const materials = data.materials.filter((x: any) => x.companyId === targetCo.id),
+      interviews = data.interviews.filter((x: any) => x.companyId === targetCo.id),
+      preps = data.preparations.filter((x: any) => x.companyId === targetCo.id),
+      futureEvents = companyFutureEvents(data.events, targetCo.id),
+      historyEvents = companyHistoryEvents(data.events, targetCo.id),
       nextEvent = futureEvents[0],
-      metadata = formatCompanyMetadata(co);
+      metadata = formatCompanyMetadata(targetCo);
     return (
       <>
         <div className="page-head company-detail-page-head">
           <div>
-            <BackNavigation label={t.companies} onClick={onBack} />
-            <h1>{co.name}</h1>
-            <p className="company-detail-metadata">{metadata.length ? <>{metadata.join(" · ")}<span aria-hidden="true"> · </span><StarRating value={co.interestLevel} /></> : <StarRating value={co.interestLevel} />}</p>
+            <BackNavigation label={t.companies} onClick={isArgonEmbed ? triggerPop : onBack} />
+            <h1>{targetCo.name}</h1>
+            <p className="company-detail-metadata">{metadata.length ? <>{metadata.join(" · ")}<span aria-hidden="true"> · </span><StarRating value={targetCo.interestLevel} /></> : <StarRating value={targetCo.interestLevel} />}</p>
           </div>
           <div className="head-actions">
             <button
               onClick={() => {
-                setEditCompany({ ...co });
+                setEditCompany({ ...targetCo });
                 open("company");
               }}
             >
               {t.edit}
             </button>
-            <button className="danger-button" onClick={() => setConfirm(co)}>
+            <button className="danger-button" onClick={() => setConfirm(targetCo)}>
               {t.remove}
             </button>
           </div>
         </div>
         <div className="course-detail">
           <section className="course-profile detail-section">
-            <i style={{ background: co.color }} />
+            <i style={{ background: targetCo.color }} />
             <h2>{t.language === "言語" ? "概要" : "概览"}</h2>
             <dl className="company-detail-list">
               <div>
                 <dt>{t.currentStage}</dt>
-                <dd>{stageDisplayLabel(co.stage, t)}</dd>
+                <dd>{stageDisplayLabel(targetCo.stage, t)}</dd>
               </div>
               {nextEvent && <div>
                 <dt>{t.nextSchedule}</dt>
@@ -3500,20 +3594,20 @@ function Companies({
               </div>}
               <div>
                 <dt>{t.interest}</dt>
-                <dd><StarRating value={co.interestLevel} /></dd>
+                <dd><StarRating value={targetCo.interestLevel} /></dd>
               </div>
             </dl>
             <dl className="company-detail-list company-info-list">
-              {co.industry && <div><dt>{t.industry}</dt><dd>{co.industry}</dd></div>}
-              {companyJobCategory(co) && <div><dt>{t.position}</dt><dd>{companyJobCategory(co)}</dd></div>}
-              {co.jobTitle && <div><dt>{t.jobTitle}</dt><dd>{co.jobTitle}</dd></div>}
-              {co.careersUrl && <div><dt>{t.recruitmentPage}</dt><dd><a className="recruitment-link" href={co.careersUrl} target="_blank" rel="noopener noreferrer" title={co.careersUrl}>{recruitmentLabel(co.careersUrl)} <ExternalLink aria-hidden="true" /></a></dd></div>}
-              {co.notes && <div><dt>{t.notes}</dt><dd>{co.notes}</dd></div>}
-              {!co.industry && !companyJobCategory(co) && !co.jobTitle && !co.careersUrl && !co.notes && <div><dd className="company-detail-muted">{t.notSet}</dd></div>}
+              {targetCo.industry && <div><dt>{t.industry}</dt><dd>{targetCo.industry}</dd></div>}
+              {companyJobCategory(targetCo) && <div><dt>{t.position}</dt><dd>{companyJobCategory(targetCo)}</dd></div>}
+              {targetCo.jobTitle && <div><dt>{t.jobTitle}</dt><dd>{targetCo.jobTitle}</dd></div>}
+              {targetCo.careersUrl && <div><dt>{t.recruitmentPage}</dt><dd><a className="recruitment-link" href={targetCo.careersUrl} target="_blank" rel="noopener noreferrer" title={targetCo.careersUrl}>{recruitmentLabel(targetCo.careersUrl)} <ExternalLink aria-hidden="true" /></a></dd></div>}
+              {targetCo.notes && <div><dt>{t.notes}</dt><dd>{targetCo.notes}</dd></div>}
+              {!targetCo.industry && !companyJobCategory(targetCo) && !targetCo.jobTitle && !targetCo.careersUrl && !targetCo.notes && <div><dd className="company-detail-muted">{t.notSet}</dd></div>}
             </dl>
           </section>
           <section className="detail-stack">
-            <CompanyWatchSection company={co} locale={t.language === "言語" ? "ja" : "zh"} openSettings={openWatchSettings} highlightEventId={watchHighlightEventId} />
+            <CompanyWatchSection company={targetCo} locale={t.language === "言語" ? "ja" : "zh"} openSettings={openWatchSettings} highlightEventId={watchHighlightEventId} />
             <Title action={<div className="record-action-wrap">
               <button type="button" className="primary" onPointerDown={(event) => event.stopPropagation()} onClick={() => setRecordMenuOpen(!recordMenuOpen)}><Plus />{t.addRecord}</button>
               <RecordActionMenu
@@ -3524,9 +3618,9 @@ function Companies({
                 actions={[
                   { id: "document", label: t.addMaterial, icon: FileJson, choose: () => { setRecordMenuOpen(false); open("es"); } },
                   { id: "interview", label: t.addInterview, icon: BriefcaseBusiness, choose: () => { setRecordMenuOpen(false); open("interview"); } },
-                  { id: "aptitude", label: t.addTest, icon: ClipboardCheck, choose: () => { setRecordMenuOpen(false); openRecordEvent({ type: "web_test", stage: "web_test" }, co.id); } },
-                  { id: "briefing", label: t.addBriefing, icon: CalendarClock, choose: () => { setRecordMenuOpen(false); openRecordEvent({ type: "briefing", stage: "briefing" }, co.id); } },
-                  { id: "other", label: t.addOtherRecord, icon: FileText, choose: () => { setRecordMenuOpen(false); openRecordEvent({ type: "general", stage: "saved" }, co.id); } },
+                  { id: "aptitude", label: t.addTest, icon: ClipboardCheck, choose: () => { setRecordMenuOpen(false); openRecordEvent({ type: "web_test", stage: "web_test" }, targetCo.id); } },
+                  { id: "briefing", label: t.addBriefing, icon: CalendarClock, choose: () => { setRecordMenuOpen(false); openRecordEvent({ type: "briefing", stage: "briefing" }, targetCo.id); } },
+                  { id: "other", label: t.addOtherRecord, icon: FileText, choose: () => { setRecordMenuOpen(false); openRecordEvent({ type: "general", stage: "saved" }, targetCo.id); } },
                 ]}
               />
             </div>}>
@@ -3538,20 +3632,20 @@ function Companies({
                 <MaterialRow
                   key={x.id}
                   x={x}
-                  company={co}
+                  company={targetCo}
                   t={t}
                   toggle={() => {}}
                   focus={() => {}}
                 />
               ))}
               {interviews.map((x: any) => (
-                <InterviewRow key={x.id} x={x} company={co} t={t} />
+                <InterviewRow key={x.id} x={x} company={targetCo} t={t} />
               ))}
               {preps.map((x: any) => (
                 <MaterialRow
                   key={x.id}
                   x={x}
-                  company={co}
+                  company={targetCo}
                   t={t}
                   toggle={() => {}}
                   focus={() => {}}
@@ -3567,7 +3661,8 @@ function Companies({
         </div>
       </>
     );
-  }
+  };
+  if (co && !isArgonEmbed) return renderDetail(co);
   const filteredCompanies = data.companies
     .filter((x: Company) => !query.trim() || x.name.toLowerCase().includes(query.trim().toLowerCase()))
     .filter((x: Company) => companyFilter === "active" ? isActiveCompany(x) : companyFilter === "waiting-result" ? isWaitingResultCompany(x, data.events) : true)
@@ -3579,8 +3674,19 @@ function Companies({
       return b.updatedAt - a.updatedAt;
     });
   const interestLabel = t.language === "言語" ? "志望度" : t.language === "Language" ? "Interest" : "志愿度";
-  return (
-    <>
+  const stackWidth = stackRef.current?.clientWidth || 720;
+  const dragProgress = swipeDx !== null ? Math.min(1, Math.max(0, swipeDx / stackWidth)) : 0;
+  const detailOpen = Boolean(activeDetailCo) && !exitingCo;
+  const listLayer = (
+    <div
+      className={`embed-company-list-layer${detailOpen && !entering ? " is-pushed" : ""}`}
+      aria-hidden={Boolean(activeDetailCo)}
+      style={isArgonEmbed && activeDetailCo && swipeDx !== null ? {
+        transform: `translate3d(${(-1 + dragProgress) * 28}px, 0, 0)`,
+        opacity: dragProgress,
+        transition: popping ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease" : "none",
+      } : undefined}
+    >
       <div className="page-head company-page-head">
         <div>
           <h1>{t.companies}</h1>
@@ -3670,7 +3776,25 @@ function Companies({
           <Empty t={t} kind="company" />
         )}
       </div>
-    </>
+    </div>
+  );
+  if (!isArgonEmbed) return listLayer;
+  return (
+    <div ref={stackRef} className="embed-company-stack">
+      {listLayer}
+      {activeDetailCo && (
+        <div
+          key={activeDetailCo.id}
+          className={`embed-company-detail-layer${entering ? " is-entering" : ""}`}
+          style={swipeDx !== null ? {
+            transform: `translate3d(${swipeDx}px, 0, 0)`,
+            transition: popping ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+          } : undefined}
+        >
+          {renderDetail(activeDetailCo)}
+        </div>
+      )}
+    </div>
   );
 }
 function Schedule({

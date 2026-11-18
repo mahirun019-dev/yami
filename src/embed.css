@@ -891,13 +891,12 @@ html[data-embed="argon"][data-theme] .settings-page-scope textarea:focus {
 /* Dialogs, sheets, and popovers float cleanly like Argon's frosted CardChrome,
  * without painting a hard-edged dim box that stops at Argon's sidebar/titlebar. */
 html[data-embed="argon"] .career-app > .workspace {
-  transition: filter 180ms ease, opacity 180ms ease;
+  transition: opacity 180ms ease;
 }
 
 html[data-embed="argon"] .career-app:has(> .modal-layer) > .workspace,
-html[data-embed="argon"]:has(> body > .backup-restore-layer, > body > .watch-disconnect-layer) .career-app > .workspace {
-  filter: blur(8px);
-  opacity: 0.42;
+html[data-embed="argon"]:has(> body > .backup-restore-layer, > body > .watch-disconnect-layer, > body > .template-delete-layer) .career-app > .workspace {
+  opacity: 0.62;
 }
 
 html[data-embed="argon"][data-theme] .modal-backdrop,
@@ -964,6 +963,24 @@ html[data-embed="argon"][data-theme] .template-delete-dialog,
 html[data-embed="argon"][data-theme] .stage-progression-warning-dialog {
   border-radius: 18px !important;
   animation: embed-card-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* When Argon hosts real macOS CardChrome material behind the WebView for modals,
+ * keep the DOM shell transparent without scale transform so frame rects align cleanly. */
+html[data-embed="argon"][data-argon-native-modal="true"] .modal-layer .drawer,
+html[data-embed="argon"][data-argon-native-modal="true"] .modal-layer .entity-card,
+html[data-embed="argon"][data-argon-native-modal="true"] .modal-layer [role="dialog"],
+html[data-embed="argon"][data-argon-native-modal="true"] .backup-restore-dialog,
+html[data-embed="argon"][data-argon-native-modal="true"] .watch-disconnect-dialog,
+html[data-embed="argon"][data-argon-native-modal="true"] .template-delete-dialog,
+html[data-embed="argon"][data-argon-native-modal="true"] .stage-progression-warning-dialog,
+html[data-embed="argon"][data-argon-native-modal="true"] .company-filter-sheet {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  animation: yami-embed-fade-in 150ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1179,4 +1196,100 @@ html[data-embed="argon"][data-theme] .record-action-items button:hover,
 html[data-embed="argon"][data-theme] .record-action-items button:focus-visible {
   background: var(--embed-menu-hover) !important;
   box-shadow: var(--embed-menu-hover-rim);
+}
+
+/* Company detail horizontal push/pop matching Argon's ProjectsView transition */
+html[data-embed="argon"] .embed-company-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  overflow-x: clip;
+}
+
+html[data-embed="argon"] .embed-company-list-layer,
+html[data-embed="argon"] .embed-company-detail-layer {
+  grid-area: 1 / 1;
+  min-width: 0;
+  will-change: transform, opacity;
+}
+
+html[data-embed="argon"] .embed-company-list-layer {
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+}
+
+html[data-embed="argon"] .embed-company-list-layer.is-pushed {
+  transform: translate3d(-28px, 0, 0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-embed="argon"] .embed-company-detail-layer {
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+}
+
+html[data-embed="argon"] .embed-company-detail-layer.is-entering {
+  transform: translate3d(56px, 0, 0);
+  opacity: 0;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-embed="argon"] .embed-company-list-layer,
+  html[data-embed="argon"] .embed-company-detail-layer {
+    transition: opacity 150ms ease;
+  }
+
+  html[data-embed="argon"] .embed-company-list-layer.is-pushed,
+  html[data-embed="argon"] .embed-company-detail-layer.is-entering {
+    transform: none;
+  }
+}
+
+/* Company detail glass legibility polish over wallpaper */
+html[data-embed="argon"][data-theme] .company-detail-page-head .head-actions > button:not(.danger-button):not(.primary) {
+  background: var(--embed-control-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+html[data-embed="argon"][data-theme] .company-detail-page-head .head-actions > button:not(.danger-button):not(.primary):hover {
+  background: var(--embed-control-hover) !important;
+}
+
+html[data-embed="argon"][data-theme] .company-detail-page-head .head-actions > button.danger-button {
+  background: var(--embed-control-bg) !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+html[data-embed="argon"][data-theme] .course-detail > .course-profile.detail-section,
+html[data-embed="argon"][data-theme] .course-detail > .detail-stack {
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--embed-card-shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+}
+
+html[data-embed="argon"][data-theme] .course-profile > i {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+html[data-embed="argon"][data-theme="light"] .course-profile > i {
+  border-color: rgba(15, 23, 38, 0.14);
+}
+
+html[data-embed="argon"][data-theme] .course-detail .selection-empty {
+  border-color: var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
 }
