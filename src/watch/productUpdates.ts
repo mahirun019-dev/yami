@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-embed-polish',
+  date: '2026-11-18',
+  title: { ja: 'Argon 内での狭い画面と透明表示を調整しました', zh: '优化了 Argon 中的窄窗口与透明外观显示' },
+  summary: { ja: 'Argon のウィンドウ幅が狭いときの設定・企業画面と、透明マテリアル時の文字やカードの視認性を整えました。', zh: '完善了 Argon 窗口较窄时的设置与企业页面布局，并提升了透明材质下的文字与卡片可读性。' },
+  changes: {
+    ja: ['Argon 内で画面幅が狭い場合でも、設定と企業追加ボタンを崩れず表示します', '透明マテリアル時の文字色・カード・ダイアログの視認性とページ切り替えの動きを整えました', 'Web 版・スマートフォンでの表示とデータには影響しません'],
+    zh: ['调整了 Argon 窄窗口下设置页布局与“新增企业”按钮显示', '改进了透明材质下的文字、卡片与弹窗对比度，并对齐页面切换动画', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-argon-embed-mode',
   date: '2026-11-18',
   title: { ja: 'Mac アプリ Argon 内での表示に対応しました', zh: '支持在 Mac 应用 Argon 中显示' },
