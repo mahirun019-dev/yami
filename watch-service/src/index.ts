@@ -13,14 +13,49 @@ async function authenticate(request: Request, env: Env) {
   return Boolean(row && row.expires_at > new Date().toISOString());
 }
 
+export const LOGIN_WINDOW_MS = 15 * 60_000;
+export const LOGIN_MAX_FAILURES_PER_CLIENT = 5;
+export const LOGIN_MAX_FAILURES_TOTAL = 50;
+
+// Returns null when the limiter is unavailable (e.g. migration 0005 not applied yet): login then fails open.
+async function loginFailures(env: Env, client: string, since: string) {
+  try {
+    await env.DB.prepare('DELETE FROM login_attempts WHERE attempted_at<?').bind(since).run();
+    return await env.DB.prepare('SELECT (SELECT COUNT(*) FROM login_attempts WHERE client_hash=? AND attempted_at>=?) AS client_failures,(SELECT COUNT(*) FROM login_attempts WHERE attempted_at>=?) AS total_failures')
+      .bind(client, since, since).first<{ client_failures: number; total_failures: number }>();
+  } catch {
+    console.error({ event: 'LOGIN_RATE_LIMIT_UNAVAILABLE' });
+    return null;
+  }
+}
+
 async function createSession(request: Request, env: Env, origin: string) {
-  const { code } = await request.json<{ code?: string }>();
+  let code: unknown;
+  try { ({ code } = await request.json<{ code?: string }>()); } catch { return json({ error: 'INVALID_INPUT' }, 400, origin); }
+  const now = new Date();
+  const since = new Date(now.getTime() - LOGIN_WINDOW_MS).toISOString();
+  const client = await sha256(`login|${request.headers.get('cf-connecting-ip') || 'unknown'}`);
+  const failures = await loginFailures(env, client, since);
+  if (failures && (Number(failures.client_failures) >= LOGIN_MAX_FAILURES_PER_CLIENT || Number(failures.total_failures) >= LOGIN_MAX_FAILURES_TOTAL)) {
+    const limited = json({ error: 'RATE_LIMITED' }, 429, origin);
+    limited.headers.set('retry-after', String(LOGIN_WINDOW_MS / 1000));
+    return limited;
+  }
   const requestCode = typeof code === 'string' ? code.trim() : '';
   const configuredCode = typeof env.WATCH_ACCESS_CODE === 'string' ? env.WATCH_ACCESS_CODE.trim() : '';
   const matches = Boolean(requestCode && configuredCode && (await sha256(requestCode)) === (await sha256(configuredCode)));
-  if (!matches) return json({ error: 'AUTH_FAILED' }, 401, origin);
+  if (!matches) {
+    if (failures) {
+      try { await env.DB.prepare('INSERT INTO login_attempts(id,client_hash,attempted_at) VALUES(?,?,?)').bind(crypto.randomUUID(), client, now.toISOString()).run(); }
+      catch { console.error({ event: 'LOGIN_ATTEMPT_WRITE_FAILED' }); }
+    }
+    return json({ error: 'AUTH_FAILED' }, 401, origin);
+  }
+  if (failures) {
+    try { await env.DB.prepare('DELETE FROM login_attempts WHERE client_hash=?').bind(client).run(); } catch { /* The window expires on its own. */ }
+  }
+  try { await env.DB.prepare('DELETE FROM sessions WHERE expires_at<?').bind(now.toISOString()).run(); } catch { /* Expired sessions are already rejected by authenticate(). */ }
   const token = crypto.randomUUID() + crypto.randomUUID();
-  const now = new Date();
   const expires = new Date(now.getTime() + 30 * 864e5).toISOString();
   await env.DB.prepare('INSERT INTO sessions(token_hash,expires_at,created_at) VALUES(?,?,?)').bind(await sha256(token), expires, now.toISOString()).run();
   return json({ token, expiresAt: expires }, 201, origin);
@@ -306,7 +341,15 @@ async function finalizeMynaviEntryCheck(
   if (!current) return;
   const previous = current.entry_status || null;
   const baseline = previous === null;
-  const notify = !baseline && !recovering && entryStatus === 'open' && ['unknown', 'unavailable', 'reservation', 'closed'].includes(previous || '');
+  // entry_status is only written by verified healthy checks, so the stored previous state stays valid
+  // evidence across a fetch failure. A definite non-open state followed by open always notifies.
+  let notify = !baseline && entryStatus === 'open' && ['unknown', 'unavailable', 'reservation', 'closed', 'needs_review'].includes(previous || '');
+  // An uncertain previous state (detector could not decide, or the page belonged to another company)
+  // may hide an earlier open state, so notify only if the user has never been told this source opened.
+  if (notify && (previous === 'needs_review' || recovering)) {
+    const announced = await env.DB.prepare("SELECT id FROM watch_events WHERE watch_target_id=? AND event_type='mynavi_entry_open' LIMIT 1").bind(target.id).first<{ id: string }>();
+    if (announced) notify = false;
+  }
   const eventId = notify ? crypto.randomUUID() : null;
   const contentHash = notify ? await sha256(`${target.id}|${previous}|open|${checkedAt}`) : null;
   const update = env.DB.prepare(`UPDATE watch_targets SET status='active',last_checked_at=?,last_success_at=?,last_http_status=?,last_error=NULL,health_status='healthy',health_checked_at=?,health_detail=NULL,detected_company_name=?,entry_status=?,entry_status_changed_at=CASE WHEN entry_status IS NULL OR entry_status<>? THEN ? ELSE entry_status_changed_at END,entry_last_checked_at=?,entry_url=?,entry_signal=?,transient_failure_count=0,health_failure_run_id=NULL,health_alerted_at=NULL,lease_until=NULL,updated_at=? WHERE id=? AND lease_until=? AND enabled=1`)
@@ -369,7 +412,8 @@ export async function checkTarget(env: Env, target: TargetRow, claimedLease?: st
     }
     trace.extractionMs += Date.now() - started;
     trace.log('source_stage');
-    await finalizeMynaviEntryCheck(env, target, lease, now, httpStatus, fetchedUrl, detectedCompanyName, detection.status, detection.url, detection.signal, Boolean(target.health_status && target.health_status !== 'healthy'), trace);
+    // Only an identity incident makes the stored Entry state uncertain; transient fetch failures do not.
+    await finalizeMynaviEntryCheck(env, target, lease, now, httpStatus, fetchedUrl, detectedCompanyName, detection.status, detection.url, detection.signal, target.health_status === 'identity_mismatch', trace);
     return;
   }
   const compatible = hasCompatibleSnapshot(target.snapshot, analysis);
@@ -497,8 +541,14 @@ export default {
     if (request.method === 'OPTIONS') return json({}, 204, origin || env.ALLOWED_ORIGIN);
     if (url.pathname === '/api/session' && request.method === 'POST') return createSession(request, env, origin);
     if (!(await authenticate(request, env))) return json({ error: 'UNAUTHORIZED' }, 401, origin);
+    if (url.pathname === '/api/session' && request.method === 'DELETE') {
+      const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || '';
+      await env.DB.prepare('DELETE FROM sessions WHERE token_hash=?').bind(await sha256(token)).run();
+      return json({}, 200, origin);
+    }
     if (url.pathname === '/api/targets' && request.method === 'GET') {
-      const [targets, events] = await Promise.all([env.DB.prepare('SELECT * FROM watch_targets ORDER BY created_at DESC').all(), env.DB.prepare('SELECT * FROM watch_events ORDER BY detected_at DESC LIMIT 100').all()]);
+      // Every unread event plus the latest read history, so an old unread notice never drops out of the feed.
+      const [targets, events] = await Promise.all([env.DB.prepare('SELECT * FROM watch_targets ORDER BY created_at DESC').all(), env.DB.prepare('SELECT * FROM watch_events WHERE read=0 OR id IN (SELECT id FROM watch_events ORDER BY detected_at DESC LIMIT 100) ORDER BY detected_at DESC LIMIT 1000').all()]);
       return json({ targets: targets.results, events: events.results }, 200, origin);
     }
     if (url.pathname === '/api/health-check' && request.method === 'GET' && url.searchParams.get('dryRun') === '1') {
@@ -563,7 +613,8 @@ export default {
         try { if (body.url) normalized = normalizeUrl(body.url); } catch (error) { return json({ error: error instanceof Error ? error.message : 'INVALID_URL' }, 400, origin); }
         const sourceType = body.sourceType ?? current.source_type;
         const resetBaseline = normalized !== current.normalized_url || sourceType !== current.source_type;
-        const enabled = body.enabled !== false;
+        // An edit that does not mention enabled must keep a paused source paused.
+        const enabled = typeof body.enabled === 'boolean' ? body.enabled : Boolean(current.enabled);
         if (resetBaseline) {
           const duplicate = await env.DB.prepare('SELECT * FROM watch_targets WHERE company_id=? AND normalized_url=?').bind(current.company_id, normalized).first<TargetRow>();
           if (duplicate && duplicate.id !== current.id) return json({ error: 'DUPLICATE_URL' }, 409, origin);

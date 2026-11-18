@@ -99,3 +99,13 @@ test('Japanese and Simplified Chinese labels match the requested state semantics
   assert.equal(watchText.zh.monitoringNeedsReview, '监控中・需确认');
   assert.equal(currentMynaviEntryStatus(target({ enabled: 0 }), company.name, now), 'needs_review');
 });
+
+test('the UI company key agrees with the Worker on 合同会社 and English legal suffixes', () => {
+  assert.equal(companyWatchKey('DMM.com'), companyWatchKey('合同会社DMM.com'));
+  assert.equal(companyWatchKey('株式会社Aiming'), companyWatchKey('Aiming Inc.'));
+  assert.equal(companyWatchKey('株式会社Aiming'), companyWatchKey('AIMING Co., Ltd.'));
+  assert.notEqual(companyWatchKey('株式会社Aiming'), companyWatchKey('株式会社エイティング'));
+  const company = { id: 'local', name: 'DMM.com' };
+  const source = target({ company_id: 'other-device', company_name: 'DMM.com', detected_company_name: '合同会社DMM.com' });
+  assert.equal(companyWatchState(company, [source], now), 'open');
+});

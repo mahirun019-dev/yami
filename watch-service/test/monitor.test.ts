@@ -72,7 +72,10 @@ test('keeps Mynavi recruitment query parameters stable through normalization', (
   const input = 'https://job.mynavi.jp/28/pc/corpinfo/displayPrevEmployment/index/?corpId=292189&recruitingCourseId=27052359';
   assert.equal(normalizeUrl(input), input);
 });
-test('rejects unsafe URLs', () => { for (const url of ['javascript:alert(1)', 'http://127.0.0.1/x', 'https://user:pass@example.com']) assert.throws(() => normalizeUrl(url)); });
+test('rejects unsafe URLs', () => { for (const url of ['javascript:alert(1)', 'http://127.0.0.1/x', 'https://user:pass@example.com', 'http://100.64.0.1/', 'http://[fd00::1]/', 'http://[fe80::1]/', 'http://intranet.local/']) assert.throws(() => normalizeUrl(url)); });
+test('accepts public domains that merely start with fc, fd or fe', () => {
+  for (const url of ['https://fc2.com/recruit/', 'https://fdk.co.jp/', 'https://www.fdc.co.jp/', 'https://fe80.example.com/']) assert.equal(normalizeUrl(url), url);
+});
 test('distinguishes explicit robots denial from an unverifiable URL', () => {
   const robotsUrl = 'https://example.com/robots.txt';
   assert.equal(robotsDecision(robotsUrl, 'User-agent: *\nDisallow: /recruit', 'https://example.com/recruit'), false);

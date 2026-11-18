@@ -109,10 +109,12 @@ export function WatchProvider({ children }: { children: ReactNode }) {
   const connect = async (code: string) => {
     if (!API) throw new Error('NOT_CONFIGURED');
     const response = await fetch(`${API}/api/session`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: code.trim() }) });
-    if (!response.ok) throw new Error('AUTH_FAILED');
+    if (!response.ok) throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'AUTH_FAILED');
     const body = await response.json(); localStorage.setItem(TOKEN_KEY, body.token); sessionStorage.removeItem(TOKEN_KEY); setToken(body.token);
   };
   const disconnect = () => {
+    // Revoke the server session too; local sign-out still completes if the service is unreachable.
+    if (API && token) void fetch(`${API}/api/session`, { method: 'DELETE', headers: { authorization: `Bearer ${token}` } }).catch(() => undefined);
     localStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(TOKEN_KEY);
     setToken('');

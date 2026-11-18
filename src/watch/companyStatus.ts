@@ -3,10 +3,12 @@ import type { MynaviEntryStatus, WatchTarget } from './types';
 // Two six-hour Cron intervals allow one delayed check without retaining old results indefinitely.
 export const ENTRY_STATUS_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
+// Mirrors watch-service companyIdentityKey: the Worker and the UI must agree on what counts as the same company.
 export function companyWatchKey(name: string) {
-  return name.normalize('NFKC').toLocaleLowerCase('ja-JP')
-    .replace(/(株式会社|有限会社|\(株\)|\(有\))/g, '')
-    .replace(/[\s・.．,，、()（）\-]/g, '');
+  return name.normalize('NFKC').toLocaleLowerCase('ja-JP').trim()
+    .replace(/(株式会社|有限会社|合同会社|合名会社|合資会社|\(株\)|\(有\)|\(同\)|\(名\)|\(資\))/g, '')
+    .replace(/[\s,.]+(?:co\.?,?\s*ltd|company\s+limited|corporation|incorporated|inc|corp|ltd|limited|llc|k\.?\s*k|g\.?\s*k)\.?$/i, '')
+    .replace(/[\p{P}\p{S}\s]/gu, '');
 }
 
 function entryCompanyKey(name: string) {

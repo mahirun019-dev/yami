@@ -148,7 +148,7 @@ export function CompanyWatchSection({ company, locale, openSettings, highlightEv
   </section>;
 }
 
-function WatchLogin({ locale }: { locale: Locale }) { const text = watchText[locale], watch = useWatch(), [code, setCode] = useState(''), [error, setError] = useState(''); return <form className="watch-login" onSubmit={async (event) => { event.preventDefault(); try { await watch.connect(code); setCode(''); } catch { setError('AUTH_FAILED'); } }}><label>{text.code}<input type="password" autoComplete="current-password" value={code} onChange={(e) => setCode(e.target.value)} /></label><button className="primary">{text.connect}</button>{error && <small>{error}</small>}</form>; }
+function WatchLogin({ locale }: { locale: Locale }) { const text = watchText[locale], watch = useWatch(), [code, setCode] = useState(''), [error, setError] = useState(''); return <form className="watch-login" onSubmit={async (event) => { event.preventDefault(); try { await watch.connect(code); setCode(''); setError(''); } catch (failure) { setError(failure instanceof Error && failure.message === 'RATE_LIMITED' ? text.rateLimited : text.authFailed); } }}><label>{text.code}<input type="password" autoComplete="current-password" value={code} onChange={(e) => setCode(e.target.value)} /></label><button className="primary">{text.connect}</button>{error && <small>{error}</small>}</form>; }
 
 export function WatchConnectionSettings({ locale }: { locale: Locale }) {
   const text = watchText[locale], watch = useWatch();

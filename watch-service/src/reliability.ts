@@ -40,6 +40,22 @@ export class SourceTrace {
   }
 }
 
+/** Charset from the Content-Type header, else a BOM, else an HTML <meta> declaration in the first 4 KB. */
+export function detectCharset(body: Uint8Array, contentType: string | null): string {
+  const header = contentType?.match(/charset\s*=\s*["']?([\w.:-]+)/i)?.[1];
+  if (header) return header.toLowerCase();
+  if (body[0] === 0xef && body[1] === 0xbb && body[2] === 0xbf) return 'utf-8';
+  // One byte per code unit keeps ASCII markup readable whatever the real encoding is.
+  const head = String.fromCharCode(...body.subarray(0, 4096));
+  const meta = head.match(/<meta[^>]+charset\s*=\s*["']?\s*([\w.:-]+)/i)?.[1];
+  return (meta || 'utf-8').toLowerCase();
+}
+
+export function decodeBody(body: Uint8Array, contentType: string | null): string {
+  try { return new TextDecoder(detectCharset(body, contentType)).decode(body); }
+  catch { return new TextDecoder().decode(body); } // Unknown label: keep the previous UTF-8 behaviour.
+}
+
 const TRANSIENT_HTTP = new Set([429, 502, 503, 504]);
 export const MAX_REQUEST_ATTEMPTS = 2;
 export const MAX_BACKOFF_MS = 1_000;
@@ -69,8 +85,7 @@ export async function requestText(url: string | URL, init: RequestInit, trace: S
             throw new CheckError(`HTTP_${response.status}`, response.status, true);
           }
           const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
-          let text = ''; let bytes = 0;
+          const chunks: Uint8Array[] = []; let bytes = 0;
           if (reader) {
             try {
               while (true) {
@@ -78,12 +93,13 @@ export async function requestText(url: string | URL, init: RequestInit, trace: S
                 if (chunk.done) break;
                 bytes += chunk.value.byteLength;
                 if (bytes > 1_500_000) { await reader.cancel(); throw new CheckError('RESPONSE_TOO_LARGE', response.status); }
-                text += decoder.decode(chunk.value, { stream: true });
+                chunks.push(chunk.value);
               }
-              text += decoder.decode();
             } finally { reader.releaseLock(); }
           }
-          return { response, text };
+          const body = new Uint8Array(bytes); let offset = 0;
+          for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.byteLength; }
+          return { response, text: decodeBody(body, response.headers.get('content-type')) };
         })(),
         new Promise<never>((_, reject) => { timer = setTimeout(() => {
           const budgetLimited = remaining < timeoutMs;

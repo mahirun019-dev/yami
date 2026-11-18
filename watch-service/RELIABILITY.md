@@ -28,7 +28,19 @@ A compatible, meaningful snapshot tied to the same URL/source type remains compa
 
 Manual health-only inspection does not consume a real content change. Normal checks persist unchanged/initial snapshots immediately. Actual changes retain the existing run-wide shared-platform filter before event generation. Uncompleted changes remain retryable against the old baseline.
 
-MyNavi continues to use its separate Entry state machine. Its transition conditions, identity checks, recommendation exclusion and recovery suppression are unchanged.
+MyNavi continues to use its separate Entry state machine, identity checks and recommendation exclusion. `entry_status` is written only by verified healthy checks, so a fetch failure never erases the last verified state. After a transient failure, a stored `unavailable`/`reservation`/`closed`/`unknown` followed by `open` notifies once, so an opening during an outage is not lost. When the stored state is uncertain (`needs_review`) or the source is recovering from an identity mismatch, `open` notifies only if no `mynavi_entry_open` event has ever been recorded for that source, which keeps detector flicker from repeating an announcement.
+
+## Encoding, identity and address checks
+
+- Response bodies are decoded with the charset from `Content-Type`, else a UTF-8 BOM, else an HTML `<meta>` declaration in the first 4 KB, so Shift_JIS/EUC-JP recruitment pages are not read as mojibake. Unknown labels fall back to UTF-8.
+- Company identity treats Japanese legal forms and English legal suffixes (Inc., Co., Ltd., Corporation, K.K., LLC) as the same company. The UI key in `src/watch/companyStatus.ts` mirrors the Worker key so both sides agree.
+- DNS checks query A records first and AAAA only when no A record exists; private, link-local, IPv4-mapped and NAT64 IPv6 answers are rejected like private IPv4.
+- `GET /api/targets` returns every unread event plus the latest 100 read events. `DELETE /api/session` revokes the caller's session on disconnect.
+- Known limitation: the MIXI adapter only accepts 2028 new-graduate posts (the owner's graduation year). Update that year deliberately when the target year changes.
+
+## Access-code rate limit
+
+`0005_login_attempts.sql` adds one table, `login_attempts`, holding a SHA-256 client key and a timestamp per failed `/api/session` attempt. A client is limited after 5 failures in 15 minutes and all clients after 50, with HTTP 429 and `Retry-After: 900`. A successful login clears that client's failures; expired attempts and expired sessions are deleted on later logins. If the migration has not been applied yet, login keeps working without the limit and logs `LOGIN_RATE_LIMIT_UNAVAILABLE`, so apply the migration before deploying this Worker version.
 
 ## Robots policy retrieval
 

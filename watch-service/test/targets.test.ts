@@ -29,6 +29,10 @@ class MemoryD1 {
           const latest = [...db.events.values()].filter((event) => event.watch_target_id === values[0] && ['source_health_issue', 'source_health_recovered'].includes(String(event.event_type))).sort((a, b) => String(b.detected_at).localeCompare(String(a.detected_at)))[0];
           return (latest ? { after_excerpt: latest.after_excerpt } : null) as T;
         }
+        if (query.startsWith("SELECT id FROM watch_events WHERE watch_target_id=? AND event_type='mynavi_entry_open'")) {
+          const found = [...db.events.values()].find((event) => event.watch_target_id === values[0] && event.event_type === 'mynavi_entry_open');
+          return (found ? { id: found.id } : null) as T;
+        }
         if (query.startsWith('SELECT entry_status FROM watch_targets')) {
           const row = db.targets.get(String(values[0]));
           return (row && row.lease_until === values[1] && row.enabled ? { entry_status: row.entry_status ?? null } : null) as T;
@@ -532,6 +536,56 @@ test('MyNavi reservation to open notifies once, but changes to recruitment copy 
   } finally { restore(); }
 });
 
+test('MyNavi Entry opening during a transient outage still notifies once after recovery', async () => {
+  const db = new MemoryD1();
+  const row = target({ entry_status: 'closed', entry_status_changed_at: '2026-09-01T00:00:00.000Z', snapshot: null, last_hash: null });
+  db.targets.set(row.id, row);
+  let fail = false; let entryMarkup = '<p>エントリー受付終了</p>';
+  const restore = setFetchPage(() => fail ? new Response('', { status: 503, headers: { 'retry-after': '60' } }) : new Response(mynaviHtml('(株)Aiming', '年間休日124日', '(株)サクセス', entryMarkup), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db)); assert.equal(row.entry_status, 'closed');
+    fail = true; await scheduled(envFor(db));
+    assert.notEqual(row.health_status, 'healthy'); assert.equal(row.entry_status, 'closed', 'a failed check keeps the verified Entry state');
+    fail = false; entryMarkup = '<a href="/entry">エントリーはこちら</a>';
+    await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'open');
+    assert.deepEqual([...db.events.values()].map((event) => event.event_type), ['mynavi_entry_open']);
+    await scheduled(envFor(db));
+    assert.equal(db.events.size, 1, 'open to open stays silent');
+  } finally { restore(); }
+});
+
+test('MyNavi needs_review to open notifies only when the opening was never announced', async () => {
+  const db = new MemoryD1();
+  const row = target({ entry_status: 'needs_review', entry_status_changed_at: '2026-09-01T00:00:00.000Z', snapshot: null, last_hash: null });
+  db.targets.set(row.id, row);
+  let entryMarkup = '<a href="/entry">エントリーはこちら</a>';
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming', '年間休日124日', '(株)サクセス', entryMarkup), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(row.entry_status, 'open');
+    assert.deepEqual([...db.events.values()].map((event) => event.event_type), ['mynavi_entry_open']);
+    entryMarkup = '<p>エントリー</p><button>検討リスト登録</button>';
+    await scheduled(envFor(db)); assert.equal(row.entry_status, 'needs_review');
+    entryMarkup = '<a href="/entry">エントリーはこちら</a>';
+    await scheduled(envFor(db)); assert.equal(row.entry_status, 'open');
+    assert.equal(db.events.size, 1, 'an uncertain flicker does not repeat an opening that was already announced');
+  } finally { restore(); }
+});
+
+test('MyNavi recovery from an identity mismatch does not repeat an already announced opening', async () => {
+  const db = new MemoryD1();
+  const row = target({ entry_status: 'closed', entry_status_changed_at: '2026-09-01T00:00:00.000Z', snapshot: null, last_hash: null, health_status: 'identity_mismatch' });
+  db.targets.set(row.id, row);
+  db.events.set('earlier-open', { id: 'earlier-open', watch_target_id: row.id, event_type: 'mynavi_entry_open', content_hash: 'earlier', detected_at: '2026-08-01T00:00:00.000Z' });
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming', '年間休日124日', '(株)サクセス', '<a href="/entry">エントリーはこちら</a>'), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  try {
+    await scheduled(envFor(db));
+    assert.equal(row.health_status, 'healthy'); assert.equal(row.entry_status, 'open');
+    assert.equal(db.events.size, 1, 'identity recovery stays conservative when the opening was already announced');
+  } finally { restore(); }
+});
+
 test('MyNavi closed to open can notify again while open to closed stays silent', async () => {
   const db = new MemoryD1();
   const row = target({ entry_status: 'closed', entry_status_changed_at: '2026-09-01T00:00:00.000Z', snapshot: null, last_hash: null, health_status: 'healthy' });
@@ -727,6 +781,24 @@ test('read-only audit scans enabled sources and performs no D1 writes', async ()
     assert.equal(report.results[0].companyName, '株式会社Aiming');
     assert.equal(report.results[0].snapshotState, 'compatible');
     assert.equal(db.writes, 0);
+  } finally { restore(); }
+});
+
+test('editing a paused source keeps it paused unless enabled is explicitly sent', async () => {
+  const db = new MemoryD1();
+  const row = target({ id: 'paused-target', enabled: 0, status: 'paused' });
+  db.targets.set(row.id, row);
+  const restore = setFetchPage(() => new Response(mynaviHtml('(株)Aiming'), { headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  const patch = (body: Record<string, unknown>) => worker.fetch(new Request(`https://careerflow-watch.example.workers.dev/api/targets/${row.id}`, {
+    method: 'PATCH', headers: { authorization: 'Bearer test-session', origin: 'https://careerflow.example', 'content-type': 'application/json' }, body: JSON.stringify(body),
+  }), envFor(db), context([]));
+  try {
+    assert.equal((await patch({ label: '本選考' })).status, 200);
+    assert.equal(row.enabled, 0); assert.equal(row.status, 'paused'); assert.equal(row.label, '本選考');
+    assert.equal((await patch({ url: 'https://job.mynavi.jp/28/pc/search/corp292190/outline.html', sourceType: 'mynavi' })).status, 200);
+    assert.equal(row.enabled, 0, 'a URL edit does not silently resume monitoring'); assert.equal(row.status, 'paused');
+    assert.equal((await patch({ enabled: true })).status, 200);
+    assert.equal(row.enabled, 1);
   } finally { restore(); }
 });
 

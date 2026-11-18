@@ -9,7 +9,8 @@ const COMPANY_SECTION = /(会社概要|会社情報|会社データ|企業概要
 const PLATFORM_SECTION = /(おすすめ企業|オススメ企業|関連企業|関連会社|類似企業|あなたへのおすすめ|注目企業|他社一覧|企業一覧|検討リスト|エントリー予約リスト|ランキング|人気企業|広告|スポンサー|キャンペーン|閲覧履歴|最近見た企業|(?:マイナビ|リクナビ|サイト|運営|プラットフォーム)からのお知らせ|メンテナンス(?:情報|のお知らせ))/i;
 const PERSONALIZED_LINE = /(マイページ|ログイン|ログアウト|会員登録|閲覧履歴|お気に入り登録|保存した企業|応募済み|エントリー予約|予約リスト|(?:エントリー|応募|予約).{0,40}(?:追加|登録|完了|しました|済み|一覧|リスト)|(?:追加|登録|完了|しました|済み|一覧|リスト).{0,40}(?:エントリー|応募|予約))/i;
 const SNAPSHOT_VERSION = 4;
-const PRIVATE_HOST = /(^localhost$|\.localhost$|\.local$|\.internal$|^0\.|^10\.|^127\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\.|^192\.168\.|^::1$|^fc|^fd|^fe80)/i;
+// IPv6 prefixes require a colon so ordinary domains such as fc2.com or fdk.co.jp are not mistaken for ULA addresses.
+const PRIVATE_HOST = /(^localhost\.?$|\.localhost\.?$|\.local\.?$|\.internal\.?$|^0\.|^10\.|^127\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\.|^192\.168\.|^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|^::1?$|^::ffff:|^64:ff9b:|^f[cd][0-9a-f]{0,2}:|^fe[89ab][0-9a-f]?:)/i;
 const CRAWLER_PRODUCT_TOKEN = 'CareerFlowWatch';
 const CRAWLER_USER_AGENT = `${CRAWLER_PRODUCT_TOKEN}/1.0 (+public recruitment monitor)`;
 const MIXI_RECRUIT_HOST = 'mixigroup-recruit.mixi.co.jp';
@@ -319,6 +320,8 @@ export function companyIdentityKey(value: string): string {
     .replace(/[【［\[(（][^】］\])）]*(?:グループ|グループ会社)[^】］\])）]*[】］\])）]/g, '')
     .replace(/[（(][a-z]{2,8}[)）]$/i, '')
     .replace(/株式会社|有限会社|合同会社|合名会社|合資会社|\(株\)|\(有\)|\(同\)|\(名\)|\(資\)/g, '')
+    // English legal suffixes (Aiming Inc., AIMING Co., Ltd.) name the same company as 株式会社Aiming.
+    .replace(/[\s,.]+(?:co\.?,?\s*ltd|company\s+limited|corporation|incorporated|inc|corp|ltd|limited|llc|k\.?\s*k|g\.?\s*k)\.?$/i, '')
     .replace(/[\p{P}\p{S}\s\u00a0]/gu, '');
 }
 
@@ -872,10 +875,16 @@ async function assertPublicDns(hostname: string, trace: SourceTrace) {
   let pending = trace.budget.dns.get(hostname);
   if (!pending) {
     pending = (async () => {
-      const { response, text } = await requestText(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`, { headers: { accept: 'application/dns-json' } }, trace, 'dns', 5_000);
-      if (!response.ok) throw new CheckError('DNS_CHECK_FAILED', response.status, true);
-      const body = JSON.parse(text) as { Answer?: Array<{ data: string }> };
-      if (!body.Answer?.length || body.Answer.some((x) => PRIVATE_HOST.test(x.data))) throw new CheckError('URL_PRIVATE_HOST', response.status);
+      const lookup = async (type: 'A' | 'AAAA') => {
+        const { response, text } = await requestText(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${type}`, { headers: { accept: 'application/dns-json' } }, trace, 'dns', 5_000);
+        if (!response.ok) throw new CheckError('DNS_CHECK_FAILED', response.status, true);
+        const body = JSON.parse(text) as { Answer?: Array<{ type?: number; data: string }> };
+        return { status: response.status, answers: body.Answer || [] };
+      };
+      let result = await lookup('A');
+      // IPv6-only hosts have no A record; check their AAAA addresses instead of rejecting them outright.
+      if (!result.answers.some((x) => x.type === undefined || x.type === 1)) result = await lookup('AAAA');
+      if (!result.answers.length || result.answers.some((x) => PRIVATE_HOST.test(x.data))) throw new CheckError('URL_PRIVATE_HOST', result.status);
     })();
     trace.budget.dns.set(hostname, pending);
     pending.catch(() => trace.budget.dns.delete(hostname));
