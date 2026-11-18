@@ -33,9 +33,11 @@ html[data-embed="argon"] .career-app {
   --action-banner-bg: rgba(0, 0, 0, 0.045);
   --action-banner-hover: rgba(0, 0, 0, 0.08);
   --embed-hairline: rgba(0, 0, 0, 0.09);
-  --embed-dialog-bg: rgba(250, 250, 251, 0.97);
-  --embed-dialog-input-bg: #ffffff;
-  --embed-dialog-muted-bg: #f1f2f4;
+  --embed-dialog-bg: rgba(250, 251, 253, 0.94);
+  --embed-dialog-input-bg: rgba(255, 255, 255, 0.88);
+  --embed-dialog-muted-bg: rgba(0, 0, 0, 0.06);
+  --embed-dialog-border: rgba(0, 0, 0, 0.12);
+  --embed-dialog-shadow: 0 22px 58px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.09);
   --embed-text-shadow: none;
   --embed-accent-fill: var(--argon-accent-fill, #346fe0);
   --embed-accent-text: var(--argon-accent-text, #2b62cf);
@@ -73,9 +75,11 @@ html[data-embed="argon"][data-theme="dark"] .career-app {
   --action-banner-bg: rgba(255, 255, 255, 0.07);
   --action-banner-hover: rgba(255, 255, 255, 0.12);
   --embed-hairline: rgba(255, 255, 255, 0.1);
-  --embed-dialog-bg: rgba(30, 33, 39, 0.98);
-  --embed-dialog-input-bg: #171a20;
-  --embed-dialog-muted-bg: #242830;
+  --embed-dialog-bg: rgba(28, 32, 39, 0.94);
+  --embed-dialog-input-bg: rgba(255, 255, 255, 0.085);
+  --embed-dialog-muted-bg: rgba(255, 255, 255, 0.085);
+  --embed-dialog-border: rgba(255, 255, 255, 0.18);
+  --embed-dialog-shadow: 0 24px 64px rgba(0, 0, 0, 0.50), 0 4px 16px rgba(0, 0, 0, 0.26);
   --embed-accent-fill: var(--argon-accent-fill, #2f66d8);
   --embed-accent-text: var(--argon-accent-text, #7faaff);
   --embed-accent-on-fill: var(--argon-accent-on-fill, #ffffff);
@@ -759,7 +763,64 @@ html[data-embed="argon"][data-theme] select option::checkmark {
   font-weight: 700;
 }
 
-/* Dialogs, sheets, and popovers float over the page: near-solid, no glass behind their text. */
+/* Primary actions match Argon's AccentButtonStyle (fill + contrast-checked onFill). */
+html[data-embed="argon"][data-theme] .career-app .primary-action,
+html[data-embed="argon"][data-theme] .career-app .primary,
+html[data-embed="argon"][data-theme] .modal-layer .form-actions > .primary,
+html[data-embed="argon"][data-theme] .settings-actions > .primary,
+html[data-embed="argon"][data-theme] .backup-action-block > button.primary,
+html[data-embed="argon"][data-theme] .stage-progression-warning-actions button.primary,
+html[data-embed="argon"][data-theme] .company-filter-sheet-actions .primary,
+html[data-embed="argon"][data-theme] .career-app .company-grid > .empty-small .primary,
+html[data-embed="argon"][data-theme] .career-app .timeline > .empty-small .primary {
+  color: var(--embed-accent-on-fill) !important;
+  background: var(--embed-accent-fill) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none;
+}
+
+html[data-embed="argon"][data-theme] .career-app .primary-action svg,
+html[data-embed="argon"][data-theme] .career-app .primary svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+html[data-embed="argon"][data-theme] .career-app .primary-action:hover,
+html[data-embed="argon"][data-theme] .career-app .primary:hover,
+html[data-embed="argon"][data-theme] .modal-layer .form-actions > .primary:hover,
+html[data-embed="argon"][data-theme] .settings-actions > .primary:hover,
+html[data-embed="argon"][data-theme] .backup-action-block > button.primary:hover,
+html[data-embed="argon"][data-theme] .stage-progression-warning-actions button.primary:hover,
+html[data-embed="argon"][data-theme] .company-filter-sheet-actions .primary:hover {
+  filter: brightness(0.94);
+}
+
+html[data-embed="argon"][data-theme] .career-app input:not([type="hidden"]):focus,
+html[data-embed="argon"][data-theme] .career-app textarea:focus,
+html[data-embed="argon"][data-theme] .modal-layer input:not([type="hidden"]):focus,
+html[data-embed="argon"][data-theme] .modal-layer textarea:focus,
+html[data-embed="argon"][data-theme] .settings-page-scope input:not([type="hidden"]):focus,
+html[data-embed="argon"][data-theme] .settings-page-scope textarea:focus {
+  border-color: var(--embed-accent-text) !important;
+  box-shadow: 0 0 0 3px var(--embed-accent-glow) !important;
+}
+
+/* Dialogs, sheets, and popovers float cleanly like Argon's frosted CardChrome,
+ * without painting a hard-edged dim box that stops at Argon's sidebar/titlebar. */
+html[data-embed="argon"][data-theme] .modal-backdrop,
+html[data-embed="argon"][data-theme] .stage-progression-warning-backdrop,
+html[data-embed="argon"][data-theme] .company-filter-sheet-backdrop,
+html[data-embed="argon"][data-theme] .record-action-backdrop,
+html[data-embed="argon"][data-theme] .sheet-backdrop,
+html[data-embed="argon"][data-theme] .backup-restore-layer,
+html[data-embed="argon"][data-theme] .watch-disconnect-layer,
+html[data-embed="argon"][data-theme] .template-delete-layer {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 html[data-embed="argon"][data-theme] .modal-layer,
 html[data-embed="argon"][data-theme] .backup-restore-layer,
 html[data-embed="argon"][data-theme] .watch-disconnect-layer,
@@ -776,8 +837,6 @@ html[data-embed="argon"][data-theme] .record-action-menu {
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .drawer,
-html[data-embed="argon"][data-theme] .modal-layer .drawer > header,
-html[data-embed="argon"][data-theme] .modal-layer .form-actions,
 html[data-embed="argon"][data-theme] .modal-layer .entity-card,
 html[data-embed="argon"][data-theme] .modal-layer [role="dialog"],
 html[data-embed="argon"][data-theme] .backup-restore-dialog,
@@ -788,13 +847,127 @@ html[data-embed="argon"][data-theme] .company-filter-sheet,
 html[data-embed="argon"][data-theme] .career-app .record-action-menu,
 html[data-embed="argon"][data-theme] .career-app .record-action-menu .record-action-surface {
   background: var(--embed-dialog-bg) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(1.4);
+  backdrop-filter: blur(36px) saturate(1.4);
+  border: 1px solid var(--embed-dialog-border) !important;
+  box-shadow: var(--embed-dialog-shadow) !important;
   text-shadow: none;
 }
 
+html[data-embed="argon"][data-theme] .modal-layer .drawer,
+html[data-embed="argon"][data-theme] .backup-restore-dialog,
+html[data-embed="argon"][data-theme] .watch-disconnect-dialog,
+html[data-embed="argon"][data-theme] .template-delete-dialog,
+html[data-embed="argon"][data-theme] .stage-progression-warning-dialog {
+  border-radius: 18px !important;
+}
+
+@media (min-width: 761px) {
+  html[data-embed="argon"][data-theme] .modal-layer {
+    padding: 18px 24px;
+  }
+
+  html[data-embed="argon"][data-theme] .modal-layer .drawer {
+    max-height: min(740px, calc(100dvh - 36px));
+  }
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .drawer > header {
+  padding: 14px 22px 12px;
+  background: transparent !important;
+  border-bottom: 1px solid var(--embed-hairline) !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .drawer > header .close-button {
+  background: var(--embed-dialog-muted-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  color: var(--text-secondary) !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .drawer > header .close-button:hover {
+  background: var(--embed-menu-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .drawer > form {
+  gap: 10px 12px;
+  padding: 14px 22px 16px;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-grid label {
+  color: var(--text-secondary) !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-grid input:not([type="hidden"]),
+html[data-embed="argon"][data-theme] .modal-layer .form-grid textarea,
+html[data-embed="argon"][data-theme] .modal-layer .form-grid select {
+  min-height: 36px;
+  border-radius: 10px !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-grid input:not([type="hidden"]),
+html[data-embed="argon"][data-theme] .modal-layer .form-grid textarea {
+  background: var(--embed-dialog-input-bg) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-grid textarea {
+  min-height: 58px;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-actions {
+  position: sticky !important;
+  bottom: -16px !important;
+  margin: 4px -22px -16px !important;
+  padding: 12px 22px 16px !important;
+  border-top: 1px solid var(--embed-hairline) !important;
+  background: var(--embed-dialog-bg) !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-actions > button:not(.primary),
+html[data-embed="argon"][data-theme] .backup-restore-dialog footer button:not(.danger-button),
+html[data-embed="argon"][data-theme] .watch-disconnect-dialog footer button:not(.danger-button),
+html[data-embed="argon"][data-theme] .template-delete-dialog footer button:not(.danger-button),
+html[data-embed="argon"][data-theme] .stage-progression-warning-actions button:not(.primary),
+html[data-embed="argon"][data-theme] .company-filter-sheet-actions button:not(.primary) {
+  background: var(--embed-dialog-muted-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-actions > button:not(.primary):hover,
+html[data-embed="argon"][data-theme] .backup-restore-dialog footer button:not(.danger-button):hover,
+html[data-embed="argon"][data-theme] .watch-disconnect-dialog footer button:not(.danger-button):hover,
+html[data-embed="argon"][data-theme] .template-delete-dialog footer button:not(.danger-button):hover,
+html[data-embed="argon"][data-theme] .stage-progression-warning-actions button:not(.primary):hover,
+html[data-embed="argon"][data-theme] .company-filter-sheet-actions button:not(.primary):hover {
+  background: var(--embed-menu-hover) !important;
+}
+
+html[data-embed="argon"][data-theme] .color-swatch.active {
+  border-color: var(--bg-surface-elevated) !important;
+  outline: 2px solid var(--embed-accent-text) !important;
+}
+
+html[data-embed="argon"][data-theme] .interest-stars button:focus-visible {
+  outline-color: var(--embed-accent-text) !important;
+}
+
 html[data-embed="argon"][data-theme] .career-app .record-action-menu {
+  background: var(--embed-menu-bg) !important;
   border: 1px solid var(--embed-menu-border) !important;
   border-radius: 12px !important;
   box-shadow: var(--embed-menu-shadow) !important;
+}
+
+html[data-embed="argon"][data-theme] .career-app .record-action-menu .record-action-surface {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html[data-embed="argon"][data-theme] .record-action-items button {

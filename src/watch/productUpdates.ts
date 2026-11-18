@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-embed-modals',
+  date: '2026-11-18',
+  title: { ja: 'Argon 内のモーダルやアクションメニューの表示を改善しました', zh: '优化了 Argon 中的弹窗表单与操作菜单样式' },
+  summary: { ja: '企業追加ダイアログなどのモーダル、確認ダイアログ、主要ボタンの表示を Argon のすりガラスと強調色に合わせました。', zh: '将新增企业等弹窗表单、确认对话框和主要操作按钮统一为 Argon 磨砂玻璃质感与强调色。' },
+  changes: {
+    ja: ['企業追加などのモーダル周囲に出ていた暗い枠線をなくし、Argon のカードと同じすりガラス表示にしました', '保存ボタンや色選択リングを Argon の強調色に合わせ、備考欄が下のボタンに隠れないよう調整しました', 'Web 版・スマートフォンでの表示と保存データには影響しません'],
+    zh: ['去掉了弹窗背景在 Argon 侧栏与标题栏边缘产生的直角暗色遮罩，弹窗本体采用磨砂玻璃圆角样式', '统一“保存”等主要按钮与显示色选中环为 Argon 强调色，并修复表单底部对“备注”输入框的遮挡', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-argon-embed-controls',
   date: '2026-11-18',
   title: { ja: 'Argon 内でのホバー・選択表示とプルダウンメニューを整えました', zh: '优化了 Argon 中的悬停/选中高亮与下拉菜单显示' },
