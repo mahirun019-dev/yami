@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-native-experience',
+  date: '2026-11-18',
+  title: { ja: 'Argon 内のモーダル、Liquid Glass メニュー、企業詳細アニメーションに対応しました', zh: '完善 Argon 内的原生磨砂弹窗、液态玻璃菜单与企业详情交互动画' },
+  summary: { ja: 'Argon のネイティブすりガラス背面・全画面ディム・Liquid Glass メニューと連携し、企業詳細画面のプッシュ遷移やトラックパッドの右スワイプ戻りを追加しました。', zh: '配合 Argon 的原生磨砂底板、全窗统一压暗与 Liquid Glass 菜单，完善企业详情页的卡片质感、左右推进动画以及触控板右滑返回。' },
+  changes: {
+    ja: ['企業追加などのモーダルで背面のテキスト透けをなくし、Argon のすりガラスカードとウィンドウ全体の統一ディムに対応しました', 'セレクトボックスと記録追加メニューを Argon ネイティブの Liquid Glass メニューで表示します', '企業詳細ページのガラスカード視認性を整え、一覧との横スライド遷移・トラックパッドの2本指右スワイプ戻りを追加しました', 'Web 版・スマートフォンでの表示と保存データには影響しません'],
+    zh: ['修复二级弹窗背面主页文字穿透问题，配合 Argon 原生磨砂底板与全窗统一压暗效果呈现', '表单下拉选择与企业详情“+ 添加记录”菜单改为由 Argon 承载原生液态玻璃（Liquid Glass）弹出列表', '优化企业详情页双栏磨砂卡片可读性，并加入与企业列表之间的左右推拉动画及触控板双指右滑返回', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-argon-embed-liquid-glass',
   date: '2026-11-18',
   title: { ja: 'Argon 内のフォームダイアログとリストメニューを刷新しました', zh: '重塑了 Argon 内的表单弹窗与液态玻璃列表菜单样式' },
