@@ -25,8 +25,9 @@ import { getUnreadProductUpdateCount, subscribeProductUpdateReadState } from "./
 import { YamiLogoLockup } from "./brand/YamiLogo";
 import { AboutSettings } from "./about/AboutSettings";
 import { aboutCopy } from "./about/i18n";
-import { PlanSettings } from "./plans/PlanSettings";
-import { planCopy } from "./plans/i18n";
+import {ACCOUNT_MODE,accountFile,storageForOwner,workspaceStorage as localStorage} from './account/storage';
+import {AccountPanel,useAccount} from './account/AccountBoundary';
+import {exportLegacyAccountTransfer} from './account/legacyTransfer';
 import { normalizeDashboardUrl } from "./route";
 
 import {
@@ -398,6 +399,7 @@ function attachmentDb(): Promise<IDBDatabase> {
   });
 }
 async function saveAttachment(key: string, file: File) {
+  if(ACCOUNT_MODE){await accountFile('attachments',key,'PUT',file,file.type||'application/octet-stream');return;}
   const db = await attachmentDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(ATTACHMENT_STORE, "readwrite");
@@ -408,6 +410,7 @@ async function saveAttachment(key: string, file: File) {
 }
 async function deleteAttachment(key?: string) {
   if (!key) return;
+  if(ACCOUNT_MODE){await accountFile('attachments',key,'DELETE');return;}
   const db = await attachmentDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(ATTACHMENT_STORE, "readwrite");
@@ -1363,12 +1366,12 @@ function normalize(x: any): Data {
     templates,
   };
 }
-function load(): Data {
+function load(localStorage=storageForOwner(undefined)): Data {
   try {
     const stored = localStorage.getItem(KEY);
     if (stored) {
       const normalized = clean(normalize(JSON.parse(stored)));
-      localStorage.setItem(KEY, JSON.stringify(normalized));
+      if(!ACCOUNT_MODE)localStorage.setItem(KEY, JSON.stringify(normalized));
       return normalized;
     }
     const old = localStorage.getItem(OLD);
@@ -1407,6 +1410,7 @@ function load(): Data {
   }
 }
 function clean(d: Data): Data {
+  if(ACCOUNT_MODE)return d;
   if (localStorage.getItem(CLEAN)) return d;
   const sampleIds = new Set(
     d.companies
@@ -1445,8 +1449,10 @@ function useMediaQuery(query: string) {
 }
 
 export default function App() {
+  const account=useAccount();
+  const localStorage=useMemo(()=>storageForOwner(account?.user.userId),[account?.user.userId]);
   const isMobile = useMediaQuery("(max-width: 767px)");
-  const [data, setData] = useState<Data>(load);
+  const [data, setData] = useState<Data>(()=>load(localStorage));
   const initialRoute = readRouteState();
   const [view, setViewState] = useState<View>(() => getStartupView(data, initialRoute)),
     [companyFilter, setCompanyFilter] = useState<CompanyRouteFilter | null>(initialRoute.companyFilter),
@@ -4684,8 +4690,8 @@ function BackupControls({ data, theme, locale, json }: any) {
   const [lastExport, setLastExport] = useState<number>(() => Number(localStorage.getItem("careerflow-last-export") || 0));
   const snapshot = (): BackupSnapshot => makeBackupSnapshot(data, theme, locale);
   const labels = locale === "ja"
-    ? { title: "バックアップ", export: "バックアップを書き出す", exportDescription: "現在の Yami データをバックアップファイルとして保存します。", download: "ブラウザの既定のダウンロード先に保存されます。", restore: "バックアップを復元", restoreDescription: "以前に書き出したバックアップファイルからデータを復元します。", choose: "バックアップファイルを選択", fileHint: "システムの「ファイル」から .json バックアップファイルを選択できます。", restoreWarning: "復元すると、現在のデータはバックアップの内容に置き換えられます。", notes: "バックアップについて", contents: "企業、日程、資料、面接記録、準備タスク、アプリ設定が含まれます。", device: "バックアップファイルはこのデバイスにのみ保存されます。", format: "ファイル形式：JSON", last: "前回の書き出し", noExport: "まだありません", generated: "バックアップファイルを生成しました", shared: "ファイルに保存を選択してください", failed: "書き出しに失敗しました" }
-    : { title: "备份", export: "导出备份", exportDescription: "将当前 Yami 数据保存为备份文件。", download: "文件将保存到浏览器的默认下载位置。", restore: "恢复备份", restoreDescription: "从此前导出的备份文件恢复数据。", choose: "选择备份文件", fileHint: "可以从系统“文件”App 中选择 .json 备份文件。", restoreWarning: "恢复后，当前数据将被备份内容替换。", notes: "备份说明", contents: "包含企业、日程、资料、面试记录、准备任务和应用设置。", device: "备份文件仅保存在此设备中。", format: "文件格式：JSON", last: "上次导出", noExport: "尚未导出", generated: "备份文件已生成", shared: "请在分享菜单中选择保存文件", failed: "导出失败" };
+    ? { title: "バックアップ", export: "バックアップを書き出す", exportDescription: "現在の Yami データをバックアップファイルとして保存します。", download: "ブラウザの既定のダウンロード先に保存されます。", restore: "バックアップを復元", restoreDescription: "以前に書き出したバックアップファイルからデータを復元します。", choose: "バックアップファイルを選択", fileHint: "システムの「ファイル」から .json バックアップファイルを選択できます。", restoreWarning: "復元すると、現在のデータはバックアップの内容に置き換えられます。", notes: "バックアップについて", contents: "企業、日程、資料、面接記録、準備タスク、アプリ設定が含まれます。", device: "バックアップファイルはこのデバイスにのみ保存されます。", format: "ファイル形式：JSON", last: "前回の書き出し", noExport: "まだありません", generated: "バックアップファイルを生成しました", shared: "ファイルに保存を選択してください", failed: "書き出しに失敗しました", transfer: "アカウント移行データを書き出す", transferHint: "添付ファイルと保存済みバックアップを含む移行用 JSON を作成します。", transferDone: "アカウント移行ファイルを保存しました。", transferFailed: "移行ファイルを作成できませんでした。添付ファイルの状態をご確認ください。" }
+    : { title: "备份", export: "导出备份", exportDescription: "将当前 Yami 数据保存为备份文件。", download: "文件将保存到浏览器的默认下载位置。", restore: "恢复备份", restoreDescription: "从此前导出的备份文件恢复数据。", choose: "选择备份文件", fileHint: "可以从系统“文件”App 中选择 .json 备份文件。", restoreWarning: "恢复后，当前数据将被备份内容替换。", notes: "备份说明", contents: "包含企业、日程、资料、面试记录、准备任务和应用设置。", device: "备份文件仅保存在此设备中。", format: "文件格式：JSON", last: "上次导出", noExport: "尚未导出", generated: "备份文件已生成", shared: "请在分享菜单中选择保存文件", failed: "导出失败", transfer: "导出账户迁移包", transferHint: "创建包含附件和已保存备份的迁移 JSON 文件。", transferDone: "账户迁移包已保存。", transferFailed: "无法创建迁移包，请检查附件数据是否完整。" };
   const exportBackup = async () => {
     const now = new Date();
     const pad = (value: number) => String(value).padStart(2, "0");
@@ -4715,10 +4721,24 @@ function BackupControls({ data, theme, locale, json }: any) {
       if ((error as DOMException).name !== "AbortError") setMessage(labels.failed);
     }
   };
+  const exportTransfer = async () => {
+    try {
+      const transfer = await exportLegacyAccountTransfer(globalThis.localStorage);
+      const now = new Date(), name = `yami-account-transfer-${now.toISOString().slice(0,10)}.json`;
+      const contents = JSON.stringify(transfer);
+      const transferFile = new File([contents], name, { type: 'application/json' });
+      if (navigator.share && navigator.canShare?.({ files: [transferFile] }) && /iPhone|iPad|iPod/i.test(navigator.userAgent)) await navigator.share({ files: [transferFile], title: 'Yami Account Transfer' });
+      else {
+        const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
+        const link = document.createElement('a'); link.href = url; link.download = name; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      setMessage(labels.transferDone);
+    } catch { setMessage(labels.transferFailed); }
+  };
   const formattedLastExport = lastExport ? new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "zh-CN", { year: "numeric", month: "numeric", day: "numeric" }).format(lastExport) : "";
   return <div className="backup-management">
     <h4>{labels.title}</h4>
-    <section className="backup-action-block"><div><h5>{labels.export}</h5><p>{labels.exportDescription}</p></div><button type="button" className="primary" onClick={() => void exportBackup()}>{labels.export}</button><small>{labels.download}</small><small className="backup-export-status">{labels.last}: {formattedLastExport || labels.noExport}</small>{message && <p className="backup-feedback" role="status">{message}</p>}</section>
+    <section className="backup-action-block"><div><h5>{labels.export}</h5><p>{labels.exportDescription}</p></div><button type="button" className="primary" onClick={() => void exportBackup()}>{labels.export}</button><small>{labels.download}</small>{!ACCOUNT_MODE&&<><div className="backup-transfer-row"><div><strong>{labels.transfer}</strong><small>{labels.transferHint}</small></div><button type="button" onClick={() => void exportTransfer()}>{labels.transfer}</button></div></>}<small className="backup-export-status">{labels.last}: {formattedLastExport || labels.noExport}</small>{message && <p className="backup-feedback" role="status">{message}</p>}</section>
     <section className="backup-action-block backup-restore-block"><div><h5>{labels.restore}</h5><p>{labels.restoreDescription}</p></div><button type="button" onClick={() => json.current?.click()}>{labels.choose}</button><small className="backup-file-hint">{labels.fileHint}</small><small className="backup-restore-warning">{labels.restoreWarning}</small></section>
     <section className="backup-notes"><strong>{labels.notes}</strong><span>{labels.contents}</span><span>{labels.device}</span><span>{labels.format}</span></section>
   </div>;
@@ -5131,7 +5151,7 @@ function MobileSettingsDrawer({
       <button type="button" onClick={() => changePage("calendar")}><CalendarSync aria-hidden="true" /><span>{t.calendarIntegration}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("watch")}><Eye aria-hidden="true" /><span>{locale === "ja" ? "企業ウォッチ接続" : "企业监控连接"}</span><ChevronRight aria-hidden="true" /></button>
       <button type="button" onClick={() => changePage("data")}><Database aria-hidden="true" /><span>{t.data}</span><ChevronRight aria-hidden="true" /></button>
-      <button type="button" onClick={() => changePage("plans")}><BriefcaseBusiness aria-hidden="true" /><span>{planCopy[locale === "ja" ? "ja" : "zh"].title}</span><ChevronRight aria-hidden="true" /></button>
+      {ACCOUNT_MODE && <button type="button" onClick={() => changePage("account")}><Settings /><span>{locale === "ja" ? "アカウント" : "账户"}</span><ChevronRight /></button>}
       <button type="button" onClick={() => changePage("about")}><Info aria-hidden="true" /><span>{about.title}</span><ChevronRight aria-hidden="true" /></button>
     </nav>;
     if (pageValue === "general") return <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} mobile />;
@@ -5141,7 +5161,7 @@ function MobileSettingsDrawer({
     if (pageValue === "templates") return <section className="mobile-settings-subpage"><TemplateManager t={t} data={data} setData={setData} /></section>;
     if (pageValue === "calendar") return <CalendarSettings t={t} data={data} updatePreferences={updatePreferences} exportCalendar={exportCalendar} />;
     if (pageValue === "watch") return <section className="mobile-settings-subpage"><WatchConnectionSettings locale={locale} /></section>;
-    if (pageValue === "plans") return <PlanSettings locale={locale} mobile />;
+    if (pageValue === "account" && ACCOUNT_MODE) return <AccountPanel locale={locale} />;
     return <AboutSettings locale={locale} mobile />;
   };
   const headerPage = transitionPage !== undefined
@@ -5168,7 +5188,7 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
   const ui = locale === "ja"
     ? { general: "一般", data: "データとバックアップ", about: "Yamiについて" }
     : { general: "常规", data: "数据与备份", about: "关于 Yami" };
-  const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["plans", planCopy[ja ? "ja" : "zh"].title, BriefcaseBusiness], ["about", ui.about, Info]] as const;
+  const tabs = [["general", ui.general, Settings], ["job-settings", t.jobSettings, ClipboardCheck], ["customize", t.customize, PanelsTopLeft], ["templates", t.templates, FileText], ["calendar", t.calendarIntegration, CalendarSync], ["watch", ja ? "企業ウォッチ接続" : "企业监控连接", Eye], ["data", ui.data, Database], ["about", ui.about, Info]] as const;
   const currentTitle = tabs.find(([key]) => key === tab)?.[1] ?? ui.general;
   return <div className="settings-page-scope desktop-settings-page"><nav className="desktop-settings-nav settings-sidebar"><header className="settings-column-header settings-menu-heading"><h2 className="settings-column-title">{t.settings}</h2></header><div className="settings-nav-list">{tabs.map(([key, text, Icon]) => <SettingsNavItem key={key} label={text} icon={Icon} active={tab === key} onClick={() => setTab(key)} />)}</div></nav><div className="desktop-settings-content">
     <header className="settings-column-header"><h2 className="settings-column-title">{currentTitle}</h2></header>
@@ -5180,7 +5200,7 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
     {tab === "watch" && <WatchConnectionSettings locale={locale} />}
     {tab === "data" && <DataSettings data={data} theme={theme} locale={locale} json={json} />}
     {tab === "about" && <AboutSettings locale={locale} />}
-    {tab === "plans" && <PlanSettings locale={locale} />}
+    {ACCOUNT_MODE && tab === "data" && <AccountPanel locale={locale} />}
   </div><input hidden ref={iconRef} type="file" accept="image/*" onChange={upload} />
   </div>;
 }

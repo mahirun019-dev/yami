@@ -19,7 +19,7 @@ export default defineConfig(({ command, mode }) => {
     define: { __YAMI_BUILD__: JSON.stringify(aboutBuildMetadata(process.cwd(), process.env)) },
     plugins: [
       react(),
-      VitePWA({
+      mode === 'account-lab' ? false : VitePWA({
         registerType: "autoUpdate",
         includeAssets: [
           "favicon.ico",

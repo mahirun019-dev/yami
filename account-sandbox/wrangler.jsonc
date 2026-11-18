@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yami-local-google-account",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": { "crons": ["17 */6 * * *"] },
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  "observability": { "enabled": false },
+  "d1_databases": [
+    { "binding": "ACCOUNT_DB", "database_name": "yami-accounts-local-only", "database_id": "00000000-0000-0000-0000-000000000001", "migrations_dir": "migrations" }
+  ],
+  "vars": { "AUTH_ENV": "local-google-test" }
+}

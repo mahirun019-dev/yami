@@ -1,3 +1,5 @@
+import {ACCOUNT_MODE,accountFile,accountRequest} from './account/storage.ts';
+import {snapshotBackupIds} from './account/backupFiles.ts';
 export type BackupSnapshot = {
   schemaVersion: number;
   createdAt: number;
@@ -24,6 +26,7 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export async function createBackup(snapshot: BackupSnapshot): Promise<void> {
+  if(ACCOUNT_MODE){await accountFile('backups',String(snapshot.createdAt),'PUT',JSON.stringify(snapshot),'application/json');return;}
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
@@ -36,6 +39,7 @@ export async function createBackup(snapshot: BackupSnapshot): Promise<void> {
 }
 
 export async function listBackups(): Promise<BackupSnapshot[]> {
+  if(ACCOUNT_MODE){const {files}=await(await accountRequest('/api/files/backups')).json();const backups=await Promise.all(snapshotBackupIds(files).map(createdAt=>getBackup(createdAt)));return backups.filter((value):value is BackupSnapshot=>Boolean(value)).sort((a,b)=>b.createdAt-a.createdAt);}
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
@@ -45,6 +49,7 @@ export async function listBackups(): Promise<BackupSnapshot[]> {
 }
 
 export async function getBackup(createdAt: number): Promise<BackupSnapshot | undefined> {
+  if(ACCOUNT_MODE)return(await accountFile('backups',String(createdAt))).json();
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE, "readonly").objectStore(STORE).get(createdAt);
@@ -54,6 +59,7 @@ export async function getBackup(createdAt: number): Promise<BackupSnapshot | und
 }
 
 export async function deleteBackup(createdAt: number): Promise<void> {
+  if(ACCOUNT_MODE){await accountFile('backups',String(createdAt),'DELETE');return;}
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");

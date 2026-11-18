@@ -1,3 +1,4 @@
+import {workspaceStorage as localStorage} from '../account/storage.ts';
 export type ProductUpdate = {
   id: string;
   date: string;

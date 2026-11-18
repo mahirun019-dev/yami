@@ -6,6 +6,8 @@ import { companyWatchKey, useWatch } from './WatchProvider';
 import { companyWatchState, currentMynaviEntryStatus, matchesWatchCompany, verifiedEntryUrl } from './companyStatus';
 import type { MynaviEntryStatus, SourceHealthStatus, WatchEvent, WatchSource } from './types';
 import { YamiBrandAvatar, YamiWordmark } from '../brand/YamiLogo';
+import {ACCOUNT_MODE} from '../account/storage';
+import {AccountWatchPanel} from '../account/AccountWatchPanel';
 import { getUnreadProductUpdateCount, loadReadProductUpdateIds, PRODUCT_UPDATES, saveReadProductUpdateIds, subscribeProductUpdateReadState } from './productUpdates';
 
 type Locale = 'ja' | 'zh';
@@ -201,6 +203,7 @@ export function WatchConnectionSettings({ locale }: { locale: Locale }) {
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [confirmDisconnect]);
+  if(ACCOUNT_MODE)return <AccountWatchPanel locale={locale}/>;
   return <section className="watch-connection-settings settings-wide-content">
     <h3>{text.connection}</h3>
     <div className="watch-settings-description"><p>{copy.purpose}</p><p>{copy.manage}</p></div>

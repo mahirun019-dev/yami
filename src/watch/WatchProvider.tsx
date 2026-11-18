@@ -1,14 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { WatchEvent, WatchTarget } from './types';
+import {ACCOUNT_MODE} from '../account/storage';
 export { companyWatchKey } from './companyStatus';
 
-const API = (import.meta.env.VITE_WATCH_API_URL as string | undefined)?.replace(/\/$/, '');
+const API = ACCOUNT_MODE ? undefined : (import.meta.env.VITE_WATCH_API_URL as string | undefined)?.replace(/\/$/, '');
 const TOKEN_KEY = 'careerflow-watch-session';
 type ContextValue = { configured: boolean; authenticated: boolean; targets: WatchTarget[]; events: WatchEvent[]; now: number; checkingTimedOut: string[]; error: string; connect(code: string): Promise<void>; disconnect(): void; refresh(): Promise<void>; request(path: string, init?: RequestInit): Promise<Response>; trackCheck(id: string): void; markRead(id: string): Promise<void>; markAllRead(): Promise<void>; };
 const Context = createContext<ContextValue | null>(null);
 
 export function WatchProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || '');
+  const [token, setToken] = useState(() => ACCOUNT_MODE?'':localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || '');
   const [targets, setTargets] = useState<WatchTarget[]>([]);
   const [events, setEvents] = useState<WatchEvent[]>([]);
   const [now, setNow] = useState(Date.now);

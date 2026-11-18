@@ -1,0 +1,5 @@
+# Google Cloud Web OAuth client for LOCAL TESTING only.
+# Callback: http://127.0.0.1:8790/auth/google/callback
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+# Sandbox only. Never use Live credentials.
