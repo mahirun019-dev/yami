@@ -11,6 +11,7 @@
 
 html[data-embed="argon"],
 html[data-embed="argon"] .career-app {
+  color-scheme: light;
   --bg-page: transparent !important;
   --bg-app: transparent !important;
   --page-bg: transparent !important;
@@ -20,9 +21,9 @@ html[data-embed="argon"] .career-app {
   --bg-surface-elevated: rgba(255, 255, 255, 0.86) !important;
   --bg-muted: rgba(0, 0, 0, 0.045) !important;
   --bg-input: rgba(255, 255, 255, 0.72) !important;
-  --bg-hover: rgba(0, 0, 0, 0.05) !important;
-  --bg-card-hover: rgba(255, 255, 255, 0.78) !important;
-  --bg-selected: rgba(0, 0, 0, 0.07) !important;
+  --bg-hover: rgba(0, 0, 0, 0.065) !important;
+  --bg-card-hover: rgba(255, 255, 255, 0.8) !important;
+  --bg-selected: rgba(0, 0, 0, 0.1) !important;
   --border-color: rgba(0, 0, 0, 0.11) !important;
   --border-default: rgba(0, 0, 0, 0.11) !important;
   --border-card: rgba(0, 0, 0, 0.07) !important;
@@ -36,17 +37,33 @@ html[data-embed="argon"] .career-app {
   --embed-dialog-input-bg: #ffffff;
   --embed-dialog-muted-bg: #f1f2f4;
   --embed-text-shadow: none;
+  --embed-accent-fill: var(--argon-accent-fill, #346fe0);
+  --embed-accent-text: var(--argon-accent-text, #2b62cf);
+  --embed-accent-on-fill: var(--argon-accent-on-fill, #ffffff);
+  --embed-accent-soft: var(--argon-accent-soft, rgba(52, 111, 224, 0.16));
+  --embed-accent-glow: var(--argon-accent-glow, rgba(52, 111, 224, 0.26));
+  --embed-accent-control: var(--argon-accent-control, #2b62cf);
+  --embed-row-hover: rgba(0, 0, 0, 0.06);
+  --embed-row-hover-ring: transparent;
+  --embed-selected-ring: rgba(0, 0, 0, 0.06);
+  --embed-control-bg: rgba(255, 255, 255, 0.78);
+  --embed-control-hover: rgba(255, 255, 255, 0.94);
+  --embed-menu-bg: rgba(252, 252, 254, 0.99);
+  --embed-menu-hover: rgba(0, 0, 0, 0.07);
+  --embed-menu-border: rgba(0, 0, 0, 0.12);
+  --embed-menu-shadow: 0 14px 36px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.07);
 }
 
 html[data-embed="argon"][data-theme="dark"],
 html[data-embed="argon"][data-theme="dark"] .career-app {
+  color-scheme: dark;
   --bg-surface: rgba(28, 31, 37, 0.58) !important;
   --bg-surface-elevated: rgba(36, 39, 46, 0.92) !important;
   --bg-muted: rgba(255, 255, 255, 0.06) !important;
-  --bg-input: rgba(255, 255, 255, 0.07) !important;
-  --bg-hover: rgba(255, 255, 255, 0.07) !important;
-  --bg-card-hover: rgba(40, 44, 52, 0.7) !important;
-  --bg-selected: rgba(255, 255, 255, 0.1) !important;
+  --bg-input: rgba(255, 255, 255, 0.09) !important;
+  --bg-hover: rgba(255, 255, 255, 0.09) !important;
+  --bg-card-hover: rgba(40, 44, 52, 0.74) !important;
+  --bg-selected: rgba(255, 255, 255, 0.14) !important;
   --border-color: rgba(255, 255, 255, 0.12) !important;
   --border-default: rgba(255, 255, 255, 0.12) !important;
   --border-card: rgba(255, 255, 255, 0.08) !important;
@@ -56,9 +73,24 @@ html[data-embed="argon"][data-theme="dark"] .career-app {
   --action-banner-bg: rgba(255, 255, 255, 0.07);
   --action-banner-hover: rgba(255, 255, 255, 0.12);
   --embed-hairline: rgba(255, 255, 255, 0.1);
-  --embed-dialog-bg: rgba(30, 33, 39, 0.97);
+  --embed-dialog-bg: rgba(30, 33, 39, 0.98);
   --embed-dialog-input-bg: #171a20;
   --embed-dialog-muted-bg: #242830;
+  --embed-accent-fill: var(--argon-accent-fill, #2f66d8);
+  --embed-accent-text: var(--argon-accent-text, #7faaff);
+  --embed-accent-on-fill: var(--argon-accent-on-fill, #ffffff);
+  --embed-accent-soft: var(--argon-accent-soft, rgba(47, 102, 216, 0.25));
+  --embed-accent-glow: var(--argon-accent-glow, rgba(47, 102, 216, 0.34));
+  --embed-accent-control: var(--argon-accent-control, #2f66d8);
+  --embed-row-hover: rgba(255, 255, 255, 0.09);
+  --embed-row-hover-ring: rgba(255, 255, 255, 0.06);
+  --embed-selected-ring: rgba(255, 255, 255, 0.1);
+  --embed-control-bg: rgba(255, 255, 255, 0.09);
+  --embed-control-hover: rgba(255, 255, 255, 0.15);
+  --embed-menu-bg: rgba(30, 33, 40, 0.99);
+  --embed-menu-hover: rgba(255, 255, 255, 0.11);
+  --embed-menu-border: rgba(255, 255, 255, 0.15);
+  --embed-menu-shadow: 0 18px 42px rgba(0, 0, 0, 0.48), 0 2px 10px rgba(0, 0, 0, 0.24);
 }
 
 /* Argon 透明, white ink (dark appearance): light ink, dark translucent plates, a soft shadow under text. */
@@ -68,45 +100,55 @@ html[data-embed="argon"][data-argon-material="clear"][data-theme="dark"] .career
   --text-secondary: rgba(255, 255, 255, 0.84) !important;
   --text-muted: rgba(255, 255, 255, 0.72) !important;
   --text-disabled: rgba(255, 255, 255, 0.45) !important;
-  --bg-surface: rgba(0, 0, 0, 0.22) !important;
+  --bg-surface: rgba(0, 0, 0, 0.26) !important;
   --bg-muted: rgba(255, 255, 255, 0.1) !important;
-  --bg-input: rgba(0, 0, 0, 0.18) !important;
-  --bg-hover: rgba(255, 255, 255, 0.12) !important;
-  --bg-card-hover: rgba(0, 0, 0, 0.34) !important;
-  --bg-selected: rgba(255, 255, 255, 0.16) !important;
-  --border-color: rgba(255, 255, 255, 0.22) !important;
-  --border-default: rgba(255, 255, 255, 0.22) !important;
-  --border-strong: rgba(255, 255, 255, 0.3) !important;
-  --border-card: rgba(255, 255, 255, 0.16) !important;
+  --bg-input: rgba(0, 0, 0, 0.26) !important;
+  --bg-hover: rgba(255, 255, 255, 0.14) !important;
+  --bg-card-hover: rgba(0, 0, 0, 0.38) !important;
+  --bg-selected: rgba(255, 255, 255, 0.2) !important;
+  --border-color: rgba(255, 255, 255, 0.24) !important;
+  --border-default: rgba(255, 255, 255, 0.24) !important;
+  --border-strong: rgba(255, 255, 255, 0.32) !important;
+  --border-card: rgba(255, 255, 255, 0.18) !important;
   --stat-divider: rgba(255, 255, 255, 0.2);
-  --action-banner-bg: rgba(0, 0, 0, 0.24);
-  --action-banner-hover: rgba(0, 0, 0, 0.34);
+  --action-banner-bg: rgba(0, 0, 0, 0.26);
+  --action-banner-hover: rgba(0, 0, 0, 0.38);
   --embed-hairline: rgba(255, 255, 255, 0.18);
   --embed-text-shadow: 0 0.5px 1.6px rgba(0, 0, 0, 0.5);
+  --embed-row-hover: rgba(255, 255, 255, 0.14);
+  --embed-row-hover-ring: rgba(255, 255, 255, 0.16);
+  --embed-selected-ring: rgba(255, 255, 255, 0.22);
+  --embed-control-bg: rgba(0, 0, 0, 0.3);
+  --embed-control-hover: rgba(0, 0, 0, 0.44);
 }
 
-/* Argon 透明, dark ink (light wallpaper below 50 %): dark ink, faint light plates, a white halo under text. */
+/* Argon 透明, dark ink (light wallpaper below 50 %): dark ink, ClearPlate-level light plates, white halo under text. */
 html[data-embed="argon"][data-argon-material="clear"][data-theme="light"],
 html[data-embed="argon"][data-argon-material="clear"][data-theme="light"] .career-app {
   --text-primary: #0d0e10 !important;
   --text-secondary: rgba(0, 0, 0, 0.74) !important;
   --text-muted: rgba(0, 0, 0, 0.64) !important;
   --text-disabled: rgba(0, 0, 0, 0.42) !important;
-  --bg-surface: rgba(255, 255, 255, 0.34) !important;
+  --bg-surface: rgba(255, 255, 255, 0.42) !important;
   --bg-muted: rgba(0, 0, 0, 0.06) !important;
-  --bg-input: rgba(255, 255, 255, 0.42) !important;
-  --bg-hover: rgba(0, 0, 0, 0.07) !important;
-  --bg-card-hover: rgba(255, 255, 255, 0.5) !important;
-  --bg-selected: rgba(0, 0, 0, 0.1) !important;
+  --bg-input: rgba(255, 255, 255, 0.54) !important;
+  --bg-hover: rgba(255, 255, 255, 0.54) !important;
+  --bg-card-hover: rgba(255, 255, 255, 0.62) !important;
+  --bg-selected: rgba(0, 0, 0, 0.11) !important;
   --border-color: rgba(0, 0, 0, 0.16) !important;
   --border-default: rgba(0, 0, 0, 0.16) !important;
   --border-strong: rgba(0, 0, 0, 0.24) !important;
-  --border-card: rgba(0, 0, 0, 0.12) !important;
+  --border-card: rgba(0, 0, 0, 0.14) !important;
   --stat-divider: rgba(0, 0, 0, 0.16);
-  --action-banner-bg: rgba(255, 255, 255, 0.38);
-  --action-banner-hover: rgba(255, 255, 255, 0.56);
+  --action-banner-bg: rgba(255, 255, 255, 0.46);
+  --action-banner-hover: rgba(255, 255, 255, 0.64);
   --embed-hairline: rgba(0, 0, 0, 0.14);
   --embed-text-shadow: 0 0 1.4px rgba(255, 255, 255, 0.75);
+  --embed-row-hover: rgba(255, 255, 255, 0.56);
+  --embed-row-hover-ring: rgba(0, 0, 0, 0.11);
+  --embed-selected-ring: rgba(0, 0, 0, 0.12);
+  --embed-control-bg: rgba(255, 255, 255, 0.54);
+  --embed-control-hover: rgba(255, 255, 255, 0.72);
 }
 
 html[data-embed="argon"] body {
@@ -150,8 +192,26 @@ html[data-embed="argon"][data-theme] .dashboard-progress-module .funnel b {
 }
 
 html[data-embed="argon"][data-theme] .dashboard-progress-module .funnel b.has-count {
-  color: var(--text-primary) !important;
-  background: var(--bg-selected) !important;
+  color: var(--embed-accent-text) !important;
+  background: var(--embed-accent-soft) !important;
+}
+
+html[data-embed="argon"][data-theme] .dashboard-progress-module .funnel .funnel-row,
+html[data-embed="argon"][data-theme] .dashboard-next-deadline-row,
+html[data-embed="argon"][data-theme] .notification-page-row {
+  border-radius: 8px;
+  transition: background-color 130ms ease, box-shadow 130ms ease;
+}
+
+html[data-embed="argon"][data-theme] .dashboard-progress-module .funnel .funnel-row:hover,
+html[data-embed="argon"][data-theme] .dashboard-next-deadline-row:hover,
+html[data-embed="argon"][data-theme] .notification-page-row:hover {
+  background: var(--embed-row-hover) !important;
+  box-shadow: inset 0 0 0 1px var(--embed-row-hover-ring);
+}
+
+html[data-embed="argon"][data-theme] .career-app .filter-bar button {
+  transition: background-color 130ms ease, box-shadow 130ms ease, color 130ms ease;
 }
 
 html[data-embed="argon"][data-theme] .career-app .filter-bar button:not(.active),
@@ -160,9 +220,16 @@ html[data-embed="argon"][data-theme] .career-app .text-button {
   color: var(--text-secondary) !important;
 }
 
-html[data-embed="argon"][data-theme] .career-app .filter-bar button.active {
+html[data-embed="argon"][data-theme] .career-app .filter-bar button:not(.active):hover {
   color: var(--text-primary) !important;
-  background: var(--bg-selected) !important;
+  background: var(--embed-row-hover) !important;
+  box-shadow: inset 0 0 0 1px var(--embed-row-hover-ring);
+}
+
+html[data-embed="argon"][data-theme] .career-app .filter-bar button.active {
+  color: var(--embed-accent-text) !important;
+  background: var(--embed-accent-soft) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--embed-accent-text) 20%, var(--embed-selected-ring));
 }
 
 html[data-embed="argon"][data-theme] .career-app .text-button:hover {
@@ -438,24 +505,258 @@ html[data-embed="argon"][data-theme] .empty-small p {
 
 html[data-embed="argon"] .app-shell.app-shell-settings {
   --settings-column-divider: var(--embed-hairline);
-  --settings-active-row: var(--bg-selected);
-  --settings-hover-row: var(--bg-hover);
-  --settings-nav-hover-row: var(--bg-hover);
-  --settings-nav-active-row: var(--bg-selected);
+  --settings-active-row: var(--embed-accent-soft);
+  --settings-hover-row: var(--embed-row-hover);
+  --settings-nav-hover-row: var(--embed-row-hover);
+  --settings-nav-active-row: var(--embed-accent-soft);
 }
 
-html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .is-selected,
+/* Settings navigation: rounded Argon-style inset pills (no full-bleed square bar or yellow edge strip). */
+@media (min-width: 768px) {
+  html[data-embed="argon"] .settings-page-scope .settings-sidebar {
+    padding-inline: 0;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-menu-heading {
+    margin: 0 12px 12px;
+    padding: 0 10px 14px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-list {
+    display: grid;
+    gap: 3px;
+    width: 100%;
+    box-sizing: border-box;
+    padding-inline: 10px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-item,
+  html[data-embed="argon"] .settings-page-scope .settings-nav-item.is-active {
+    min-height: 40px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-inner {
+    min-height: 40px;
+    padding: 8px 10px 8px 12px;
+  }
+
+  html[data-embed="argon"] .settings-page-scope .settings-nav-item[aria-selected="true"]::after {
+    display: none !important;
+  }
+}
+
+html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item {
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: color 130ms ease, background-color 130ms ease, box-shadow 130ms ease;
+}
+
+html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item:hover:not([aria-selected="true"]) {
+  color: var(--text-primary) !important;
+  background: var(--embed-row-hover) !important;
+  box-shadow: inset 0 0 0 1px var(--embed-row-hover-ring);
+}
+
+html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item.is-selected,
 html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item[aria-selected="true"] {
-  background: var(--bg-selected) !important;
+  color: var(--text-primary) !important;
+  background: var(--embed-accent-soft) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--embed-accent-text) 20%, var(--embed-selected-ring));
+  font-weight: 600;
+}
+
+html[data-embed="argon"] .settings-page-scope .settings-nav-item[aria-selected="true"] > svg:first-child,
+html[data-embed="argon"] .settings-page-scope .settings-nav-item[aria-selected="true"] .settings-nav-chevron {
+  color: var(--embed-accent-text) !important;
 }
 
 html[data-embed="argon"] .settings-page-scope .settings-nav-item[aria-selected="true"] svg * {
   fill: none !important;
+  stroke: currentColor !important;
 }
 
-html[data-embed="argon"][data-theme] .app-shell.app-shell-settings .settings-page-scope .settings-nav-item:hover:not([aria-selected="true"]),
-html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list button:hover {
-  background: var(--bg-hover) !important;
+html[data-embed="argon"] .settings-page-scope .settings-nav-item:focus-visible {
+  outline: 2px solid var(--embed-accent-text) !important;
+  outline-offset: -2px !important;
+}
+
+/* Settings lists, theme choices, segmented choices, and font-size slider follow Argon's accent. */
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list {
+  display: grid;
+  gap: 3px;
+  padding-top: 4px;
+  border-top-color: var(--embed-hairline);
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list button {
+  min-height: 44px;
+  border-bottom: 0 !important;
+  border-radius: 8px;
+  padding-inline: 12px;
+  transition: color 130ms ease, background-color 130ms ease, box-shadow 130ms ease;
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list button:hover:not(.is-selected) {
+  color: var(--text-primary) !important;
+  background: var(--embed-row-hover) !important;
+  box-shadow: inset 0 0 0 1px var(--embed-row-hover-ring);
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list button.is-selected {
+  color: var(--text-primary) !important;
+  background: var(--embed-accent-soft) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--embed-accent-text) 20%, var(--embed-selected-ring));
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list button svg {
+  color: var(--embed-accent-text) !important;
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .settings-language-list button:focus-visible {
+  outline: 2px solid var(--embed-accent-text) !important;
+  outline-offset: -2px !important;
+}
+
+html[data-embed="argon"][data-theme] .settings-theme-choice.is-selected {
+  border-color: var(--embed-accent-text) !important;
+}
+
+html[data-embed="argon"][data-theme] .settings-theme-choice-check {
+  color: var(--embed-accent-text) !important;
+}
+
+html[data-embed="argon"][data-theme] .settings-font-size-track-progress,
+html[data-embed="argon"][data-theme] .settings-font-size-stop.is-passed,
+html[data-embed="argon"][data-theme] .settings-font-size-thumb {
+  background: var(--embed-accent-control) !important;
+  border-color: var(--embed-accent-control) !important;
+}
+
+html[data-embed="argon"][data-theme] .settings-font-size-thumb {
+  border-color: var(--bg-surface-elevated) !important;
+}
+
+html[data-embed="argon"][data-theme] .mode-options label.selected,
+html[data-embed="argon"][data-theme] .segmented-control input:checked + span {
+  border-color: var(--embed-accent-text) !important;
+  color: var(--embed-accent-text) !important;
+  background: var(--embed-accent-soft) !important;
+}
+
+html[data-embed="argon"][data-theme] .backup-cloud-actions button:not(.primary),
+html[data-embed="argon"][data-theme] .settings-actions button:not(.primary),
+html[data-embed="argon"][data-theme] .settings-secondary-button {
+  background: var(--embed-control-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 130ms ease, border-color 130ms ease;
+}
+
+html[data-embed="argon"][data-theme] .backup-cloud-actions button:not(.primary):hover,
+html[data-embed="argon"][data-theme] .settings-actions button:not(.primary):hover,
+html[data-embed="argon"][data-theme] .settings-secondary-button:hover {
+  background: var(--embed-control-hover) !important;
+  border-color: var(--border-strong) !important;
+}
+
+/* Native <select> popups use macOS glass NSMenu unless switched to CSS base-select,
+ * where the menu renders in-app over our own near-solid surface with clear highlights. */
+html[data-embed="argon"][data-theme] select,
+html[data-embed="argon"][data-theme] ::picker(select) {
+  appearance: base-select;
+}
+
+html[data-embed="argon"][data-theme] .career-app select,
+html[data-embed="argon"][data-theme] .settings-page-scope select,
+html[data-embed="argon"][data-theme] .modal-layer select,
+html[data-embed="argon"][data-theme] select {
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary) !important;
+  background: var(--embed-control-bg) !important;
+  border-color: var(--border-strong) !important;
+  text-shadow: none;
+  transition: background-color 130ms ease, border-color 130ms ease, box-shadow 130ms ease;
+}
+
+html[data-embed="argon"][data-theme] select:hover:not(:disabled) {
+  background: var(--embed-control-hover) !important;
+}
+
+html[data-embed="argon"][data-theme] select:focus-visible,
+html[data-embed="argon"][data-theme] select:open {
+  outline: none !important;
+  border-color: var(--embed-accent-text) !important;
+  box-shadow: 0 0 0 3px var(--embed-accent-glow) !important;
+}
+
+html[data-embed="argon"][data-theme] select::picker-icon {
+  color: var(--text-secondary);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), color 130ms ease;
+}
+
+html[data-embed="argon"][data-theme] select:open::picker-icon {
+  color: var(--text-primary);
+  transform: rotate(180deg);
+}
+
+html[data-embed="argon"][data-theme] ::picker(select) {
+  position-area: block-end span-inline-end;
+  position-try-fallbacks: flip-block, flip-inline;
+  min-width: anchor-size(width);
+  max-height: min(260px, 42dvh);
+  overflow-y: auto;
+  margin-block: 6px;
+  padding: 5px;
+  border: 1px solid var(--embed-menu-border);
+  border-radius: 12px;
+  background: var(--embed-menu-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(20px) saturate(1.3);
+  box-shadow: var(--embed-menu-shadow);
+  color: var(--text-primary);
+  text-shadow: none;
+}
+
+html[data-embed="argon"][data-theme] select option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 33px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  color: var(--text-primary);
+  background: transparent;
+  font-size: calc(13.5px * var(--reading-scale, 1));
+  font-weight: 450;
+  text-shadow: none;
+  cursor: pointer;
+  transition: background-color 110ms ease, color 110ms ease;
+}
+
+html[data-embed="argon"][data-theme] select option:hover,
+html[data-embed="argon"][data-theme] select option:focus,
+html[data-embed="argon"][data-theme] select option:focus-visible {
+  background: var(--embed-menu-hover);
+  outline: none;
+}
+
+html[data-embed="argon"][data-theme] select option:checked {
+  background: var(--embed-accent-soft);
+  color: var(--embed-accent-text);
+  font-weight: 600;
+}
+
+html[data-embed="argon"][data-theme] select option:checked:hover {
+  background: color-mix(in srgb, var(--embed-accent-soft) 85%, var(--text-primary) 8%);
+}
+
+html[data-embed="argon"][data-theme] select option::checkmark {
+  color: var(--embed-accent-text);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 /* Dialogs, sheets, and popovers float over the page: near-solid, no glass behind their text. */
@@ -469,6 +770,8 @@ html[data-embed="argon"][data-theme] .record-action-menu {
   --bg-surface: var(--embed-dialog-bg);
   --bg-input: var(--embed-dialog-input-bg);
   --bg-muted: var(--embed-dialog-muted-bg);
+  --embed-control-bg: var(--embed-dialog-input-bg);
+  --embed-control-hover: var(--embed-dialog-muted-bg);
   text-shadow: none;
 }
 
@@ -486,4 +789,20 @@ html[data-embed="argon"][data-theme] .career-app .record-action-menu,
 html[data-embed="argon"][data-theme] .career-app .record-action-menu .record-action-surface {
   background: var(--embed-dialog-bg) !important;
   text-shadow: none;
+}
+
+html[data-embed="argon"][data-theme] .career-app .record-action-menu {
+  border: 1px solid var(--embed-menu-border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--embed-menu-shadow) !important;
+}
+
+html[data-embed="argon"][data-theme] .record-action-items button {
+  border-radius: 7px;
+  transition: background-color 110ms ease;
+}
+
+html[data-embed="argon"][data-theme] .record-action-items button:hover,
+html[data-embed="argon"][data-theme] .record-action-items button:focus-visible {
+  background: var(--embed-menu-hover) !important;
 }
