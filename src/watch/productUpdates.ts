@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-compact-month-grid',
+  date: '2026-11-18',
+  title: { ja: 'Argon 内の「今月の予定」カレンダーをコンパクトにしました', zh: '优化了 Argon 主页“本月日程”的紧凑排版' },
+  summary: { ja: 'Argon のウィンドウ幅に合わせてホーム画面の月間カレンダーのセル高さをコンパクトにし、1画面でより多くの情報を見やすくしました。', zh: '针对 Argon 窗口宽度调整了主页月历格子高度与今日高亮框比例，大幅减少空白占位。' },
+  changes: {
+    ja: ['Argon 内では 981px 未満の幅でも月間カレンダーをコンパクトな行高で表示します', 'Web 版・スマートフォンでの表示と保存データには影響しません'],
+    zh: ['在 Argon 嵌入窗口宽度下收紧“本月日程”日历行高与今日边框大小，同屏可浏览更多内容', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-argon-native-experience',
   date: '2026-11-18',
   title: { ja: 'Argon 内のモーダル、Liquid Glass メニュー、企業詳細アニメーションに対応しました', zh: '完善 Argon 内的原生磨砂弹窗、液态玻璃菜单与企业详情交互动画' },

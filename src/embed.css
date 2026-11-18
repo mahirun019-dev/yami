@@ -1293,3 +1293,28 @@ html[data-embed="argon"][data-theme] .course-detail .selection-empty {
   border-color: var(--border-color);
   background: rgba(255, 255, 255, 0.04);
 }
+
+/* Keep dashboard monthly schedule compact inside Argon panes (< 981px wide too). */
+html[data-embed="argon"] .home-month-module .home-month-calendar {
+  gap: 4px;
+}
+
+html[data-embed="argon"] .home-month-module .home-month-weekdays,
+html[data-embed="argon"] .home-month-module .home-month-grid {
+  gap: 2px 4px;
+}
+
+html[data-embed="argon"] .home-month-module .home-month-day {
+  width: 100%;
+  max-width: 48px;
+  min-height: 30px;
+  height: 32px;
+  aspect-ratio: auto !important;
+  justify-self: center;
+  padding: 2px 4px;
+  border-radius: 8px;
+}
+
+html[data-embed="argon"] .home-month-module .home-month-view-all {
+  margin-top: 8px;
+}
