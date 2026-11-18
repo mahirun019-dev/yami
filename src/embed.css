@@ -28,9 +28,7 @@ html[data-embed="argon"] .career-app {
   --border-card: rgba(0, 0, 0, 0.07) !important;
   --text-secondary: #474c54 !important;
   --text-muted: #5b6069 !important;
-  --embed-bar-bg: rgba(255, 255, 255, 0.55);
   --embed-hairline: rgba(0, 0, 0, 0.09);
-  --embed-nav-active: rgba(0, 0, 0, 0.075);
   --embed-dialog-bg: rgba(250, 250, 251, 0.97);
   --embed-text-shadow: none;
 }
@@ -49,9 +47,7 @@ html[data-embed="argon"][data-theme="dark"] .career-app {
   --border-card: rgba(255, 255, 255, 0.08) !important;
   --text-secondary: #c2c7cf !important;
   --text-muted: #a2a8b1 !important;
-  --embed-bar-bg: rgba(20, 22, 27, 0.5);
   --embed-hairline: rgba(255, 255, 255, 0.1);
-  --embed-nav-active: rgba(255, 255, 255, 0.1);
   --embed-dialog-bg: rgba(30, 33, 39, 0.97);
 }
 
@@ -67,9 +63,7 @@ html[data-embed="argon"][data-argon-material="clear"][data-theme="dark"] .career
   --border-color: rgba(255, 255, 255, 0.22) !important;
   --border-default: rgba(255, 255, 255, 0.22) !important;
   --border-card: rgba(255, 255, 255, 0.16) !important;
-  --embed-bar-bg: rgba(0, 0, 0, 0.2);
   --embed-hairline: rgba(255, 255, 255, 0.18);
-  --embed-nav-active: rgba(255, 255, 255, 0.16);
   --embed-text-shadow: 0 0.5px 1.6px rgba(0, 0, 0, 0.5);
 }
 
@@ -84,9 +78,7 @@ html[data-embed="argon"][data-argon-material="clear"][data-theme="light"] .caree
   --bg-input: rgba(255, 255, 255, 0.4) !important;
   --border-color: rgba(0, 0, 0, 0.16) !important;
   --border-default: rgba(0, 0, 0, 0.16) !important;
-  --embed-bar-bg: rgba(255, 255, 255, 0.28);
   --embed-hairline: rgba(0, 0, 0, 0.14);
-  --embed-nav-active: rgba(0, 0, 0, 0.08);
   --embed-text-shadow: 0 0 1.4px rgba(255, 255, 255, 0.75);
 }
 
@@ -111,112 +103,79 @@ html[data-embed="argon"] .app-shell {
   padding: 0 !important;
 }
 
-/* ---- Layout: one column, compact navigation bar on top ------------------- */
+/* ---- Layout: one column, no navigation of Yami's own ---------------------
+ * Argon's sidebar lists Yami's pages; switches arrive through window.yamiEmbed. */
 
 html[data-embed="argon"] .career-app {
   grid-template-columns: minmax(0, 1fr) !important;
-  grid-template-rows: auto minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
   min-height: 100dvh;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
 
-html[data-embed="argon"] .career-app .sidebar {
-  position: sticky !important;
-  top: 0;
-  z-index: 30;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 8px 34px !important;
-  overflow: visible !important;
-  border: 0 !important;
-  border-bottom: 1px solid var(--embed-hairline) !important;
-  background: var(--embed-bar-bg) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(1.3);
-  backdrop-filter: blur(24px) saturate(1.3);
-}
-
-/* Argon's sidebar already carries the Yami mark. */
-html[data-embed="argon"] .career-app .sidebar .brand {
+html[data-embed="argon"] .career-app .sidebar,
+html[data-embed="argon"] .career-app .mobile-header,
+html[data-embed="argon"] .career-mobile-nav,
+html[data-embed="argon"] [data-mobile-bottom-nav="true"] {
   display: none !important;
-}
-
-html[data-embed="argon"] .career-app .sidebar > .nav-list {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  width: auto !important;
-  flex-wrap: nowrap;
-  gap: 2px !important;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-html[data-embed="argon"] .career-app .sidebar .nav-list button {
-  width: auto !important;
-  min-height: 36px !important;
-  flex: 0 0 auto;
-  padding: 0 !important;
-  color: var(--text-secondary) !important;
-  font-size: calc(14px * var(--reading-scale, 1)) !important;
-}
-
-html[data-embed="argon"] .career-app .sidebar .nav-list button.active,
-html[data-embed="argon"] .career-app .sidebar .nav-list button[aria-current="page"],
-html[data-embed="argon"] .career-app .sidebar .nav-list button:hover {
-  color: var(--text-primary) !important;
-}
-
-html[data-embed="argon"] .career-app .sidebar .sidebar-nav-capsule {
-  min-height: 34px !important;
-  gap: 7px !important;
-  padding-inline: 11px !important;
-}
-
-html[data-embed="argon"] .career-app .sidebar .nav-list button svg.sidebar-nav-icon {
-  width: 19px !important;
-  height: 19px !important;
-  flex-basis: 19px !important;
-}
-
-html[data-embed="argon"] .career-app .sidebar .nav-list button.active > .sidebar-nav-capsule,
-html[data-embed="argon"] .career-app .sidebar .nav-list button[aria-current="page"] > .sidebar-nav-capsule {
-  background: var(--embed-nav-active) !important;
-}
-
-html[data-embed="argon"] .career-app .sidebar .sidebar-flex-spacer {
-  flex: 1 1 auto;
-}
-
-html[data-embed="argon"] .career-app .sidebar .sidebar-footer-actions {
-  flex: 0 0 auto;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
 }
 
 html[data-embed="argon"] .career-app .workspace {
   min-height: 0 !important;
+  padding-bottom: 42px !important;
+  scroll-padding-bottom: 0 !important;
 }
 
-html[data-embed="argon"] .career-app .sidebar .sidebar-company-action {
-  width: auto !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  padding-inline: 14px !important;
-  gap: 6px !important;
-  font-size: calc(14px * var(--reading-scale, 1)) !important;
+/* 新增企业 lived in the sidebar on desktop; embedded, the page heads carry it. */
+html[data-embed="argon"][data-theme] .career-app .dashboard-head-actions,
+html[data-embed="argon"][data-theme] .career-app .company-grid > .empty-small .empty-action {
+  display: flex !important;
 }
 
-html[data-embed="argon"] .career-app .sidebar .sidebar-company-action svg {
-  width: 16px !important;
-  height: 16px !important;
+html[data-embed="argon"] .company-page-head {
+  display: flex !important;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+html[data-embed="argon"] .embed-head-actions {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+/* ---- Page switch: Argon's push --------------------------------------------
+ * Going down Argon's sidebar the new page comes up from below, butted against
+ * the old one as it leaves upward; going up, the reverse. */
+
+@keyframes yami-embed-out-up { to { transform: translateY(-100vh); } }
+@keyframes yami-embed-in-up { from { transform: translateY(100vh); } }
+@keyframes yami-embed-out-down { to { transform: translateY(100vh); } }
+@keyframes yami-embed-in-down { from { transform: translateY(-100vh); } }
+@keyframes yami-embed-fade-out { to { opacity: 0; } }
+@keyframes yami-embed-fade-in { from { opacity: 0; } }
+
+html[data-embed-push]::view-transition-group(root) {
+  animation-duration: 340ms;
+}
+
+html[data-embed-push]::view-transition-old(root),
+html[data-embed-push]::view-transition-new(root) {
+  animation-duration: 340ms;
+  animation-timing-function: cubic-bezier(0.22, 0.95, 0.3, 1);
+  mix-blend-mode: normal;
+}
+
+html[data-embed-push="down"]::view-transition-old(root) { animation-name: yami-embed-out-up; }
+html[data-embed-push="down"]::view-transition-new(root) { animation-name: yami-embed-in-up; }
+html[data-embed-push="up"]::view-transition-old(root) { animation-name: yami-embed-out-down; }
+html[data-embed-push="up"]::view-transition-new(root) { animation-name: yami-embed-in-down; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-embed-push]::view-transition-old(root) { animation: yami-embed-fade-out 150ms ease-out both; }
+  html[data-embed-push]::view-transition-new(root) { animation: yami-embed-fade-in 150ms ease-out both; }
 }
 
 /* ---- Surfaces that paint a page-sized background in the web version ----- */
@@ -230,7 +189,7 @@ html[data-embed="argon"][data-theme] .desktop-settings-content {
 }
 
 html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-nav.settings-sidebar {
-  background: var(--embed-bar-bg) !important;
+  background: transparent !important;
   border-color: var(--embed-hairline) !important;
 }
 

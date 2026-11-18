@@ -1,4 +1,4 @@
-import { isArgonEmbed } from "./embed";
+import { installEmbedNavigation, isArgonEmbed, postToHost, type EmbedPage } from "./embed";
 import {
   memo,
   useEffect,
@@ -15,7 +15,7 @@ import {
   type Ref,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { createBackup, type BackupSnapshot } from "./backups";
 import { geocodeCoordinates, getWeather, getWeatherByCoordinates, type WeatherResult } from "./weather";
 import prefectureData from "./data/japan-prefectures.json";
@@ -2219,6 +2219,11 @@ export default function App() {
   return (
     <WatchProvider><div className={`app-shell${!isMobile && settings ? " app-shell-settings" : ""}`} data-app-shell="true">
       <div className={`student-app career-app${!isMobile && settings ? " has-desktop-settings" : ""}`} onClickCapture={handleExternalLinkClick}>
+        {isArgonEmbed && <EmbedBridge view={view} settings={settings} go={(page) => {
+          if (page === "settings") { setSettingsOpen(true); return; }
+          if (settings) closeSettingsPage();
+          navigate(page);
+        }} />}
         <aside className="sidebar panel">
           <Brand />
           <StableNav view={view} setView={setView} settings={settings} setSettings={setSettingsOpen} t={t} />
@@ -2599,6 +2604,21 @@ function Nav({
       </button>
     </div>
   );
+}
+
+/** Embedded in Argon: the host's sidebar is the navigation. Reports the page and unread count, takes page switches. */
+function EmbedBridge({ view, settings, go }: { view: View; settings: boolean; go: (page: EmbedPage) => void }) {
+  const { events } = useWatch();
+  const unreadProductUpdates = useSyncExternalStore(subscribeProductUpdateReadState, getUnreadProductUpdateCount, () => 0);
+  const unread = events.filter((event) => !event.read).length + unreadProductUpdates;
+  const page: EmbedPage = settings ? "settings" : view;
+  const pageRef = useRef(page);
+  pageRef.current = page;
+  const goRef = useRef(go);
+  goRef.current = go;
+  useEffect(() => installEmbedNavigation(() => pageRef.current, (next) => flushSync(() => goRef.current(next))), []);
+  useEffect(() => postToHost({ type: "state", page, unread }), [page, unread]);
+  return null;
 }
 
 const StableNav = memo(Nav);
@@ -3121,12 +3141,13 @@ function Dashboard({
             }).format(new Date())}
           </h1>
         </div>
-        <div className="dashboard-head-actions">
+        {/* Shown only when embedded (CSS hides it in the web version); the onboarding card has its own button. */}
+        {data.companies.length > 0 && <div className="dashboard-head-actions">
           <PrimaryActionButton className="dashboard-company-action" onClick={() => open("company")}>
             <Plus />
             {t.addCompany}
           </PrimaryActionButton>
-        </div>
+        </div>}
         </div>
         {data.companies.length === 0 && <section className="dashboard-onboarding" aria-labelledby="dashboard-onboarding-title">
           <div>
@@ -3554,6 +3575,13 @@ function Companies({
           <h1>{t.companies}</h1>
           <p>{t.subtitle}</p>
         </div>
+        {/* Embedded in Argon there's no Yami sidebar, so its 新增企业 moves into the page head. */}
+        {isArgonEmbed && <div className="embed-head-actions">
+          <PrimaryActionButton className="dashboard-company-action" onClick={() => open("company")}>
+            <Plus />
+            {t.addCompany}
+          </PrimaryActionButton>
+        </div>}
       </div>
       {companyFilter && <div className="route-filter-bar" role="status">
         <span>{companyFilter === "active" ? t.inProgress : t.waiting}</span>

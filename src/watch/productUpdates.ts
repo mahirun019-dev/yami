@@ -17,8 +17,8 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
   title: { ja: 'Mac アプリ Argon 内での表示に対応しました', zh: '支持在 Mac 应用 Argon 中显示' },
   summary: { ja: 'Argon の中で Yami を開くと、Argon の画面になじむ表示になります。Web 版とスマートフォンでの表示やデータは変わりません。', zh: '在 Argon 中打开 Yami 时，界面会融入 Argon 的窗口。网页版和手机上的显示与数据保持不变。' },
   changes: {
-    ja: ['Argon 内では背景を透明にし、ナビゲーションを上部にまとめます', 'Argon 内ではテーマが Argon の外観設定に従います', 'Web 版・スマートフォンの表示と保存データには影響しません'],
-    zh: ['在 Argon 中背景透明，导航收进顶部一栏', '在 Argon 中主题跟随 Argon 的外观设置', '网页版、手机端的显示和已保存的数据不受影响'],
+    ja: ['Argon 内では背景を透明にし、ページの切り替えは Argon のサイドバーから行います', 'Argon 内ではテーマが Argon の外観設定に従います', 'Web 版・スマートフォンの表示と保存データには影響しません'],
+    zh: ['在 Argon 中背景透明，通过 Argon 的侧边栏切换页面', '在 Argon 中主题跟随 Argon 的外观设置', '网页版、手机端的显示和已保存的数据不受影响'],
   },
 }, {
   id: '2026-11-18-yami-plan-page-removed',
