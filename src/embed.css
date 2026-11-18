@@ -55,6 +55,7 @@ html[data-embed="argon"] .career-app {
   --embed-menu-hover-rim: inset 0 0.5px 0 rgba(255, 255, 255, 0.7);
   --embed-menu-border: rgba(255, 255, 255, 0.74);
   --embed-menu-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), inset 0 -0.5px 0 rgba(0, 0, 0, 0.06), 0 18px 44px rgba(0, 0, 0, 0.16), 0 2px 10px rgba(0, 0, 0, 0.07);
+  --embed-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 html[data-embed="argon"][data-theme="dark"],
@@ -97,6 +98,7 @@ html[data-embed="argon"][data-theme="dark"] .career-app {
   --embed-menu-hover-rim: inset 0 0.5px 0 rgba(255, 255, 255, 0.18);
   --embed-menu-border: rgba(255, 255, 255, 0.24);
   --embed-menu-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 -0.5px 0 rgba(255, 255, 255, 0.08), 0 22px 54px rgba(0, 0, 0, 0.48), 0 4px 14px rgba(0, 0, 0, 0.22);
+  --embed-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 4px 18px rgba(0, 0, 0, 0.22);
 }
 
 /* Argon 透明, white ink (dark appearance): light ink, dark translucent plates, a soft shadow under text. */
@@ -318,12 +320,25 @@ html[data-embed="argon"] .embed-head-actions {
     padding: 20px 22px 42px !important;
   }
 
+  html[data-embed="argon"] .company-page-head,
+  html[data-embed="argon"] .notification-page-head,
+  html[data-embed="argon"] .company-detail-page-head {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   html[data-embed="argon"] .career-app .workspace.workspace-settings {
     padding: 0 !important;
   }
 
   html[data-embed="argon"] .career-app .company-toolbar {
-    grid-template-columns: minmax(0, 1fr) 52px;
+    grid-template-columns: minmax(0, 1fr) 46px;
+    gap: 8px;
+  }
+
+  html[data-embed="argon"][data-argon-native-modal="true"] .company-filter-sheet {
+    border-radius: 18px !important;
+    animation: yami-embed-fade-in 150ms ease-out both !important;
   }
 
   html[data-embed="argon"] .settings-page-scope.desktop-settings-page {
@@ -483,9 +498,16 @@ html[data-embed-push="up"]::view-transition-new(root) { animation-name: yami-emb
 html[data-embed="argon"][data-theme] .settings-page-scope,
 html[data-embed="argon"][data-theme] .desktop-settings-page,
 html[data-embed="argon"][data-theme] .desktop-settings-content,
-html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-content > .settings-section {
+html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-content > .settings-section,
+html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-content > .watch-connection-settings {
   background: transparent !important;
   background-color: transparent !important;
+  box-sizing: border-box;
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-content > .settings-section.settings-general > .settings-general-group:first-of-type {
+  padding-top: 0;
+  border-top: 0;
 }
 
 html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-nav.settings-sidebar,
@@ -1247,13 +1269,11 @@ html[data-embed="argon"] .embed-company-detail-layer.is-entering {
   }
 }
 
-/* Company detail glass legibility polish over wallpaper */
+/* Company detail clear translucent cards without heavy backdrop blur */
 html[data-embed="argon"][data-theme] .company-detail-page-head .head-actions > button:not(.danger-button):not(.primary) {
   background: var(--embed-control-bg) !important;
   border-color: var(--border-color) !important;
   color: var(--text-primary) !important;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
 }
 
 html[data-embed="argon"][data-theme] .company-detail-page-head .head-actions > button:not(.danger-button):not(.primary):hover {
@@ -1262,8 +1282,6 @@ html[data-embed="argon"][data-theme] .company-detail-page-head .head-actions > b
 
 html[data-embed="argon"][data-theme] .company-detail-page-head .head-actions > button.danger-button {
   background: var(--embed-control-bg) !important;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
 }
 
 html[data-embed="argon"][data-theme] .course-detail > .course-profile.detail-section,
@@ -1272,9 +1290,6 @@ html[data-embed="argon"][data-theme] .course-detail > .detail-stack {
   border-radius: 14px;
   background: var(--bg-surface);
   border: 1px solid var(--border-card);
-  box-shadow: var(--embed-card-shadow);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
 }
 
 html[data-embed="argon"][data-theme] .course-profile > i {
@@ -1317,4 +1332,49 @@ html[data-embed="argon"] .home-month-module .home-month-day {
 
 html[data-embed="argon"] .home-month-module .home-month-view-all {
   margin-top: 8px;
+}
+
+/* Crisp clear plates (no blurred glass slab over the wallpaper on right-hand pages) */
+html[data-embed="argon"][data-theme] .career-app .dashboard-section,
+html[data-embed="argon"][data-theme] .career-app .dashboard-main .dashboard-section {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-embed="argon"][data-theme] .notification-day-groups > section > div {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+html[data-embed="argon"][data-theme] .notification-day-groups .notification-page-item:last-child {
+  border-bottom: 0;
+}
+
+html[data-embed="argon"][data-theme] .career-app .entity-card,
+html[data-embed="argon"][data-theme] .career-app .timeline-row.entity-card,
+html[data-embed="argon"][data-theme] .career-app .interview-card.entity-card,
+html[data-embed="argon"][data-theme] .career-app .filter-bar.entity-card,
+html[data-embed="argon"][data-theme] .settings-page-scope .template-saved-item,
+html[data-embed="argon"][data-theme] .career-app .materials-empty-tile,
+html[data-embed="argon"][data-theme] .career-app .empty-small {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-card) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-embed="argon"][data-theme] .career-app .materials-empty-tile,
+html[data-embed="argon"][data-theme] .career-app .empty-small {
+  border: 1px solid var(--border-card);
+}
+
+html[data-embed="argon"][data-theme] .settings-page-scope .desktop-settings-content > .settings-section .settings-danger {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-card) !important;
 }

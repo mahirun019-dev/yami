@@ -1556,6 +1556,10 @@ export default function App() {
   };
   const openCompany = (companyId: string) => selectCompany(companyId);
   const [watchHighlightEventId, setWatchHighlightEventId] = useState<string>();
+  const [templateEditing, setTemplateEditing] = useState(false);
+  useEffect(() => {
+    if (!settings) setTemplateEditing(false);
+  }, [settings]);
   const openWatchedCompany = (companyId: string, companyName?: string, eventId?: string) => {
     const matchingCompany = data.companies.find((company) => company.id === companyId || (companyName && companyWatchKey(company.name) === companyWatchKey(companyName)));
     if (matchingCompany) { setWatchHighlightEventId(eventId); selectCompany(matchingCompany.id); }
@@ -2230,7 +2234,7 @@ export default function App() {
   return (
     <WatchProvider><div className={`app-shell${useInlineSettings && settings ? " app-shell-settings" : ""}`} data-app-shell="true">
       <div className={`student-app career-app${useInlineSettings && settings ? " has-desktop-settings" : ""}`} onClickCapture={handleExternalLinkClick}>
-        {isArgonEmbed && <EmbedBridge view={view} settings={settings} canGoBack={!settings && view === "companies" && Boolean(selected)} go={(page) => {
+        {isArgonEmbed && <EmbedBridge view={view} settings={settings} canGoBack={(!settings && view === "companies" && Boolean(selected)) || (settings && templateEditing)} go={(page) => {
           if (page === "settings") { setSettingsOpen(true); return; }
           if (settings) closeSettingsPage();
           navigate(page);
@@ -2280,6 +2284,7 @@ export default function App() {
               upload={upload}
               updatePreferences={updatePreferences}
               exportCalendar={exportCalendar}
+              onTemplateEditingChange={setTemplateEditing}
             />
           ) : <>
           {view === "dashboard" && (
@@ -4923,18 +4928,88 @@ const templateCategoryKeys: Array<[TemplateCategory, string]> = [
   ["reverseQuestion", "templateReverseQuestion"],
   ["preparation", "templatePreparation"],
 ];
-function TemplateManager({ t, data, setData }: any) {
+function TemplateManager({ t, data, setData, onEditingChange }: any) {
   const [page, setPage] = useState<"list" | "new" | "edit">("list");
   const [editing, setEditing] = useState<CareerTemplate | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CareerTemplate | null>(null);
   const [draft, setDraft] = useState({ category: "selfPr" as TemplateCategory, title: "", content: "" });
+  const [swipeDx, setSwipeDx] = useState<number | null>(null);
+  const [exitingPage, setExitingPage] = useState<"new" | "edit" | null>(null);
+  const [popping, setPopping] = useState(false);
+  const [entering, setEntering] = useState(false);
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  const prevPageRef = useRef<"list" | "new" | "edit">(page);
   const ja = t.language === "言語";
   const copy = ja
     ? { saved: "保存済みテンプレート", empty: "保存されたテンプレートはありません。", emptyHint: "よく使う文章を保存して、ES や面接準備で再利用できます。", create: "テンプレートを作成", back: "テンプレート一覧に戻る", newTitle: "新規テンプレート", editTitle: "テンプレートを編集", cancel: "キャンセル", characters: (count: number) => `${count}文字`, deleteTitle: "このテンプレートを削除しますか？", deleteBody: "削除すると元に戻せません。", delete: "削除", previewEmpty: "本文はまだありません" }
     : { saved: "已保存的模板", empty: "还没有保存的模板。", emptyHint: "保存常用文本，之后可在 ES 和面试准备中重复使用。", create: "创建模板", back: "返回模板列表", newTitle: "新建模板", editTitle: "编辑模板", cancel: "取消", characters: (count: number) => `${count}字`, deleteTitle: "要删除这个模板吗？", deleteBody: "删除后无法恢复。", delete: "删除", previewEmpty: "暂无正文" };
+  useEffect(() => {
+    onEditingChange?.(page !== "list");
+    return () => onEditingChange?.(false);
+  }, [page, onEditingChange]);
+  useLayoutEffect(() => {
+    if (!isArgonEmbed) return;
+    const prev = prevPageRef.current;
+    prevPageRef.current = page;
+    if (page !== "list" && prev === "list") {
+      setPopping(false);
+      setSwipeDx(null);
+      setEntering(true);
+      const frame = requestAnimationFrame(() => setEntering(false));
+      return () => cancelAnimationFrame(frame);
+    }
+    if (page === "list" && prev !== "list") {
+      setSwipeDx(null);
+      setPopping(false);
+    }
+  }, [page]);
   const beginNew = () => { setEditing(null); setDraft({ category: "selfPr", title: "", content: "" }); setPage("new"); };
   const beginEdit = (template: CareerTemplate) => { setEditing(template); setDraft({ category: template.category, title: template.title, content: template.content }); setPage("edit"); };
   const closeEditor = () => { setEditing(null); setPage("list"); };
+  const triggerPop = () => {
+    if (!isArgonEmbed || page === "list") { closeEditor(); return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setSwipeDx(null);
+      closeEditor();
+      return;
+    }
+    setExitingPage(page);
+    setPopping(true);
+    const width = stackRef.current?.clientWidth || window.innerWidth;
+    setSwipeDx(width);
+    window.setTimeout(() => {
+      closeEditor();
+      setPopping(false);
+      setExitingPage(null);
+      setSwipeDx(null);
+    }, 260);
+  };
+  useEffect(() => {
+    if (!isArgonEmbed || page === "list") {
+      registerEmbedSwipeHandler(null);
+      return;
+    }
+    registerEmbedSwipeHandler({
+      onMove: (dx) => {
+        setPopping(false);
+        setSwipeDx(Math.max(0, dx));
+      },
+      onEnd: (velocity) => {
+        const width = stackRef.current?.clientWidth || window.innerWidth;
+        setSwipeDx((current) => {
+          const offset = current ?? 0;
+          if (offset > width / 3 || velocity > 700) {
+            window.setTimeout(() => triggerPop(), 0);
+            return offset;
+          }
+          setPopping(true);
+          window.setTimeout(() => setPopping(false), 240);
+          return 0;
+        });
+      },
+    });
+    return () => registerEmbedSwipeHandler(null);
+  }, [page]);
   const saveTemplate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft.title.trim() || !draft.content.trim()) return;
@@ -4957,22 +5032,53 @@ function TemplateManager({ t, data, setData }: any) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [deleteTarget]);
   const categoryName = (category: TemplateCategory) => t[templateCategoryKeys.find(([value]) => value === category)?.[1] || "templatePreparation"];
+  const activeEditorPage = page !== "list" ? page : exitingPage;
+  const listContent = <>
+    <header className="template-manager-heading"><h4>{copy.saved}</h4>{data.templates.length > 0 && <button type="button" className="settings-secondary-button" onClick={beginNew}><Plus aria-hidden="true" />{t.templateNew}</button>}</header>
+    {data.templates.length ? <div className="template-saved-list">{data.templates.map((template: CareerTemplate) => <button type="button" className="template-saved-item" key={template.id} onClick={() => beginEdit(template)}>
+      <span className="template-saved-category">{categoryName(template.category)}</span><strong>{template.title}</strong><span className="template-saved-preview">{template.content.trim() || copy.previewEmpty}</span><small>{Array.from(template.content).length}{ja ? "文字" : "字"}</small>
+    </button>)}</div> : <div className="template-empty-state"><p>{copy.empty}</p><span>{copy.emptyHint}</span><button type="button" className="settings-secondary-button" onClick={beginNew}><Plus aria-hidden="true" />{copy.create}</button></div>}
+  </>;
+  const renderEditor = (editorPage: "new" | "edit") => <>
+    <button type="button" className="template-back-button" onClick={isArgonEmbed ? triggerPop : closeEditor}><ArrowLeft aria-hidden="true" />{copy.back}</button>
+    <header className="template-manager-heading"><h4>{editorPage === "new" ? copy.newTitle : copy.editTitle}</h4></header>
+    <form className="template-editor-form" onSubmit={saveTemplate}>
+      <label><span>{t.templateCategory}</span><select value={draft.category} onChange={(event) => setDraft((value) => ({ ...value, category: event.target.value as TemplateCategory }))}>{templateCategoryKeys.map(([value, key]) => <option key={value} value={value}>{t[key]}</option>)}</select></label>
+      <label><span>{t.templateTitle}</span><input required value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} /></label>
+      <label className="template-content-field"><span>{t.templateContent}</span><textarea required value={draft.content} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} rows={8} /><output aria-live="polite">{copy.characters(Array.from(draft.content).length)}</output></label>
+      <footer className="template-editor-actions"><div>{editorPage === "edit" && editing && <button type="button" className="template-delete-link" onClick={() => setDeleteTarget(editing)}>{t.templateDelete}</button>}</div><div><button type="button" onClick={isArgonEmbed ? triggerPop : closeEditor}>{copy.cancel}</button><button type="submit" className="primary">{t.save}</button></div></footer>
+    </form>
+  </>;
+  const stackWidth = stackRef.current?.clientWidth || 640;
+  const dragProgress = swipeDx !== null ? Math.min(1, Math.max(0, swipeDx / stackWidth)) : 0;
+  const editorOpen = Boolean(activeEditorPage) && !exitingPage;
   return <div className={`template-manager-page${page !== "list" ? " is-editing" : ""}`}>
-    {page === "list" ? <>
-      <header className="template-manager-heading"><h4>{copy.saved}</h4>{data.templates.length > 0 && <button type="button" className="settings-secondary-button" onClick={beginNew}><Plus aria-hidden="true" />{t.templateNew}</button>}</header>
-      {data.templates.length ? <div className="template-saved-list">{data.templates.map((template: CareerTemplate) => <button type="button" className="template-saved-item" key={template.id} onClick={() => beginEdit(template)}>
-        <span className="template-saved-category">{categoryName(template.category)}</span><strong>{template.title}</strong><span className="template-saved-preview">{template.content.trim() || copy.previewEmpty}</span><small>{Array.from(template.content).length}{ja ? "文字" : "字"}</small>
-      </button>)}</div> : <div className="template-empty-state"><p>{copy.empty}</p><span>{copy.emptyHint}</span><button type="button" className="settings-secondary-button" onClick={beginNew}><Plus aria-hidden="true" />{copy.create}</button></div>}
-    </> : <>
-      <button type="button" className="template-back-button" onClick={closeEditor}><ArrowLeft aria-hidden="true" />{copy.back}</button>
-      <header className="template-manager-heading"><h4>{page === "new" ? copy.newTitle : copy.editTitle}</h4></header>
-      <form className="template-editor-form" onSubmit={saveTemplate}>
-        <label><span>{t.templateCategory}</span><select value={draft.category} onChange={(event) => setDraft((value) => ({ ...value, category: event.target.value as TemplateCategory }))}>{templateCategoryKeys.map(([value, key]) => <option key={value} value={value}>{t[key]}</option>)}</select></label>
-        <label><span>{t.templateTitle}</span><input required value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} /></label>
-        <label className="template-content-field"><span>{t.templateContent}</span><textarea required value={draft.content} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} rows={8} /><output aria-live="polite">{copy.characters(Array.from(draft.content).length)}</output></label>
-        <footer className="template-editor-actions"><div>{page === "edit" && editing && <button type="button" className="template-delete-link" onClick={() => setDeleteTarget(editing)}>{t.templateDelete}</button>}</div><div><button type="button" onClick={closeEditor}>{copy.cancel}</button><button type="submit" className="primary">{t.save}</button></div></footer>
-      </form>
-    </>}
+    {isArgonEmbed ? (
+      <div ref={stackRef} className="embed-company-stack">
+        <div
+          className={`embed-company-list-layer${editorOpen && !entering ? " is-pushed" : ""}`}
+          aria-hidden={Boolean(activeEditorPage)}
+          style={activeEditorPage && swipeDx !== null ? {
+            transform: `translate3d(${(-1 + dragProgress) * 28}px, 0, 0)`,
+            opacity: dragProgress,
+            transition: popping ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease" : "none",
+          } : undefined}
+        >
+          {listContent}
+        </div>
+        {activeEditorPage && (
+          <div
+            className={`embed-company-detail-layer${entering ? " is-entering" : ""}`}
+            style={swipeDx !== null ? {
+              transform: `translate3d(${swipeDx}px, 0, 0)`,
+              transition: popping ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+            } : undefined}
+          >
+            {renderEditor(activeEditorPage)}
+          </div>
+        )}
+      </div>
+    ) : (page === "list" ? listContent : renderEditor(page))}
     {deleteTarget && <div className="template-delete-layer" onMouseDown={(event) => { if (event.target === event.currentTarget) setDeleteTarget(null); }}>
       <section className="template-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="template-delete-title" aria-describedby="template-delete-description">
         <h5 id="template-delete-title">{copy.deleteTitle}</h5><p id="template-delete-description">{copy.deleteBody}</p>
@@ -5355,7 +5461,7 @@ function MobileSettingsDrawer({
     </aside>
   </div>;
 }
-function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, json, iconRef, upload, updatePreferences, exportCalendar }: any) {
+function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, json, iconRef, upload, updatePreferences, exportCalendar, onTemplateEditingChange }: any) {
   const [tab, setTab] = useState("general");
   const [tabDir, setTabDir] = useState<"down" | "up" | null>(null);
   const navListRef = useRef<HTMLDivElement | null>(null);
@@ -5400,7 +5506,7 @@ function SettingsPanel({ t, theme, setTheme, locale, setLocale, data, setData, j
     {tab === "general" && <GeneralSettings t={t} locale={locale} data={data} updatePreferences={updatePreferences} theme={theme} setTheme={setTheme} setLocale={setLocale} />}
     {tab === "job-settings" && <JobHuntSettings t={t} data={data} updatePreferences={updatePreferences} />}
     {tab === "customize" && <CustomizeSettings t={t} data={data} updatePreferences={updatePreferences} />}
-    {tab === "templates" && <section className="settings-section settings-wide-content"><TemplateManager t={t} data={data} setData={setData} /></section>}
+    {tab === "templates" && <section className="settings-section settings-wide-content"><TemplateManager t={t} data={data} setData={setData} onEditingChange={onTemplateEditingChange} /></section>}
     {tab === "calendar" && <CalendarSettings t={t} data={data} updatePreferences={updatePreferences} exportCalendar={exportCalendar} />}
     {tab === "watch" && <WatchConnectionSettings locale={locale} />}
     {tab === "data" && <DataSettings data={data} theme={theme} locale={locale} json={json} />}

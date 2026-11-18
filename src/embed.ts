@@ -39,7 +39,8 @@ type HostMessage =
   | { type: 'state'; page: EmbedPage; unread: number; canGoBack?: boolean }
   | { type: 'modal'; rect: { x: number; y: number; width: number; height: number; radius: number } | null }
   | { type: 'openMenu'; id: string; rect: { x: number; y: number; width: number; height: number }; align?: 'start' | 'end'; items: MenuOptionItem[] }
-  | { type: 'closeMenu' };
+  | { type: 'closeMenu' }
+  | { type: 'scroll'; scrolled: boolean };
 
 type SwipeHandler = {
   onMove: (dx: number) => void;
@@ -254,13 +255,26 @@ export function installEmbedNavigation(current: () => EmbedPage, go: (page: Embe
       postToHost({ type: 'modal', rect: payload });
     }
   };
+  let lastScrolled = false;
+  const syncScrollState = () => {
+    const next = window.scrollY > 4;
+    if (next !== lastScrolled) {
+      lastScrolled = next;
+      postToHost({ type: 'scroll', scrolled: next });
+    }
+  };
+  const onScroll = () => {
+    syncModalRect();
+    syncScrollState();
+  };
   const mutationObs = typeof MutationObserver !== 'undefined'
     ? new MutationObserver(() => requestAnimationFrame(syncModalRect))
     : null;
   mutationObs?.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   window.addEventListener('resize', syncModalRect);
-  window.addEventListener('scroll', syncModalRect, { passive: true });
+  window.addEventListener('scroll', onScroll, { passive: true });
   syncModalRect();
+  syncScrollState();
 
   return () => {
     document.removeEventListener('mousedown', onPointerDown, true);
@@ -268,7 +282,7 @@ export function installEmbedNavigation(current: () => EmbedPage, go: (page: Embe
     mutationObs?.disconnect();
     resizeObs?.disconnect();
     window.removeEventListener('resize', syncModalRect);
-    window.removeEventListener('scroll', syncModalRect);
+    window.removeEventListener('scroll', onScroll);
     applyWorkspaceCutout(null);
     delete (window as unknown as { yamiEmbed?: unknown }).yamiEmbed;
   };
