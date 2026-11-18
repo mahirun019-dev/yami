@@ -12,6 +12,15 @@ const PRODUCT_UPDATE_READ_KEY = 'yami-product-update-read-ids';
 const PRODUCT_UPDATE_READ_EVENT = 'yami:product-update-read-state-change';
 
 export const PRODUCT_UPDATES: ProductUpdate[] = [{
+  id: '2026-11-18-yami-argon-embed-liquid-glass',
+  date: '2026-11-18',
+  title: { ja: 'Argon 内のフォームダイアログとリストメニューを刷新しました', zh: '重塑了 Argon 内的表单弹窗与液态玻璃列表菜单样式' },
+  summary: { ja: '企業追加ダイアログを Argon ネイティブの一体感のあるシート構成に見直し、プルダウンや操作メニューに半透明のガラス表現を取り入れました。', zh: '重做了新增企业等二级弹窗卡片的整体比例与操作栏，并为下拉列表和记录操作菜单适配了液态玻璃质感。' },
+  changes: {
+    ja: ['企業追加ダイアログのフッター帯・区切り線・ボタンサイズを Argon 準拠に整理しました', 'プルダウンや操作メニューに半透明のぼかし・光沢リムを取り入れました', 'Web 版・スマートフォンでの表示と保存データには影響しません'],
+    zh: ['去掉弹窗顶部/底部的厚重分隔带，改用与 Argon 一致的单层磨砂卡片和紧凑型按钮布局', '下拉选择菜单与操作菜单支持半透明饱和模糊、顶部高光边缘与平滑圆角胶囊交互', '网页版、手机端的显示和已保存的数据不受影响'],
+  },
+}, {
   id: '2026-11-18-yami-argon-embed-transitions',
   date: '2026-11-18',
   title: { ja: 'Argon 内の設定切り替えアニメーションとモーダルの透過感を改善しました', zh: '新增 Argon 设置页切换动画，并提升弹窗通透感' },

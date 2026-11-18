@@ -33,11 +33,11 @@ html[data-embed="argon"] .career-app {
   --action-banner-bg: rgba(0, 0, 0, 0.045);
   --action-banner-hover: rgba(0, 0, 0, 0.08);
   --embed-hairline: rgba(0, 0, 0, 0.09);
-  --embed-dialog-bg: rgba(250, 251, 254, 0.76);
-  --embed-dialog-input-bg: rgba(255, 255, 255, 0.78);
+  --embed-dialog-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.80), rgba(246, 248, 252, 0.72));
+  --embed-dialog-input-bg: rgba(255, 255, 255, 0.72);
   --embed-dialog-muted-bg: rgba(0, 0, 0, 0.06);
-  --embed-dialog-border: rgba(0, 0, 0, 0.14);
-  --embed-dialog-shadow: 0 22px 58px rgba(0, 0, 0, 0.20), 0 4px 16px rgba(0, 0, 0, 0.08);
+  --embed-dialog-border: rgba(255, 255, 255, 0.72);
+  --embed-dialog-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), inset 0 -0.5px 0 rgba(0, 0, 0, 0.06), 0 22px 58px rgba(0, 0, 0, 0.20), 0 4px 16px rgba(0, 0, 0, 0.08);
   --embed-text-shadow: none;
   --embed-accent-fill: var(--argon-accent-fill, #346fe0);
   --embed-accent-text: var(--argon-accent-text, #2b62cf);
@@ -50,10 +50,11 @@ html[data-embed="argon"] .career-app {
   --embed-selected-ring: rgba(0, 0, 0, 0.06);
   --embed-control-bg: rgba(255, 255, 255, 0.78);
   --embed-control-hover: rgba(255, 255, 255, 0.94);
-  --embed-menu-bg: rgba(252, 252, 254, 0.99);
-  --embed-menu-hover: rgba(0, 0, 0, 0.07);
-  --embed-menu-border: rgba(0, 0, 0, 0.12);
-  --embed-menu-shadow: 0 14px 36px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.07);
+  --embed-menu-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(244, 247, 252, 0.78));
+  --embed-menu-hover: rgba(0, 0, 0, 0.065);
+  --embed-menu-hover-rim: inset 0 0.5px 0 rgba(255, 255, 255, 0.7);
+  --embed-menu-border: rgba(255, 255, 255, 0.74);
+  --embed-menu-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), inset 0 -0.5px 0 rgba(0, 0, 0, 0.06), 0 18px 44px rgba(0, 0, 0, 0.16), 0 2px 10px rgba(0, 0, 0, 0.07);
 }
 
 html[data-embed="argon"][data-theme="dark"],
@@ -75,11 +76,11 @@ html[data-embed="argon"][data-theme="dark"] .career-app {
   --action-banner-bg: rgba(255, 255, 255, 0.07);
   --action-banner-hover: rgba(255, 255, 255, 0.12);
   --embed-hairline: rgba(255, 255, 255, 0.1);
-  --embed-dialog-bg: rgba(26, 30, 38, 0.72);
-  --embed-dialog-input-bg: rgba(255, 255, 255, 0.09);
+  --embed-dialog-bg: linear-gradient(180deg, rgba(38, 43, 54, 0.72), rgba(22, 25, 32, 0.78));
+  --embed-dialog-input-bg: rgba(255, 255, 255, 0.075);
   --embed-dialog-muted-bg: rgba(255, 255, 255, 0.09);
   --embed-dialog-border: rgba(255, 255, 255, 0.22);
-  --embed-dialog-shadow: 0 24px 64px rgba(0, 0, 0, 0.46), 0 4px 16px rgba(0, 0, 0, 0.24);
+  --embed-dialog-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), inset 0 -0.5px 0 rgba(255, 255, 255, 0.06), 0 24px 64px rgba(0, 0, 0, 0.48), 0 4px 16px rgba(0, 0, 0, 0.24);
   --embed-accent-fill: var(--argon-accent-fill, #2f66d8);
   --embed-accent-text: var(--argon-accent-text, #7faaff);
   --embed-accent-on-fill: var(--argon-accent-on-fill, #ffffff);
@@ -91,10 +92,11 @@ html[data-embed="argon"][data-theme="dark"] .career-app {
   --embed-selected-ring: rgba(255, 255, 255, 0.1);
   --embed-control-bg: rgba(255, 255, 255, 0.09);
   --embed-control-hover: rgba(255, 255, 255, 0.15);
-  --embed-menu-bg: rgba(30, 33, 40, 0.99);
-  --embed-menu-hover: rgba(255, 255, 255, 0.11);
-  --embed-menu-border: rgba(255, 255, 255, 0.15);
-  --embed-menu-shadow: 0 18px 42px rgba(0, 0, 0, 0.48), 0 2px 10px rgba(0, 0, 0, 0.24);
+  --embed-menu-bg: linear-gradient(180deg, rgba(44, 49, 60, 0.78), rgba(24, 28, 36, 0.84));
+  --embed-menu-hover: rgba(255, 255, 255, 0.13);
+  --embed-menu-hover-rim: inset 0 0.5px 0 rgba(255, 255, 255, 0.18);
+  --embed-menu-border: rgba(255, 255, 255, 0.24);
+  --embed-menu-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 -0.5px 0 rgba(255, 255, 255, 0.08), 0 22px 54px rgba(0, 0, 0, 0.48), 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 
 /* Argon 透明, white ink (dark appearance): light ink, dark translucent plates, a soft shadow under text. */
@@ -118,7 +120,7 @@ html[data-embed="argon"][data-argon-material="clear"][data-theme="dark"] .career
   --action-banner-bg: rgba(0, 0, 0, 0.26);
   --action-banner-hover: rgba(0, 0, 0, 0.38);
   --embed-hairline: rgba(255, 255, 255, 0.18);
-  --embed-dialog-bg: rgba(18, 22, 29, 0.64);
+  --embed-dialog-bg: linear-gradient(180deg, rgba(32, 37, 48, 0.64), rgba(18, 22, 30, 0.70));
   --embed-text-shadow: 0 0.5px 1.6px rgba(0, 0, 0, 0.5);
   --embed-row-hover: rgba(255, 255, 255, 0.14);
   --embed-row-hover-ring: rgba(255, 255, 255, 0.16);
@@ -148,7 +150,7 @@ html[data-embed="argon"][data-argon-material="clear"][data-theme="light"] .caree
   --action-banner-bg: rgba(255, 255, 255, 0.46);
   --action-banner-hover: rgba(255, 255, 255, 0.64);
   --embed-hairline: rgba(0, 0, 0, 0.14);
-  --embed-dialog-bg: rgba(255, 255, 255, 0.68);
+  --embed-dialog-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(248, 250, 253, 0.68));
   --embed-text-shadow: 0 0 1.4px rgba(255, 255, 255, 0.75);
   --embed-row-hover: rgba(255, 255, 255, 0.56);
   --embed-row-hover-ring: rgba(0, 0, 0, 0.11);
@@ -791,12 +793,12 @@ html[data-embed="argon"][data-theme] ::picker(select) {
   max-height: min(260px, 42dvh);
   overflow-y: auto;
   margin-block: 6px;
-  padding: 5px;
+  padding: 6px;
   border: 1px solid var(--embed-menu-border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--embed-menu-bg);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
-  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(42px) saturate(2);
+  backdrop-filter: blur(42px) saturate(2);
   box-shadow: var(--embed-menu-shadow);
   color: var(--text-primary);
   text-shadow: none;
@@ -806,27 +808,29 @@ html[data-embed="argon"][data-theme] select option {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 33px;
-  padding: 6px 10px;
-  border-radius: 7px;
+  min-height: 31px;
+  padding: 5px 10px;
+  border-radius: 9px;
   color: var(--text-primary);
   background: transparent;
-  font-size: calc(13.5px * var(--reading-scale, 1));
+  font-size: calc(13px * var(--reading-scale, 1));
   font-weight: 450;
   text-shadow: none;
   cursor: pointer;
-  transition: background-color 110ms ease, color 110ms ease;
+  transition: background-color 110ms ease, color 110ms ease, box-shadow 110ms ease;
 }
 
 html[data-embed="argon"][data-theme] select option:hover,
 html[data-embed="argon"][data-theme] select option:focus,
 html[data-embed="argon"][data-theme] select option:focus-visible {
   background: var(--embed-menu-hover);
+  box-shadow: var(--embed-menu-hover-rim);
   outline: none;
 }
 
 html[data-embed="argon"][data-theme] select option:checked {
   background: var(--embed-accent-soft);
+  box-shadow: var(--embed-menu-hover-rim);
   color: var(--embed-accent-text);
   font-weight: 600;
 }
@@ -924,6 +928,17 @@ html[data-embed="argon"][data-theme] .record-action-menu {
   text-shadow: none;
 }
 
+@keyframes embed-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 html[data-embed="argon"][data-theme] .modal-layer .drawer,
 html[data-embed="argon"][data-theme] .modal-layer .entity-card,
 html[data-embed="argon"][data-theme] .modal-layer [role="dialog"],
@@ -935,8 +950,8 @@ html[data-embed="argon"][data-theme] .company-filter-sheet,
 html[data-embed="argon"][data-theme] .career-app .record-action-menu,
 html[data-embed="argon"][data-theme] .career-app .record-action-menu .record-action-surface {
   background: var(--embed-dialog-bg) !important;
-  -webkit-backdrop-filter: blur(36px) saturate(1.4);
-  backdrop-filter: blur(36px) saturate(1.4);
+  -webkit-backdrop-filter: blur(40px) saturate(1.75);
+  backdrop-filter: blur(40px) saturate(1.75);
   border: 1px solid var(--embed-dialog-border) !important;
   box-shadow: var(--embed-dialog-shadow) !important;
   text-shadow: none;
@@ -948,6 +963,17 @@ html[data-embed="argon"][data-theme] .watch-disconnect-dialog,
 html[data-embed="argon"][data-theme] .template-delete-dialog,
 html[data-embed="argon"][data-theme] .stage-progression-warning-dialog {
   border-radius: 18px !important;
+  animation: embed-card-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-embed="argon"][data-theme] .modal-layer .drawer,
+  html[data-embed="argon"][data-theme] .backup-restore-dialog,
+  html[data-embed="argon"][data-theme] .watch-disconnect-dialog,
+  html[data-embed="argon"][data-theme] .template-delete-dialog,
+  html[data-embed="argon"][data-theme] .stage-progression-warning-dialog {
+    animation: yami-embed-fade-in 150ms ease-out both;
+  }
 }
 
 @media (min-width: 761px) {
@@ -956,21 +982,38 @@ html[data-embed="argon"][data-theme] .stage-progression-warning-dialog {
   }
 
   html[data-embed="argon"][data-theme] .modal-layer .drawer {
-    max-height: min(740px, calc(100dvh - 36px));
+    width: min(540px, 100%);
+    max-height: min(720px, calc(100dvh - 36px));
   }
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .drawer > header {
-  padding: 14px 22px 12px;
+  padding: 18px 22px 8px;
   background: transparent !important;
-  border-bottom: 1px solid var(--embed-hairline) !important;
+  border-bottom: 0 !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .drawer > header h2 {
+  font-size: calc(16px * var(--reading-scale, 1));
+  font-weight: 620;
+  letter-spacing: -0.01em;
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .drawer > header .close-button {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 50% !important;
   background: var(--embed-dialog-muted-bg) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 8px !important;
+  border: 0 !important;
   color: var(--text-secondary) !important;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .drawer > header .close-button svg {
+  width: 14px;
+  height: 14px;
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .drawer > header .close-button:hover {
@@ -979,39 +1022,100 @@ html[data-embed="argon"][data-theme] .modal-layer .drawer > header .close-button
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .drawer > form {
-  gap: 10px 12px;
-  padding: 14px 22px 16px;
+  gap: 11px 14px;
+  padding: 8px 22px 20px;
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .form-grid label {
+  gap: 5px;
   color: var(--text-secondary) !important;
+  font-size: calc(12px * var(--reading-scale, 1));
+  font-weight: 500;
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .form-grid input:not([type="hidden"]),
 html[data-embed="argon"][data-theme] .modal-layer .form-grid textarea,
 html[data-embed="argon"][data-theme] .modal-layer .form-grid select {
-  min-height: 36px;
-  border-radius: 10px !important;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 8px !important;
+  font-size: calc(13px * var(--reading-scale, 1));
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .form-grid input:not([type="hidden"]),
 html[data-embed="argon"][data-theme] .modal-layer .form-grid textarea {
   background: var(--embed-dialog-input-bg) !important;
-  border-color: var(--border-strong) !important;
+  border-color: var(--border-color) !important;
   color: var(--text-primary) !important;
 }
 
+html[data-embed="argon"][data-theme] .modal-layer .form-grid select {
+  border-color: var(--border-color) !important;
+}
+
 html[data-embed="argon"][data-theme] .modal-layer .form-grid textarea {
-  min-height: 58px;
+  min-height: 60px;
+  padding: 8px 10px;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .interest-stars {
+  min-height: 34px;
+  gap: 2px;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .interest-stars button {
+  width: 24px;
+  height: 26px;
+  font-size: calc(18px * var(--reading-scale, 1));
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .interest-stars span {
+  margin-left: 6px;
+  font-size: calc(12.5px * var(--reading-scale, 1));
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .color-swatches {
+  min-height: 28px;
+  gap: 8px;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .color-swatch {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .color-swatch svg {
+  width: 12px;
+  height: 12px;
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .form-actions {
-  position: sticky !important;
-  bottom: -16px !important;
-  margin: 4px -22px -16px !important;
-  padding: 12px 22px 16px !important;
-  border-top: 1px solid var(--embed-hairline) !important;
-  background: var(--embed-dialog-bg) !important;
+  position: static !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 6px 0 0 !important;
+  padding: 6px 0 0 !important;
+  border-top: 0 !important;
+  background: transparent !important;
+}
+
+html[data-embed="argon"][data-theme] .modal-layer .form-actions > button,
+html[data-embed="argon"][data-theme] .backup-restore-dialog footer button,
+html[data-embed="argon"][data-theme] .watch-disconnect-dialog footer button,
+html[data-embed="argon"][data-theme] .template-delete-dialog footer button,
+html[data-embed="argon"][data-theme] .stage-progression-warning-actions button {
+  width: auto !important;
+  min-width: 72px;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 16px !important;
+  border-radius: 8px !important;
+  font-size: calc(13px * var(--reading-scale, 1)) !important;
+  font-weight: 600 !important;
 }
 
 html[data-embed="argon"][data-theme] .modal-layer .form-actions > button:not(.primary),
@@ -1035,8 +1139,9 @@ html[data-embed="argon"][data-theme] .company-filter-sheet-actions button:not(.p
 }
 
 html[data-embed="argon"][data-theme] .color-swatch.active {
-  border-color: var(--bg-surface-elevated) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
   outline: 2px solid var(--embed-accent-text) !important;
+  outline-offset: 2px;
 }
 
 html[data-embed="argon"][data-theme] .interest-stars button:focus-visible {
@@ -1044,9 +1149,12 @@ html[data-embed="argon"][data-theme] .interest-stars button:focus-visible {
 }
 
 html[data-embed="argon"][data-theme] .career-app .record-action-menu {
+  padding: 6px !important;
   background: var(--embed-menu-bg) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(1.9) !important;
+  backdrop-filter: blur(36px) saturate(1.9) !important;
   border: 1px solid var(--embed-menu-border) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   box-shadow: var(--embed-menu-shadow) !important;
 }
 
@@ -1059,11 +1167,16 @@ html[data-embed="argon"][data-theme] .career-app .record-action-menu .record-act
 }
 
 html[data-embed="argon"][data-theme] .record-action-items button {
-  border-radius: 7px;
-  transition: background-color 110ms ease;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-top: 0 !important;
+  border-radius: 9px;
+  font-size: calc(13px * var(--reading-scale, 1));
+  transition: background-color 110ms ease, box-shadow 110ms ease;
 }
 
 html[data-embed="argon"][data-theme] .record-action-items button:hover,
 html[data-embed="argon"][data-theme] .record-action-items button:focus-visible {
   background: var(--embed-menu-hover) !important;
+  box-shadow: var(--embed-menu-hover-rim);
 }
